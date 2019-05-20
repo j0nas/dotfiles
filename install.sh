@@ -35,10 +35,13 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 nvm install --lts
 npm i -g tldr
 
-# Install Docker & Compose
+# Install Docker, Compose & Machine
 curl -fsSL https://get.docker.com -o- | bash
 usermod -aG docker $USER
 curl -L "https://github.com/docker/compose/releases/download/1.24.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
+base=https://github.com/docker/machine/releases/download/v0.16.0 &&
+  curl -L $base/docker-machine-$(uname -s)-$(uname -m) >/tmp/docker-machine &&
+  install /tmp/docker-machine /usr/local/bin/docker-machine
 
 gnome-tweaks
