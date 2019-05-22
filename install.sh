@@ -26,9 +26,10 @@ dpkg -i google-chrome-stable_current_amd64.deb
 # Copy everything to home folder
 cp ./* ~
 
-# Install oh-my-zsh & zsh-autosuggestions
+# Install oh-my-zsh, zsh-autosuggestions & alias-tips
 sh -c "$(curl -fsSL https://raw.githubusercontent.com/robbyrussell/oh-my-zsh/master/tools/install.sh)"
 git clone https://github.com/zsh-users/zsh-autosuggestions ~/.zsh/zsh-autosuggestions
+git clone https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
 
 # Install Node Version Manager, Node.js LTS & tldr package
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash

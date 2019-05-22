@@ -1,6 +1,7 @@
-source ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
-source $ZSH/oh-my-zsh.sh
 . ~/z.sh
+. $ZSH/oh-my-zsh.sh
+. ~/.zsh/zsh-autosuggestions/zsh-autosuggestions.zsh
+. ~/.zsh/alias-tips/alias-tips.plugin.zsh
 
 alias dc="docker-compose"
 alias x="xclip -selection clipboard"
