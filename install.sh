@@ -35,6 +35,9 @@ git clone https://github.com/djui/alias-tips.git ~/.zsh/alias-tips
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.34.0/install.sh | bash
 nvm install --lts
 npm i -g tldr
+npm config set init-author-name "Jonas Jensen" -g
+npm config set init-author-email "jonas.jensen@msn.com" -g
+npm config set init-author-url "https://jonas-jensen.com" -g
 
 # Install Docker, Compose & Machine
 curl -fsSL https://get.docker.com -o- | bash
