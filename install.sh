@@ -14,7 +14,7 @@ apt -y install git zsh curl xclip gnome-tweak-tool
 
 apt-get update
 apt-get upgrade
-apt-get install powerline fonts-powerline wget
+apt-get install powerline fonts-powerline wget tmux
 
 # Apps
 snap install --classic slack webstorm
