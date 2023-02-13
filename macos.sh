@@ -19,3 +19,7 @@ brew install --cask google-chrome
 brew install --cask microsoft-teams
 brew install --cask visual-studio-code
 brew install --cask signal
+
+defaults write -g InitialKeyRepeat -int 10 # normal minimum is 15 (225 ms)
+defaults write -g KeyRepeat -int 1 # normal minimum is 2 (30 ms)
+
