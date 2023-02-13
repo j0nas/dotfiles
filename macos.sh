@@ -12,6 +12,8 @@ brew install zsh
 brew install tmux
 brew install z
 brew install gh
+brew install docker-compose
+brew install --cask docker
 brew install --cask alfred
 brew install --cask google-chrome
 brew install --cask microsoft-teams
