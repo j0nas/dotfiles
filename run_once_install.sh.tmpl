@@ -18,6 +18,25 @@ if [[ ! -d "$HOME/.antidote" ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
+# --- Nerd Font ---
+{{ if eq .chezmoi.os "darwin" -}}
+if ! ls ~/Library/Fonts/JetBrainsMonoNerd* &> /dev/null; then
+  if command -v brew &> /dev/null; then
+    echo "==> Installing JetBrains Mono Nerd Font..."
+    brew install --cask font-jetbrains-mono-nerd-font
+  else
+    echo "NOTE: Install a Nerd Font for starship icons: brew install --cask font-jetbrains-mono-nerd-font"
+  fi
+fi
+{{ else -}}
+if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
+  echo "==> Installing JetBrains Mono Nerd Font..."
+  mkdir -p ~/.local/share/fonts
+  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz | tar -xJ -C ~/.local/share/fonts
+  fc-cache -f ~/.local/share/fonts
+fi
+{{ end -}}
+
 # --- zsh ---
 if ! command -v zsh &> /dev/null; then
   echo ""
