@@ -6,9 +6,9 @@ Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https
 
 ```sh
 sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply j0nas
-curl https://mise.run | sh
-mise install
 ```
+
+This single command installs chezmoi, clones this repo, applies configs, and runs the bootstrap script which installs mise, all tools, and the zsh plugin manager.
 
 ## What's included
 
