@@ -1,0 +1,56 @@
+# --- Path ---
+export PATH="$HOME/.local/bin:$PATH"
+{{ if eq .chezmoi.os "darwin" -}}
+eval "$(/opt/homebrew/bin/brew shellenv)"
+{{ end -}}
+
+# --- History ---
+HISTFILE=~/.zsh_history
+HISTSIZE=50000
+SAVEHIST=50000
+setopt SHARE_HISTORY
+setopt HIST_IGNORE_DUPS
+setopt HIST_IGNORE_SPACE
+
+# --- Editor ---
+export EDITOR='nano'
+
+# --- Completion ---
+autoload -Uz compinit && compinit
+zstyle ':completion:*' menu select
+zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
+
+# --- Plugins (antidote) ---
+if [[ -d "$HOME/.antidote" ]]; then
+  source "$HOME/.antidote/antidote.zsh"
+  antidote load
+fi
+
+# --- Aliases ---
+alias dc="docker compose"
+{{ if eq .chezmoi.os "darwin" -}}
+alias x="pbcopy"
+{{ else -}}
+alias x="xclip -selection clipboard"
+{{ end -}}
+
+# --- Tools ---
+
+# starship prompt
+eval "$(starship init zsh)"
+
+# zoxide (smarter cd)
+eval "$(zoxide init zsh)"
+
+# mise (runtime manager)
+if command -v mise &> /dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
+# fzf
+{{ if eq .chezmoi.os "darwin" -}}
+source <(fzf --zsh)
+{{ else -}}
+[ -f /usr/share/doc/fzf/examples/key-bindings.zsh ] && source /usr/share/doc/fzf/examples/key-bindings.zsh
+[ -f /usr/share/doc/fzf/examples/completion.zsh ] && source /usr/share/doc/fzf/examples/completion.zsh
+{{ end -}}
