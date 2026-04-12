@@ -36,16 +36,16 @@ alias x="xclip -selection clipboard"
 
 # --- Tools ---
 
+# mise (runtime manager) — must be first, other tools are installed via mise
+if command -v mise &> /dev/null; then
+  eval "$(mise activate zsh)"
+fi
+
 # starship prompt
 eval "$(starship init zsh)"
 
 # zoxide (smarter cd)
 eval "$(zoxide init zsh)"
-
-# mise (runtime manager)
-if command -v mise &> /dev/null; then
-  eval "$(mise activate zsh)"
-fi
 
 # fzf
 {{ if eq .chezmoi.os "darwin" -}}
