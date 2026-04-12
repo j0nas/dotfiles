@@ -3,6 +3,15 @@ set -e
 
 echo "==> Bootstrapping dotfiles..."
 
+{{ if eq .chezmoi.os "darwin" -}}
+# --- Homebrew ---
+if ! command -v brew &> /dev/null; then
+  echo "==> Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+fi
+{{ end -}}
+
 # --- mise ---
 if ! command -v mise &> /dev/null; then
   echo "==> Installing mise..."
@@ -21,12 +30,8 @@ fi
 # --- Nerd Font ---
 {{ if eq .chezmoi.os "darwin" -}}
 if ! ls ~/Library/Fonts/JetBrainsMonoNerd* &> /dev/null; then
-  if command -v brew &> /dev/null; then
-    echo "==> Installing JetBrains Mono Nerd Font..."
-    brew install --cask font-jetbrains-mono-nerd-font
-  else
-    echo "NOTE: Install a Nerd Font for starship icons: brew install --cask font-jetbrains-mono-nerd-font"
-  fi
+  echo "==> Installing JetBrains Mono Nerd Font..."
+  brew install --cask font-jetbrains-mono-nerd-font
 fi
 {{ else -}}
 if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
@@ -38,19 +43,17 @@ fi
 {{ end -}}
 
 # --- zsh ---
-if ! command -v zsh &> /dev/null; then
-  echo ""
-  echo "NOTE: zsh is not installed. Install it manually:"
+if command -v zsh &> /dev/null; then
+  if [[ "$SHELL" != */zsh ]]; then
+    echo "==> Setting zsh as default shell..."
+    chsh -s "$(which zsh)"
+  fi
+else
 {{ if eq .chezmoi.os "darwin" -}}
-  echo "  brew install zsh"
+  echo "NOTE: zsh should already be installed on macOS"
 {{ else -}}
-  echo "  sudo apt install -y zsh"
+  echo "NOTE: Install zsh manually: sudo apt install -y zsh && chsh -s \$(which zsh)"
 {{ end -}}
-  echo "  chsh -s \$(which zsh)"
-elif [[ "$SHELL" != */zsh ]]; then
-  echo ""
-  echo "NOTE: zsh is installed but not your default shell. Run:"
-  echo "  chsh -s \$(which zsh)"
 fi
 
 echo "==> Done!"
