@@ -14,5 +14,15 @@ alias gp='git push'
 alias gst='git status'
 alias glog='git log --oneline --decorate --graph'
 
+# docker
+alias dc='docker compose'
+
+# clipboard
+{{ if eq .chezmoi.os "darwin" -}}
+alias x='pbcopy'
+{{ else -}}
+alias x='xclip -selection clipboard'
+{{ end -}}
+
 # tools
 alias c='claude'

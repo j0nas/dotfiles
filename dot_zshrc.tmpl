@@ -28,12 +28,6 @@ fi
 
 # --- Aliases ---
 source "$HOME/.config/zsh/aliases.zsh"
-alias dc="docker compose"
-{{ if eq .chezmoi.os "darwin" -}}
-alias x="pbcopy"
-{{ else -}}
-alias x="xclip -selection clipboard"
-{{ end -}}
 
 # --- Tools ---
 
