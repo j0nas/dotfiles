@@ -39,8 +39,7 @@ if [[ "$OS" == "Darwin" ]]; then
 elif [[ "$IS_WSL" == true ]]; then
   if ! command -v wezterm.exe &> /dev/null; then
     echo "==> Installing WezTerm on Windows..."
-    powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements wez.wezterm" || \
-      echo "NOTE: If winget failed, install WezTerm manually: winget install wez.wezterm"
+    powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements wez.wezterm" || true
   fi
 fi
 
