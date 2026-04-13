@@ -20,11 +20,10 @@ config.color_scheme = "Catppuccin Mocha"
 config.window_padding = { left = 8, right = 8, top = 8, bottom = 8 }
 config.hide_tab_bar_if_only_one_tab = true
 
--- Enable CSI-u encoding so Shift+Enter is recognized by CLI tools like Claude Code
-config.enable_csi_u_key_encoding = true
-
 -- Keys (tmux-inspired)
 config.keys = {
+  -- Shift+Enter: send CSI u sequence (bypasses ConPTY stripping it on WSL)
+  { key = "Enter", mods = "SHIFT", action = act.SendString("\x1b[13;2u") },
   { key = "h", mods = "CTRL|SHIFT", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
   { key = "v", mods = "CTRL|SHIFT", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
   { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = true }) },
