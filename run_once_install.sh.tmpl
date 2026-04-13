@@ -35,11 +35,11 @@ if ! command -v wezterm &> /dev/null; then
 fi
 {{ else -}}
 # On Windows/WSL, WezTerm runs on the Windows side.
-# Symlink config so Windows WezTerm finds it.
+# Copy config so Windows WezTerm finds it (WSL symlinks don't work cross-OS).
 WIN_HOME="/mnt/c/Users/${USER}"
-if [[ -d "$WIN_HOME" && ! -e "$WIN_HOME/.wezterm.lua" ]]; then
-  echo "==> Symlinking WezTerm config to Windows home..."
-  ln -s "$HOME/.wezterm.lua" "$WIN_HOME/.wezterm.lua"
+if [[ -d "$WIN_HOME" ]]; then
+  echo "==> Copying WezTerm config to Windows home..."
+  cp "$HOME/.wezterm.lua" "$WIN_HOME/.wezterm.lua"
 fi
 {{ end -}}
 
