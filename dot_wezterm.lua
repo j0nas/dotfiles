@@ -22,8 +22,6 @@ config.hide_tab_bar_if_only_one_tab = true
 
 -- Keys (tmux-inspired)
 config.keys = {
-  -- Shift+Enter: send CSI u sequence (bypasses ConPTY stripping it on WSL)
-  { key = "Enter", mods = "SHIFT", action = act.SendString("\x1b[13;2u") },
   { key = "h", mods = "CTRL|SHIFT", action = act.SplitHorizontal({ domain = "CurrentPaneDomain" }) },
   { key = "v", mods = "CTRL|SHIFT", action = act.SplitVertical({ domain = "CurrentPaneDomain" }) },
   { key = "w", mods = "CTRL|SHIFT", action = act.CloseCurrentPane({ confirm = true }) },
@@ -33,5 +31,10 @@ config.keys = {
   { key = "UpArrow", mods = "CTRL|SHIFT", action = act.ActivatePaneDirection("Up") },
   { key = "DownArrow", mods = "CTRL|SHIFT", action = act.ActivatePaneDirection("Down") },
 }
+
+-- Windows/WSL: ConPTY strips Shift+Enter, so send the CSI u sequence explicitly
+if wezterm.target_triple:find("windows") then
+  table.insert(config.keys, { key = "Enter", mods = "SHIFT", action = act.SendString("\x1b[13;2u") })
+end
 
 return config
