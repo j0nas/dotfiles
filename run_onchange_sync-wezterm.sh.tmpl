@@ -1,7 +1,7 @@
 {{ if ne .chezmoi.os "darwin" -}}
 #!/bin/bash
 # Sync WezTerm config to Windows home on every change.
-# Hash: {{ include "dot_wezterm.lua" | sha256sum }}
+# Hash: {{ include "dot_wezterm.lua.tmpl" | sha256sum }}
 WIN_HOME="/mnt/c/Users/${USER}"
 if [[ -d "$WIN_HOME" ]]; then
   cp "$HOME/.wezterm.lua" "$WIN_HOME/.wezterm.lua"

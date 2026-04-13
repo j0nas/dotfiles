@@ -58,6 +58,30 @@ if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
 fi
 {{ end -}}
 
+# --- VS Code extensions ---
+EXTENSIONS=(
+  anthropic.claude-code
+  bradlc.vscode-tailwindcss
+  buenon.scratchpads
+  catppuccin.catppuccin-vsc
+)
+if command -v code &> /dev/null; then
+  echo "==> Installing VS Code extensions..."
+  for ext in "${EXTENSIONS[@]}"; do
+    code --install-extension "$ext" --force 2>/dev/null || true
+  done
+fi
+
+{{ if stat "/mnt/c/Users" -}}
+# --- VS Code settings (WSL → Windows) ---
+WIN_HOME="/mnt/c/Users/${USER}"
+VSCODE_WIN="$WIN_HOME/AppData/Roaming/Code/User"
+if [[ -d "$WIN_HOME" ]]; then
+  mkdir -p "$VSCODE_WIN"
+  cp "$HOME/.config/Code/User/settings.json" "$VSCODE_WIN/settings.json"
+fi
+{{ end -}}
+
 # --- zsh ---
 if command -v zsh &> /dev/null; then
   if [[ "$SHELL" != */zsh ]]; then

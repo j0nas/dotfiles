@@ -1,0 +1,11 @@
+{{ if stat "/mnt/c/Users" -}}
+#!/bin/bash
+# Sync VS Code settings to Windows on every change.
+# Hash: {{ include "dot_config/Code/User/settings.json.tmpl" | sha256sum }}
+WIN_HOME="/mnt/c/Users/${USER}"
+VSCODE_WIN="$WIN_HOME/AppData/Roaming/Code/User"
+if [[ -d "$WIN_HOME" ]]; then
+  mkdir -p "$VSCODE_WIN"
+  cp "$HOME/.config/Code/User/settings.json" "$VSCODE_WIN/settings.json"
+fi
+{{ end -}}
