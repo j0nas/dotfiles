@@ -15,10 +15,9 @@ This single command installs chezmoi, clones this repo, applies configs, and run
 **Linux/WSL only:**
 - Install zsh: `sudo apt install -y zsh && chsh -s $(which zsh)`
 
-**All platforms:**
-- In Warp (or your terminal), set the font to **JetBrains Mono Nerd Font**
-
 ## What's included
+
+**Terminal:** WezTerm (Catppuccin Mocha theme, JetBrains Mono Nerd Font)
 
 **Configs:** zsh, tmux, nano, starship (prompt)
 
