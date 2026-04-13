@@ -5,16 +5,10 @@ Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https
 ## Setup on a new machine
 
 ```sh
-sh -c "$(curl -fsLS get.chezmoi.io)" -- init --apply j0nas
+bash <(curl -fsSL https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh)
 ```
 
-This single command installs chezmoi, clones this repo, applies configs, and runs the bootstrap script which installs mise, all tools, and the zsh plugin manager.
-
-### Manual steps after setup
-
-**Windows/WSL:**
-- Install zsh: `sudo apt install -y zsh && chsh -s $(which zsh)`
-- Install WezTerm: `winget install wez.wezterm`
+One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd Font, and zsh plugins.
 
 ## What's included
 
