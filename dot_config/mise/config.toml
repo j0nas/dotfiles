@@ -2,5 +2,4 @@
 starship = "latest"
 zoxide = "latest"
 fzf = "latest"
-tmux = "latest"
 gh = "latest"
