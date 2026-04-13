@@ -25,10 +25,10 @@ alias x='xclip -selection clipboard'
 {{ end -}}
 
 # navigation
-{{ if eq .chezmoi.os "darwin" -}}
-alias desktop='cd ~/Desktop'
-{{ else -}}
+{{ if stat "/mnt/c/Users" -}}
 alias desktop='cd /mnt/c/Users/jonas/Desktop'
+{{ else -}}
+alias desktop='cd ~/Desktop'
 {{ end -}}
 
 # tools
