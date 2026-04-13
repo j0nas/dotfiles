@@ -14,8 +14,8 @@ One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd F
 
 **Terminal:** WezTerm (Catppuccin Mocha theme, JetBrains Mono Nerd Font)
 
-**Configs:** zsh, nano, starship (prompt)
+**Configs:** zsh, git, nano, starship (prompt), Claude Code
 
-**Tools (via mise):** starship, zoxide, fzf, gh
+**Tools (via mise):** starship, zoxide, fzf, gh, claude
 
 **Zsh plugins (via antidote):** zsh-autosuggestions, zsh-syntax-highlighting
