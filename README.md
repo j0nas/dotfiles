@@ -12,8 +12,9 @@ This single command installs chezmoi, clones this repo, applies configs, and run
 
 ### Manual steps after setup
 
-**Linux/WSL only:**
+**Windows/WSL:**
 - Install zsh: `sudo apt install -y zsh && chsh -s $(which zsh)`
+- Install WezTerm: `winget install wez.wezterm`
 
 ## What's included
 

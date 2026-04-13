@@ -2,7 +2,11 @@ local wezterm = require("wezterm")
 local config = wezterm.config_builder()
 
 -- Shell
-config.default_prog = { "zsh" }
+if wezterm.target_triple:find("windows") then
+  config.default_domain = "WSL:Ubuntu"
+else
+  config.default_prog = { "zsh" }
+end
 
 -- Font
 config.font = wezterm.font("JetBrains Mono")
