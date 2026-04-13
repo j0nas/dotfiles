@@ -24,5 +24,12 @@ alias x='pbcopy'
 alias x='xclip -selection clipboard'
 {{ end -}}
 
+# navigation
+{{ if eq .chezmoi.os "darwin" -}}
+alias desktop='cd ~/Desktop'
+{{ else -}}
+alias desktop='cd /mnt/c/Users/jonas/Desktop'
+{{ end -}}
+
 # tools
 alias c='claude'
