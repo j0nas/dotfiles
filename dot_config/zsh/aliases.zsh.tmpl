@@ -26,7 +26,7 @@ alias x='xclip -selection clipboard'
 
 # navigation
 {{ if stat "/mnt/c/Users" -}}
-alias desktop='cd /mnt/c/Users/jonas/Desktop'
+alias desktop='cd /mnt/c/Users/{{ .chezmoi.username }}/Desktop'
 {{ else -}}
 alias desktop='cd ~/Desktop'
 {{ end -}}
