@@ -13,3 +13,6 @@ alias gl='git pull'
 alias gp='git push'
 alias gst='git status'
 alias glog='git log --oneline --decorate --graph'
+
+# tools
+alias c='claude'
