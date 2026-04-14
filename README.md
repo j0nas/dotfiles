@@ -26,20 +26,19 @@ One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd F
 
 ## Obsidian + iCloud notes
 
-iCloud sync is set up differently on each platform:
+The vault lives in iCloud. Each platform reaches it differently:
 
-- **macOS** — iCloud Drive is native. The Obsidian app container lives at
+- **macOS** — iCloud Drive is native. Vault path:
   `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Jonas' Vault`.
 - **Windows (WSL)** — `run_once_install.sh.tmpl` runs `winget install Apple.iCloud`.
-  After first install you must sign in to iCloud for Windows and tick
-  *iCloud Drive*. Vault path: `C:\Users\<user>\iCloudDrive\iCloud~md~obsidian\Jonas' Vault`.
-- **Linux** — there is no official iCloud client. Obsidian is installed via
-  flatpak, but you'll need Obsidian Sync, Syncthing, or git for cross-device
-  sync on Linux.
+  Sign in to iCloud for Windows and tick *iCloud Drive*; the vault syncs to
+  `C:\Users\<user>\iCloudDrive\iCloud~md~obsidian\Jonas' Vault`. Re-run
+  `chezmoi apply` once the sync completes so the plugin script can find it.
+- **Linux** — no official iCloud client. Obsidian installs via flatpak, but
+  you'll need Obsidian Sync, Syncthing, or git for cross-device sync.
 
-**Important:** create the vault on an Apple device first (e.g. Obsidian iOS →
-*Create new vault* → *Store in iCloud*). Creating it on Windows first breaks
-iOS discovery. After the container has synced down, re-run `chezmoi apply` and
-`run_onchange_setup-obsidian-tasks.sh.tmpl` will drop the Tasks plugin into
-`<vault>/.obsidian/plugins/obsidian-tasks-plugin/` and enable it in
-`community-plugins.json`.
+`run_onchange_setup-obsidian-tasks.sh.tmpl` drops the pinned Tasks release into
+`<vault>/.obsidian/plugins/obsidian-tasks-plugin/` and enables it in
+`community-plugins.json`. It appends rather than replaces, so existing plugins
+in the vault are preserved and iCloud propagates the change to other devices.
+Bump `PLUGIN_VERSION` in that script to upgrade.
