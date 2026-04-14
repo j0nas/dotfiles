@@ -58,6 +58,40 @@ if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
 fi
 {{ end -}}
 
+# --- Obsidian + iCloud ---
+# iCloud Drive is native on macOS. On Windows we install iCloud for Windows
+# via winget (runs cross-OS from WSL). There is no official iCloud client
+# for Linux — Obsidian is still installed, but iCloud sync is unavailable.
+{{ if eq .chezmoi.os "darwin" -}}
+if ! command -v obsidian &> /dev/null && [[ ! -d "/Applications/Obsidian.app" ]]; then
+  echo "==> Installing Obsidian..."
+  brew install --cask obsidian
+fi
+{{ else if stat "/mnt/c/Users" -}}
+if ! command -v obsidian.exe &> /dev/null; then
+  echo "==> Installing Obsidian on Windows..."
+  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements Obsidian.Obsidian" || true
+fi
+if [[ ! -d "/mnt/c/Program Files (x86)/Common Files/Apple/Internet Services" ]] \
+   && [[ ! -d "/mnt/c/Program Files/Common Files/Apple/Internet Services" ]]; then
+  echo "==> Installing iCloud for Windows..."
+  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements Apple.iCloud" || true
+  echo "    Sign in to iCloud for Windows and enable 'iCloud Drive' to finish sync setup."
+fi
+{{ else if eq .chezmoi.os "linux" -}}
+if ! command -v obsidian &> /dev/null && ! flatpak info md.obsidian.Obsidian &> /dev/null; then
+  echo "==> Installing Obsidian (flatpak)..."
+  if command -v flatpak &> /dev/null; then
+    flatpak install -y --noninteractive flathub md.obsidian.Obsidian || true
+  else
+    echo "NOTE: flatpak not installed. Install it first: sudo apt install -y flatpak"
+    echo "      Then: flatpak install -y flathub md.obsidian.Obsidian"
+  fi
+fi
+echo "NOTE: Linux has no native iCloud client — iCloud sync is not available here."
+echo "      Use Obsidian Sync, Syncthing, or git if you need cross-device sync on Linux."
+{{ end -}}
+
 # --- VS Code extensions ---
 EXTENSIONS=(
   anthropic.claude-code
