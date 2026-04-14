@@ -1,0 +1,84 @@
+#!/bin/bash
+# Install & enable the Obsidian Tasks plugin in the iCloud vault.
+# Runs when this file's hash changes — bump PLUGIN_VERSION to upgrade.
+#
+# Vault lives in iCloud so we write to the platform-specific iCloud path:
+#   macOS: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>
+#   WSL:   /mnt/c/Users/<user>/iCloudDrive/iCloud~md~obsidian/<vault>
+#   Linux: no iCloud — skipped.
+set -e
+
+PLUGIN_ID="obsidian-tasks-plugin"
+PLUGIN_VERSION="7.23.1"
+VAULT_NAME={{ .obsidian_vault | quote }}
+
+# Resolve vault path per platform. We check the canonical iCloud-container
+# path first, then fall back to the user-facing "Obsidian" alias.
+{{ if eq .chezmoi.os "darwin" -}}
+CANDIDATES=(
+  "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
+  "$HOME/Library/Mobile Documents/com~apple~CloudDocs/Obsidian/$VAULT_NAME"
+)
+{{ else if stat "/mnt/c/Users" -}}
+WIN_HOME="/mnt/c/Users/${USER}"
+CANDIDATES=(
+  "$WIN_HOME/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
+  "$WIN_HOME/iCloudDrive/Obsidian/$VAULT_NAME"
+  "$WIN_HOME/iCloud Drive/Obsidian/$VAULT_NAME"
+)
+{{ else -}}
+echo "==> Skipping Obsidian Tasks plugin setup: no iCloud sync on Linux."
+exit 0
+{{ end -}}
+
+VAULT=""
+for c in "${CANDIDATES[@]}"; do
+  if [[ -d "$c" ]]; then VAULT="$c"; break; fi
+done
+
+if [[ -z "$VAULT" ]]; then
+  echo "==> Skipping Obsidian Tasks plugin setup: vault not found."
+  echo "    Create '$VAULT_NAME' on an Apple device (Obsidian iOS → 'Store in iCloud')"
+  echo "    so iCloud creates the container, then re-run 'chezmoi apply'."
+  echo "    Looked in:"
+  for c in "${CANDIDATES[@]}"; do echo "      - $c"; done
+  exit 0
+fi
+
+PLUGIN_DIR="$VAULT/.obsidian/plugins/$PLUGIN_ID"
+COMMUNITY_PLUGINS="$VAULT/.obsidian/community-plugins.json"
+
+# Skip if already at the target version.
+if [[ -f "$PLUGIN_DIR/manifest.json" ]] \
+   && grep -q "\"version\"[[:space:]]*:[[:space:]]*\"$PLUGIN_VERSION\"" "$PLUGIN_DIR/manifest.json"; then
+  echo "==> Obsidian Tasks $PLUGIN_VERSION already installed."
+else
+  echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
+  mkdir -p "$PLUGIN_DIR"
+  BASE="https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/$PLUGIN_VERSION"
+  for f in main.js manifest.json styles.css; do
+    curl -fsSL -o "$PLUGIN_DIR/$f" "$BASE/$f"
+  done
+fi
+
+# Enable the plugin in community-plugins.json (a JSON array of plugin ids).
+# Use python3 for safe JSON editing — it's universally available.
+python3 - "$COMMUNITY_PLUGINS" "$PLUGIN_ID" <<'PY'
+import json, os, sys
+path, plugin_id = sys.argv[1], sys.argv[2]
+plugins = []
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            plugins = json.load(f)
+    except json.JSONDecodeError:
+        plugins = []
+if plugin_id not in plugins:
+    plugins.append(plugin_id)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(plugins, f, indent=2)
+    print(f"==> Enabled {plugin_id} in {path}")
+else:
+    print(f"==> {plugin_id} already enabled.")
+PY
