@@ -8,7 +8,7 @@ Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https
 bash <(curl -fsSL https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh)
 ```
 
-One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd Font, and zsh plugins.
+One command. Installs everything: zsh, WezTerm, VS Code, chezmoi, mise, CLI tools, Nerd Font, and zsh plugins.
 
 ## What's included
 
@@ -24,7 +24,7 @@ One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd F
 
 **Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for task management — GTD-friendly)
 
-**Signal** desktop (brew cask on macOS, winget on Windows, flatpak on Linux)
+**Signal** desktop, **VS Code** (brew cask on macOS, winget on Windows, flatpak on Linux)
 
 ## Obsidian + iCloud notes
 

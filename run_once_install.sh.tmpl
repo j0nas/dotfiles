@@ -27,28 +27,27 @@ if [[ ! -d "$HOME/.antidote" ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
-# --- Nerd Font ---
+# --- Font & GUI apps ---
+# On WSL the terminal (WezTerm) runs Windows-side, so the font and GUI apps
+# must be installed on Windows via winget — Linux-side equivalents would be
+# invisible to the host terminal.
 {{ if eq .chezmoi.os "darwin" -}}
-brew install --cask font-jetbrains-mono-nerd-font
-{{ else -}}
-if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
-  echo "==> Installing JetBrains Mono Nerd Font..."
-  mkdir -p ~/.local/share/fonts
-  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz | tar -xJ -C ~/.local/share/fonts
-  fc-cache -f ~/.local/share/fonts
-fi
-{{ end -}}
-
-# --- GUI apps ---
-{{ if eq .chezmoi.os "darwin" -}}
-CASKS=(wezterm obsidian signal)
+CASKS=(
+  font-jetbrains-mono-nerd-font
+  wezterm
+  obsidian
+  signal
+  visual-studio-code
+)
 brew install --cask "${CASKS[@]}"
 {{ else if stat "/mnt/c/Users" -}}
 WINGET_PKGS=(
+  DEVCOM.JetBrainsMonoNerdFont
   wez.wezterm
   Obsidian.Obsidian
   OpenWhisperSystems.Signal
   Apple.iCloud
+  Microsoft.VisualStudioCode
 )
 for p in "${WINGET_PKGS[@]}"; do
   # winget exits non-zero (0x8A150061) if already installed — || true is required.
@@ -56,7 +55,17 @@ for p in "${WINGET_PKGS[@]}"; do
 done
 echo "NOTE: After first Apple.iCloud install, sign in + tick 'iCloud Drive' so the vault syncs."
 {{ else if eq .chezmoi.os "linux" -}}
-FLATPAKS=(md.obsidian.Obsidian org.signal.Signal)
+# Font has to be on the host filesystem (flatpak apps see it via the portal).
+if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
+  echo "==> Installing JetBrains Mono Nerd Font..."
+  mkdir -p ~/.local/share/fonts
+  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz | tar -xJ -C ~/.local/share/fonts
+  fc-cache -f ~/.local/share/fonts
+fi
+# com.visualstudio.code is the unofficial Flathub build — extensions that
+# shell out to host tools (gcc, python, node) won't find them. If you need
+# that, install Code from Microsoft's apt repo instead.
+FLATPAKS=(md.obsidian.Obsidian org.signal.Signal com.visualstudio.code)
 if command -v flatpak &> /dev/null; then
   flatpak install -y --noninteractive flathub "${FLATPAKS[@]}"
 else
