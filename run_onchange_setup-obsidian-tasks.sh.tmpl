@@ -31,16 +31,19 @@ fi
 
 PLUGIN_DIR="$VAULT/.obsidian/plugins/$PLUGIN_ID"
 COMMUNITY_PLUGINS="$VAULT/.obsidian/community-plugins.json"
+MANIFEST="$PLUGIN_DIR/manifest.json"
 
-# Skip if already at the target version.
-if [[ -f "$PLUGIN_DIR/manifest.json" ]] \
-   && grep -q "\"version\"[[:space:]]*:[[:space:]]*\"$PLUGIN_VERSION\"" "$PLUGIN_DIR/manifest.json"; then
+# Skip if already at the target version. Python handles missing/malformed JSON
+# via 2>/dev/null — any error falls through to the install branch.
+if python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["version"]==sys.argv[2] else 1)' \
+     "$MANIFEST" "$PLUGIN_VERSION" 2>/dev/null; then
   echo "==> Obsidian Tasks $PLUGIN_VERSION already installed."
 else
   echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
   # Download to a temp dir first so a partial failure doesn't leave the
   # plugin in a half-installed state that the version check would skip over.
-  TMP="$(mktemp -d)"
+  # mktemp -d works on modern macOS and Linux; fall back to BSD form just in case.
+  TMP="$(mktemp -d 2>/dev/null || mktemp -d -t obsidian-tasks)"
   trap 'rm -rf "$TMP"' EXIT
   BASE="https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/$PLUGIN_VERSION"
   for f in main.js manifest.json styles.css; do

@@ -30,18 +30,8 @@ if [[ "$OS" == "Linux" ]]; then
   fi
 fi
 
-# --- WezTerm ---
-if [[ "$OS" == "Darwin" ]]; then
-  if ! command -v wezterm &> /dev/null; then
-    echo "==> Installing WezTerm..."
-    brew install --cask wezterm
-  fi
-elif [[ "$IS_WSL" == true ]]; then
-  if ! command -v wezterm.exe &> /dev/null; then
-    echo "==> Installing WezTerm on Windows..."
-    powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements wez.wezterm" || true
-  fi
-fi
+# WezTerm and other GUI apps are installed by chezmoi's run_once_install.sh.tmpl
+# (see CLAUDE.md). setup.sh only handles what has to exist before chezmoi runs.
 
 # --- chezmoi ---
 if ! command -v chezmoi &> /dev/null; then
