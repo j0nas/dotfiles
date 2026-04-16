@@ -12,36 +12,20 @@ PLUGIN_ID="obsidian-tasks-plugin"
 PLUGIN_VERSION="7.23.1"
 VAULT_NAME={{ .obsidian_vault | quote }}
 
-# Resolve vault path per platform. We check the canonical iCloud-container
-# path first, then fall back to the user-facing "Obsidian" alias.
+# Canonical iCloud vault path per platform.
 {{ if eq .chezmoi.os "darwin" -}}
-CANDIDATES=(
-  "$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
-  "$HOME/Library/Mobile Documents/com~apple~CloudDocs/Obsidian/$VAULT_NAME"
-)
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
 {{ else if stat "/mnt/c/Users" -}}
-WIN_HOME="/mnt/c/Users/${USER}"
-CANDIDATES=(
-  "$WIN_HOME/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
-  "$WIN_HOME/iCloudDrive/Obsidian/$VAULT_NAME"
-  "$WIN_HOME/iCloud Drive/Obsidian/$VAULT_NAME"
-)
+VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
 {{ else -}}
 echo "==> Skipping Obsidian Tasks plugin setup: no iCloud sync on Linux."
 exit 0
 {{ end -}}
 
-VAULT=""
-for c in "${CANDIDATES[@]}"; do
-  if [[ -d "$c" ]]; then VAULT="$c"; break; fi
-done
-
-if [[ -z "$VAULT" ]]; then
-  echo "==> Skipping Obsidian Tasks plugin setup: vault not found."
-  echo "    Create '$VAULT_NAME' on an Apple device (Obsidian iOS → 'Store in iCloud')"
-  echo "    so iCloud creates the container, then re-run 'chezmoi apply'."
-  echo "    Looked in:"
-  for c in "${CANDIDATES[@]}"; do echo "      - $c"; done
+if [[ ! -d "$VAULT" ]]; then
+  echo "==> Skipping Obsidian Tasks plugin setup: vault not synced yet at"
+  echo "    $VAULT"
+  echo "    Wait for iCloud to finish, then re-run 'chezmoi apply'."
   exit 0
 fi
 
@@ -54,11 +38,16 @@ if [[ -f "$PLUGIN_DIR/manifest.json" ]] \
   echo "==> Obsidian Tasks $PLUGIN_VERSION already installed."
 else
   echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
-  mkdir -p "$PLUGIN_DIR"
+  # Download to a temp dir first so a partial failure doesn't leave the
+  # plugin in a half-installed state that the version check would skip over.
+  TMP="$(mktemp -d)"
+  trap 'rm -rf "$TMP"' EXIT
   BASE="https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/$PLUGIN_VERSION"
   for f in main.js manifest.json styles.css; do
-    curl -fsSL -o "$PLUGIN_DIR/$f" "$BASE/$f"
+    curl -fsSL -o "$TMP/$f" "$BASE/$f"
   done
+  mkdir -p "$PLUGIN_DIR"
+  mv "$TMP"/main.js "$TMP"/manifest.json "$TMP"/styles.css "$PLUGIN_DIR/"
 fi
 
 # Enable the plugin in community-plugins.json (a JSON array of plugin ids).
