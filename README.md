@@ -22,7 +22,7 @@ One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd F
 
 **Zsh plugins (via antidote):** zsh-autosuggestions, zsh-syntax-highlighting
 
-**Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for GTD workflows)
+**Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for task management — GTD-friendly)
 
 **Signal** desktop (brew cask on macOS, winget on Windows, flatpak on Linux)
 

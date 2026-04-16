@@ -58,61 +58,37 @@ if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
 fi
 {{ end -}}
 
-# --- Obsidian + iCloud ---
-# iCloud Drive is native on macOS. On Windows we install iCloud for Windows
-# via winget (runs cross-OS from WSL). There is no official iCloud client
-# for Linux — Obsidian is still installed, but iCloud sync is unavailable.
+# --- GUI apps ---
+# Trust each tool's idempotency (see CLAUDE.md). Add apps by appending ids.
 {{ if eq .chezmoi.os "darwin" -}}
-if ! command -v obsidian &> /dev/null && [[ ! -d "/Applications/Obsidian.app" ]]; then
-  echo "==> Installing Obsidian..."
-  brew install --cask obsidian
-fi
+CASKS=(obsidian signal)
+for c in "${CASKS[@]}"; do
+  echo "==> brew install --cask $c"
+  brew install --cask "$c"
+done
 {{ else if stat "/mnt/c/Users" -}}
-if ! command -v obsidian.exe &> /dev/null; then
-  echo "==> Installing Obsidian on Windows..."
-  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements Obsidian.Obsidian" || true
-fi
-if [[ ! -d "/mnt/c/Program Files (x86)/Common Files/Apple/Internet Services" ]] \
-   && [[ ! -d "/mnt/c/Program Files/Common Files/Apple/Internet Services" ]]; then
-  echo "==> Installing iCloud for Windows..."
-  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements Apple.iCloud" || true
-  echo "    Sign in to iCloud for Windows and enable 'iCloud Drive' to finish sync setup."
-fi
+WINGET_PKGS=(
+  Obsidian.Obsidian
+  OpenWhisperSystems.Signal
+  Apple.iCloud
+)
+for p in "${WINGET_PKGS[@]}"; do
+  echo "==> winget install $p"
+  # winget exits non-zero if already installed — || true is required, not optional.
+  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements -e --id $p" || true
+done
+echo "NOTE: After first Apple.iCloud install, sign in + tick 'iCloud Drive' so the vault syncs."
 {{ else if eq .chezmoi.os "linux" -}}
-if ! command -v obsidian &> /dev/null && ! flatpak info md.obsidian.Obsidian &> /dev/null; then
-  echo "==> Installing Obsidian (flatpak)..."
-  if command -v flatpak &> /dev/null; then
-    flatpak install -y --noninteractive flathub md.obsidian.Obsidian || true
-  else
-    echo "NOTE: flatpak not installed. Install it first: sudo apt install -y flatpak"
-    echo "      Then: flatpak install -y flathub md.obsidian.Obsidian"
-  fi
+FLATPAKS=(md.obsidian.Obsidian org.signal.Signal)
+if command -v flatpak &> /dev/null; then
+  for f in "${FLATPAKS[@]}"; do
+    echo "==> flatpak install $f"
+    flatpak install -y --noninteractive flathub "$f"
+  done
+else
+  echo "NOTE: flatpak not installed. Run 'sudo apt install -y flatpak' then re-apply."
 fi
-echo "NOTE: Linux has no native iCloud client — iCloud sync is not available here."
-echo "      Use Obsidian Sync, Syncthing, or git if you need cross-device sync on Linux."
-{{ end -}}
-
-# --- Signal ---
-{{ if eq .chezmoi.os "darwin" -}}
-if [[ ! -d "/Applications/Signal.app" ]]; then
-  echo "==> Installing Signal..."
-  brew install --cask signal
-fi
-{{ else if stat "/mnt/c/Users" -}}
-if ! command -v signal.exe &> /dev/null && [[ ! -d "/mnt/c/Program Files/Signal" ]]; then
-  echo "==> Installing Signal on Windows..."
-  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements OpenWhisperSystems.Signal" || true
-fi
-{{ else if eq .chezmoi.os "linux" -}}
-if ! command -v signal-desktop &> /dev/null && ! flatpak info org.signal.Signal &> /dev/null; then
-  echo "==> Installing Signal (flatpak)..."
-  if command -v flatpak &> /dev/null; then
-    flatpak install -y --noninteractive flathub org.signal.Signal || true
-  else
-    echo "NOTE: flatpak not installed. Install it first: sudo apt install -y flatpak"
-    echo "      Then: flatpak install -y flathub org.signal.Signal"
-  fi
-fi
+echo "NOTE: Linux has no iCloud client — use Syncthing/git for Obsidian cross-device sync."
 {{ end -}}
 
 # --- VS Code extensions ---
