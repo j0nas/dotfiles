@@ -8,7 +8,7 @@ Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https
 bash <(curl -fsSL https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh)
 ```
 
-One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd Font, and zsh plugins.
+One command. Installs everything: zsh, WezTerm, VS Code, chezmoi, mise, CLI tools, Nerd Font, and zsh plugins.
 
 ## What's included
 
@@ -21,3 +21,26 @@ One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd F
 **VS Code extensions:** Claude Code, Tailwind CSS, Scratchpads, Catppuccin
 
 **Zsh plugins (via antidote):** zsh-autosuggestions, zsh-syntax-highlighting
+
+**Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for task management — GTD-friendly)
+
+**Signal** desktop, **VS Code** (brew cask on macOS, winget on Windows, flatpak on Linux)
+
+## Obsidian + iCloud notes
+
+The vault lives in iCloud. Each platform reaches it differently:
+
+- **macOS** — iCloud Drive is native. Vault path:
+  `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Jonas' Vault`.
+- **Windows (WSL)** — `run_once_install.sh.tmpl` runs `winget install Apple.iCloud`.
+  Sign in to iCloud for Windows and tick *iCloud Drive*; the vault syncs to
+  `C:\Users\<user>\iCloudDrive\iCloud~md~obsidian\Jonas' Vault`. Re-run
+  `chezmoi apply` once the sync completes so the plugin script can find it.
+- **Linux** — no official iCloud client. Obsidian installs via flatpak, but
+  you'll need Obsidian Sync, Syncthing, or git for cross-device sync.
+
+`run_onchange_setup-obsidian-tasks.sh.tmpl` drops the pinned Tasks release into
+`<vault>/.obsidian/plugins/obsidian-tasks-plugin/` and enables it in
+`community-plugins.json`. It appends rather than replaces, so existing plugins
+in the vault are preserved and iCloud propagates the change to other devices.
+Bump `PLUGIN_VERSION` in that script to upgrade.

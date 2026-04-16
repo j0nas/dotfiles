@@ -4,10 +4,6 @@ set -e
 echo "==> Setting up dotfiles..."
 
 OS="$(uname -s)"
-IS_WSL=false
-if [[ -f /proc/version ]] && grep -qi microsoft /proc/version; then
-  IS_WSL=true
-fi
 
 # --- macOS: install Homebrew ---
 if [[ "$OS" == "Darwin" ]]; then
@@ -18,7 +14,7 @@ if [[ "$OS" == "Darwin" ]]; then
   fi
 fi
 
-# --- Linux: install zsh ---
+# --- Linux/WSL: install zsh ---
 if [[ "$OS" == "Linux" ]]; then
   if ! command -v zsh &> /dev/null; then
     echo "==> Installing zsh (requires sudo)..."
@@ -26,20 +22,7 @@ if [[ "$OS" == "Linux" ]]; then
   fi
   if [[ "$SHELL" != */zsh ]]; then
     echo "==> Setting zsh as default shell..."
-    chsh -s "$(which zsh)"
-  fi
-fi
-
-# --- WezTerm ---
-if [[ "$OS" == "Darwin" ]]; then
-  if ! command -v wezterm &> /dev/null; then
-    echo "==> Installing WezTerm..."
-    brew install --cask wezterm
-  fi
-elif [[ "$IS_WSL" == true ]]; then
-  if ! command -v wezterm.exe &> /dev/null; then
-    echo "==> Installing WezTerm on Windows..."
-    powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements wez.wezterm" || true
+    chsh -s "$(command -v zsh)"
   fi
 fi
 

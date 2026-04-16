@@ -1,0 +1,75 @@
+#!/bin/bash
+# Install & enable the Obsidian Tasks plugin in the iCloud vault.
+# Runs when this file's hash changes — bump PLUGIN_VERSION to upgrade.
+#
+# Vault lives in iCloud so we write to the platform-specific iCloud path:
+#   macOS: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>
+#   WSL:   /mnt/c/Users/<user>/iCloudDrive/iCloud~md~obsidian/<vault>
+#   Linux: no iCloud — skipped.
+set -e
+
+PLUGIN_ID="obsidian-tasks-plugin"
+PLUGIN_VERSION="7.23.1"
+VAULT_NAME={{ .obsidian_vault | quote }}
+
+# Canonical iCloud vault path per platform.
+{{ if eq .chezmoi.os "darwin" -}}
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
+{{ else if stat "/mnt/c/Users" -}}
+VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
+{{ else -}}
+echo "==> Skipping Obsidian Tasks plugin setup: no iCloud sync on Linux."
+exit 0
+{{ end -}}
+
+if [[ ! -d "$VAULT" ]]; then
+  echo "==> Skipping Obsidian Tasks plugin setup: vault not synced yet at"
+  echo "    $VAULT"
+  echo "    Wait for iCloud to finish, then re-run 'chezmoi apply'."
+  exit 0
+fi
+
+PLUGIN_DIR="$VAULT/.obsidian/plugins/$PLUGIN_ID"
+COMMUNITY_PLUGINS="$VAULT/.obsidian/community-plugins.json"
+MANIFEST="$PLUGIN_DIR/manifest.json"
+
+# Skip if already at the target version. Python handles missing/malformed JSON
+# via 2>/dev/null — any error falls through to the install branch.
+if python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["version"]==sys.argv[2] else 1)' \
+     "$MANIFEST" "$PLUGIN_VERSION" 2>/dev/null; then
+  echo "==> Obsidian Tasks $PLUGIN_VERSION already installed."
+else
+  echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
+  # Download to a temp dir first so a partial failure doesn't leave the
+  # plugin in a half-installed state that the version check would skip over.
+  TMP="$(mktemp -d)"
+  trap 'rm -rf "$TMP"' EXIT
+  BASE="https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/$PLUGIN_VERSION"
+  for f in main.js manifest.json styles.css; do
+    curl -fsSL -o "$TMP/$f" "$BASE/$f"
+  done
+  mkdir -p "$PLUGIN_DIR"
+  mv "$TMP"/main.js "$TMP"/manifest.json "$TMP"/styles.css "$PLUGIN_DIR/"
+fi
+
+# Enable the plugin in community-plugins.json (a JSON array of plugin ids).
+# Use python3 for safe JSON editing — it's universally available.
+python3 - "$COMMUNITY_PLUGINS" "$PLUGIN_ID" <<'PY'
+import json, os, sys
+path, plugin_id = sys.argv[1], sys.argv[2]
+plugins = []
+if os.path.exists(path):
+    try:
+        with open(path) as f:
+            plugins = json.load(f)
+    except json.JSONDecodeError:
+        plugins = []
+if plugin_id not in plugins:
+    plugins.append(plugin_id)
+    os.makedirs(os.path.dirname(path), exist_ok=True)
+    with open(path, "w") as f:
+        json.dump(plugins, f, indent=2)
+    print(f"==> Enabled {plugin_id} in {path}")
+else:
+    print(f"==> {plugin_id} already enabled.")
+PY
