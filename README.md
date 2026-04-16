@@ -24,6 +24,8 @@ One command. Installs everything: zsh, WezTerm, chezmoi, mise, CLI tools, Nerd F
 
 **Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for GTD workflows)
 
+**Signal** desktop (brew cask on macOS, winget on Windows, flatpak on Linux)
+
 ## Obsidian + iCloud notes
 
 The vault lives in iCloud. Each platform reaches it differently:
