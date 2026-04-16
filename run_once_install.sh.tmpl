@@ -92,6 +92,29 @@ echo "NOTE: Linux has no native iCloud client — iCloud sync is not available h
 echo "      Use Obsidian Sync, Syncthing, or git if you need cross-device sync on Linux."
 {{ end -}}
 
+# --- Signal ---
+{{ if eq .chezmoi.os "darwin" -}}
+if [[ ! -d "/Applications/Signal.app" ]]; then
+  echo "==> Installing Signal..."
+  brew install --cask signal
+fi
+{{ else if stat "/mnt/c/Users" -}}
+if ! command -v signal.exe &> /dev/null && [[ ! -d "/mnt/c/Program Files/Signal" ]]; then
+  echo "==> Installing Signal on Windows..."
+  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements OpenWhisperSystems.Signal" || true
+fi
+{{ else if eq .chezmoi.os "linux" -}}
+if ! command -v signal-desktop &> /dev/null && ! flatpak info org.signal.Signal &> /dev/null; then
+  echo "==> Installing Signal (flatpak)..."
+  if command -v flatpak &> /dev/null; then
+    flatpak install -y --noninteractive flathub org.signal.Signal || true
+  else
+    echo "NOTE: flatpak not installed. Install it first: sudo apt install -y flatpak"
+    echo "      Then: flatpak install -y flathub org.signal.Signal"
+  fi
+fi
+{{ end -}}
+
 # --- VS Code extensions ---
 EXTENSIONS=(
   anthropic.claude-code
