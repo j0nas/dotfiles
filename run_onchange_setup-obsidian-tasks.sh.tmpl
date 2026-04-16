@@ -42,8 +42,7 @@ else
   echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
   # Download to a temp dir first so a partial failure doesn't leave the
   # plugin in a half-installed state that the version check would skip over.
-  # mktemp -d works on modern macOS and Linux; fall back to BSD form just in case.
-  TMP="$(mktemp -d 2>/dev/null || mktemp -d -t obsidian-tasks)"
+  TMP="$(mktemp -d)"
   trap 'rm -rf "$TMP"' EXIT
   BASE="https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/$PLUGIN_VERSION"
   for f in main.js manifest.json styles.css; do

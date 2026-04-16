@@ -4,10 +4,6 @@ set -e
 echo "==> Setting up dotfiles..."
 
 OS="$(uname -s)"
-IS_WSL=false
-if [[ -f /proc/version ]] && grep -qi microsoft /proc/version; then
-  IS_WSL=true
-fi
 
 # --- macOS: install Homebrew ---
 if [[ "$OS" == "Darwin" ]]; then
@@ -18,7 +14,7 @@ if [[ "$OS" == "Darwin" ]]; then
   fi
 fi
 
-# --- Linux: install zsh ---
+# --- Linux/WSL: install zsh ---
 if [[ "$OS" == "Linux" ]]; then
   if ! command -v zsh &> /dev/null; then
     echo "==> Installing zsh (requires sudo)..."
@@ -26,12 +22,9 @@ if [[ "$OS" == "Linux" ]]; then
   fi
   if [[ "$SHELL" != */zsh ]]; then
     echo "==> Setting zsh as default shell..."
-    chsh -s "$(which zsh)"
+    chsh -s "$(command -v zsh)"
   fi
 fi
-
-# WezTerm and other GUI apps are installed by chezmoi's run_once_install.sh.tmpl
-# (see CLAUDE.md). setup.sh only handles what has to exist before chezmoi runs.
 
 # --- chezmoi ---
 if ! command -v chezmoi &> /dev/null; then

@@ -40,13 +40,9 @@ fi
 {{ end -}}
 
 # --- GUI apps ---
-# Trust each tool's idempotency (see CLAUDE.md). Add apps by appending ids.
 {{ if eq .chezmoi.os "darwin" -}}
 CASKS=(wezterm obsidian signal)
-for c in "${CASKS[@]}"; do
-  echo "==> brew install --cask $c"
-  brew install --cask "$c"
-done
+brew install --cask "${CASKS[@]}"
 {{ else if stat "/mnt/c/Users" -}}
 WINGET_PKGS=(
   wez.wezterm
@@ -55,18 +51,14 @@ WINGET_PKGS=(
   Apple.iCloud
 )
 for p in "${WINGET_PKGS[@]}"; do
-  echo "==> winget install $p"
-  # winget exits non-zero if already installed — || true is required, not optional.
+  # winget exits non-zero (0x8A150061) if already installed — || true is required.
   powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements -e --id $p" || true
 done
 echo "NOTE: After first Apple.iCloud install, sign in + tick 'iCloud Drive' so the vault syncs."
 {{ else if eq .chezmoi.os "linux" -}}
 FLATPAKS=(md.obsidian.Obsidian org.signal.Signal)
 if command -v flatpak &> /dev/null; then
-  for f in "${FLATPAKS[@]}"; do
-    echo "==> flatpak install $f"
-    flatpak install -y --noninteractive flathub "$f"
-  done
+  flatpak install -y --noninteractive flathub "${FLATPAKS[@]}"
 else
   echo "NOTE: flatpak not installed. Run 'sudo apt install -y flatpak' then re-apply."
 fi
@@ -83,32 +75,8 @@ EXTENSIONS=(
 if command -v code &> /dev/null; then
   echo "==> Installing VS Code extensions..."
   for ext in "${EXTENSIONS[@]}"; do
-    code --install-extension "$ext" --force 2>/dev/null || true
+    code --install-extension "$ext" --force
   done
-fi
-
-{{ if stat "/mnt/c/Users" -}}
-# --- VS Code settings (WSL → Windows) ---
-WIN_HOME="/mnt/c/Users/${USER}"
-VSCODE_WIN="$WIN_HOME/AppData/Roaming/Code/User"
-if [[ -d "$WIN_HOME" ]]; then
-  mkdir -p "$VSCODE_WIN"
-  cp "$HOME/.config/Code/User/settings.json" "$VSCODE_WIN/settings.json"
-fi
-{{ end -}}
-
-# --- zsh ---
-if command -v zsh &> /dev/null; then
-  if [[ "$SHELL" != */zsh ]]; then
-    echo "==> Setting zsh as default shell..."
-    chsh -s "$(which zsh)"
-  fi
-else
-{{ if eq .chezmoi.os "darwin" -}}
-  echo "NOTE: zsh should already be installed on macOS"
-{{ else -}}
-  echo "NOTE: Install zsh manually: sudo apt install -y zsh && chsh -s \$(which zsh)"
-{{ end -}}
 fi
 
 echo "==> Done!"
