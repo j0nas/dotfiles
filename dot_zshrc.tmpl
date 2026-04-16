@@ -1,5 +1,6 @@
 # --- Path ---
-export PATH="$HOME/.local/bin:$PATH"
+typeset -U path  # dedupe on re-source / nested shells
+path=("$HOME/.local/bin" $path)
 {{ if eq .chezmoi.os "darwin" -}}
 eval "$(/opt/homebrew/bin/brew shellenv)"
 {{ end -}}
@@ -16,7 +17,13 @@ setopt HIST_IGNORE_SPACE
 export EDITOR='nano'
 
 # --- Completion ---
-autoload -Uz compinit && compinit
+# Rebuild the compdump at most once a day; otherwise load the cache with -C.
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
 
