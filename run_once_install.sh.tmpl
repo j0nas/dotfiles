@@ -75,7 +75,7 @@ EXTENSIONS=(
 if command -v code &> /dev/null; then
   echo "==> Installing VS Code extensions..."
   for ext in "${EXTENSIONS[@]}"; do
-    code --install-extension "$ext" --force
+    code --install-extension "$ext" --force || true
   done
 fi
 
