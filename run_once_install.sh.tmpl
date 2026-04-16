@@ -27,28 +27,9 @@ if [[ ! -d "$HOME/.antidote" ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
-# --- WezTerm ---
-{{ if eq .chezmoi.os "darwin" -}}
-if ! command -v wezterm &> /dev/null; then
-  echo "==> Installing WezTerm..."
-  brew install --cask wezterm
-fi
-{{ else -}}
-# On Windows/WSL, WezTerm runs on the Windows side.
-# Copy config so Windows WezTerm finds it (WSL symlinks don't work cross-OS).
-WIN_HOME="/mnt/c/Users/${USER}"
-if [[ -d "$WIN_HOME" ]]; then
-  echo "==> Copying WezTerm config to Windows home..."
-  cp "$HOME/.wezterm.lua" "$WIN_HOME/.wezterm.lua"
-fi
-{{ end -}}
-
 # --- Nerd Font ---
 {{ if eq .chezmoi.os "darwin" -}}
-if ! ls ~/Library/Fonts/JetBrainsMonoNerd* &> /dev/null; then
-  echo "==> Installing JetBrains Mono Nerd Font..."
-  brew install --cask font-jetbrains-mono-nerd-font
-fi
+brew install --cask font-jetbrains-mono-nerd-font
 {{ else -}}
 if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
   echo "==> Installing JetBrains Mono Nerd Font..."
@@ -61,13 +42,14 @@ fi
 # --- GUI apps ---
 # Trust each tool's idempotency (see CLAUDE.md). Add apps by appending ids.
 {{ if eq .chezmoi.os "darwin" -}}
-CASKS=(obsidian signal)
+CASKS=(wezterm obsidian signal)
 for c in "${CASKS[@]}"; do
   echo "==> brew install --cask $c"
   brew install --cask "$c"
 done
 {{ else if stat "/mnt/c/Users" -}}
 WINGET_PKGS=(
+  wez.wezterm
   Obsidian.Obsidian
   OpenWhisperSystems.Signal
   Apple.iCloud

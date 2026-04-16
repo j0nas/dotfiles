@@ -9,7 +9,7 @@
 - **Shared data** lives in `.chezmoi.toml.tmpl` (`font`, `name`, `email`). Use template variables instead of hardcoding.
 - **WezTerm config** (`dot_wezterm.lua.tmpl`) is a chezmoi template. Use `wezterm.target_triple:find("windows")` for Windows-specific Lua logic. On WSL, this file is copied (not symlinked) to the Windows home by `run_onchange_sync-wezterm.sh.tmpl`.
 - **VS Code settings** (`dot_config/Code/User/settings.json.tmpl`) — on WSL, copied to Windows side by `run_onchange_sync-vscode.sh.tmpl`.
-- **mise manages CLI tools**, not GUI apps. WezTerm is installed via brew/winget in `setup.sh`.
+- **mise manages CLI tools**, not GUI apps. GUI apps (WezTerm, Obsidian, Signal, …) go in `run_once_install.sh.tmpl` arrays.
 - **`run_once_install.sh.tmpl`** handles userspace bootstrapping (mise, antidote, fonts, GUI apps). System-level installs (zsh) go in `setup.sh`.
 - After editing wezterm config, run `chezmoi apply` to sync the Windows copy.
 
