@@ -27,6 +27,20 @@ if [[ ! -d "$HOME/.antidote" ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
+# --- Node CLI tools (on top of mise-installed Node) ---
+# agent-browser is kept here rather than in mise config because `agent-browser
+# install` (which downloads the matched Chrome for Testing binary) is a
+# required post-install step that mise can't orchestrate.
+npm install -g agent-browser
+agent-browser install
+
+# Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
+# `agent-browser skills get core` at runtime, so the workflow content stays
+# version-matched to the installed CLI. `npx skills add` errors on re-add, so
+# guard with a file test.
+[ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
+  npx -y skills add vercel-labs/agent-browser
+
 # --- Font & GUI apps ---
 # On WSL the terminal (WezTerm) runs Windows-side, so the font and GUI apps
 # must be installed on Windows via winget — Linux-side equivalents would be
@@ -40,6 +54,19 @@ CASKS=(
   visual-studio-code
 )
 brew install --cask "${CASKS[@]}"
+
+# Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-
+# level checks but limited DOM/event fidelity -- does NOT reliably drive
+# React's synthetic event handlers, so the default engine stays Chrome.
+# Invoke via `agent-browser --engine lightpanda <cmd>`. Direct binary
+# download (no Homebrew formula), so a file-exists guard is needed.
+if [ ! -x "$HOME/.local/bin/lightpanda" ]; then
+  mkdir -p "$HOME/.local/bin"
+  arch="aarch64"; [ "$(uname -m)" = "x86_64" ] && arch="x86_64"
+  curl -fsSL -o "$HOME/.local/bin/lightpanda" \
+    "https://github.com/lightpanda-io/browser/releases/download/nightly/lightpanda-${arch}-macos"
+  chmod +x "$HOME/.local/bin/lightpanda"
+fi
 {{ else if stat "/mnt/c/Users" -}}
 WINGET_PKGS=(
   DEVCOM.JetBrainsMonoNerdFont
