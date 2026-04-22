@@ -2,6 +2,7 @@
 
 ## Key rules
 
+- **Setup is idempotent.** `chezmoi apply`, `setup.sh`, and the `run_once_*` scripts must be safe to re-run: no duplicate appends, no clobbered user state, no crashes on existing installs. See the package-manager section below for specifics.
 - **Three OS targets**: macOS, Linux, and WSL. WSL is NOT the same as Linux — it has Windows-specific quirks (ConPTY, `/mnt/c`, symlinks don't cross OS boundary).
 - **Don't hardcode usernames**. Use `{{ .chezmoi.username }}` in templates or `${USER}` in shell scripts.
 - **chezmoi naming**: dotfiles use `dot_` prefix, templates end in `.tmpl`. Files in `.chezmoiignore` are repo-only (not applied).
