@@ -34,7 +34,13 @@ fi
 export PATH="$HOME/.local/bin:$PATH"
 
 echo "==> Applying dotfiles..."
-chezmoi init --apply j0nas
+# `init --apply` does NOT pull on re-runs if the source already exists, so
+# `update` (= git pull + apply) is the idempotent choice once initialized.
+if [[ -d "$HOME/.local/share/chezmoi/.git" ]]; then
+  chezmoi update
+else
+  chezmoi init --apply j0nas
+fi
 
 echo ""
 echo "==> All done! Open WezTerm and enjoy your new shell."
