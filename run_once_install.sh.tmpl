@@ -20,7 +20,6 @@ fi
 echo "==> Installing tools via mise..."
 export PATH="$HOME/.local/bin:$PATH"
 mise install
-export PATH="$HOME/.local/share/mise/shims:$PATH"
 
 # --- antidote (zsh plugin manager) ---
 if [[ ! -d "$HOME/.antidote" ]]; then
@@ -32,15 +31,16 @@ fi
 # agent-browser is kept here rather than in mise config because `agent-browser
 # install` (which downloads the matched Chrome for Testing binary) is a
 # required post-install step that mise can't orchestrate.
-npm install -g agent-browser
-agent-browser install
+# Use `mise exec` to run node/npm since shims may not be in PATH yet.
+mise exec -- npm install -g agent-browser
+mise exec -- agent-browser install
 
 # Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
 # `agent-browser skills get core` at runtime, so the workflow content stays
 # version-matched to the installed CLI. `npx skills add` errors on re-add, so
 # guard with a file test.
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
-  npx -y skills add vercel-labs/agent-browser
+  mise exec -- npx -y skills add vercel-labs/agent-browser
 
 # --- Font & GUI apps ---
 # On WSL the terminal (WezTerm) runs Windows-side, so the font and GUI apps
