@@ -20,7 +20,7 @@ fi
 echo "==> Installing tools via mise..."
 export PATH="$HOME/.local/bin:$PATH"
 mise install
-eval "$(mise activate bash --shims)"
+export PATH="$HOME/.local/share/mise/shims:$PATH"
 
 # --- antidote (zsh plugin manager) ---
 if [[ ! -d "$HOME/.antidote" ]]; then
