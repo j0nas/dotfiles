@@ -20,6 +20,7 @@ fi
 echo "==> Installing tools via mise..."
 export PATH="$HOME/.local/bin:$PATH"
 mise install
+eval "$(mise activate bash --shims)"
 
 # --- antidote (zsh plugin manager) ---
 if [[ ! -d "$HOME/.antidote" ]]; then
@@ -49,6 +50,7 @@ agent-browser install
 CASKS=(
   font-jetbrains-mono-nerd-font
   wezterm
+  brave-browser
   obsidian
   signal
   visual-studio-code
@@ -71,6 +73,7 @@ fi
 WINGET_PKGS=(
   DEVCOM.JetBrainsMonoNerdFont
   wez.wezterm
+  Brave.Brave
   Obsidian.Obsidian
   OpenWhisperSystems.Signal
   Apple.iCloud
@@ -92,7 +95,7 @@ fi
 # com.visualstudio.code is the unofficial Flathub build — extensions that
 # shell out to host tools (gcc, python, node) won't find them. If you need
 # that, install Code from Microsoft's apt repo instead.
-FLATPAKS=(md.obsidian.Obsidian org.signal.Signal com.visualstudio.code)
+FLATPAKS=(com.brave.Browser md.obsidian.Obsidian org.signal.Signal com.visualstudio.code)
 if command -v flatpak &> /dev/null; then
   flatpak install -y --noninteractive flathub "${FLATPAKS[@]}"
 else
