@@ -42,6 +42,10 @@ mise exec -- agent-browser install
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
   mise exec -- npx -y skills add vercel-labs/agent-browser
 
+# Context7 MCP server (up-to-date library docs). `claude mcp add` overwrites
+# on re-run with the same name, so it's safe to call unguarded.
+mise exec -- claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp
+
 # --- Font & GUI apps ---
 # On WSL the terminal (WezTerm) runs Windows-side, so the font and GUI apps
 # must be installed on Windows via winget — Linux-side equivalents would be
