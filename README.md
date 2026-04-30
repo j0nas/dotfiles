@@ -4,25 +4,9 @@ Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https
 
 ## Setup on a new machine
 
-### macOS
+On Windows, first install WSL from PowerShell: `wsl --install -d Ubuntu`
 
-```sh
-curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
-```
-
-### Linux (Debian/Ubuntu)
-
-```sh
-curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
-```
-
-### WSL
-
-Install WSL first from PowerShell, then run the setup from inside the WSL terminal:
-
-```powershell
-wsl --install -d Ubuntu
-```
+Then, on any platform:
 
 ```sh
 curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
