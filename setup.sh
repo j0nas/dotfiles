@@ -14,7 +14,7 @@ if [[ "$OS" == "Darwin" ]]; then
   fi
 fi
 
-# --- Linux/WSL: install zsh ---
+# --- Linux/WSL: install zsh (requires sudo, not handled by chezmoi) ---
 if [[ "$OS" == "Linux" ]]; then
   if ! command -v zsh &> /dev/null; then
     echo "==> Installing zsh (requires sudo)..."

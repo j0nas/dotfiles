@@ -4,11 +4,29 @@ Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https
 
 ## Setup on a new machine
 
+### macOS
+
 ```sh
-bash <(curl -fsSL https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh)
+curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
 ```
 
-One command. Installs everything: zsh, WezTerm, VS Code, chezmoi, mise, CLI tools, Nerd Font, and zsh plugins.
+### Linux (Debian/Ubuntu)
+
+```sh
+curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
+```
+
+### WSL
+
+Install WSL first from PowerShell, then run the setup from inside the WSL terminal:
+
+```powershell
+wsl --install -d Ubuntu
+```
+
+```sh
+curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
+```
 
 ## What's included
 

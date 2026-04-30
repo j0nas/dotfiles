@@ -44,10 +44,16 @@ if command -v mise &> /dev/null; then
 fi
 
 # starship prompt
-eval "$(starship init zsh)"
+if command -v starship &> /dev/null; then
+  eval "$(starship init zsh)"
+fi
 
 # zoxide (smarter cd)
-eval "$(zoxide init zsh)"
+if command -v zoxide &> /dev/null; then
+  eval "$(zoxide init zsh)"
+fi
 
 # fzf
-source <(fzf --zsh)
+if command -v fzf &> /dev/null; then
+  source <(fzf --zsh)
+fi
