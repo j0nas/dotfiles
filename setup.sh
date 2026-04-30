@@ -5,15 +5,6 @@ echo "==> Setting up dotfiles..."
 
 OS="$(uname -s)"
 
-# --- macOS: install Homebrew ---
-if [[ "$OS" == "Darwin" ]]; then
-  if ! command -v brew &> /dev/null; then
-    echo "==> Installing Homebrew..."
-    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-    eval "$(/opt/homebrew/bin/brew shellenv)"
-  fi
-fi
-
 # --- Linux/WSL: install zsh (requires sudo, not handled by chezmoi) ---
 if [[ "$OS" == "Linux" ]]; then
   if ! command -v zsh &> /dev/null; then
