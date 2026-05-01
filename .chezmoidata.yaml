@@ -26,3 +26,8 @@ packages:
       - md.obsidian.Obsidian
       - org.signal.Signal
       - com.visualstudio.code
+vscode_extensions:
+  - anthropic.claude-code
+  - bradlc.vscode-tailwindcss
+  - buenon.scratchpads
+  - catppuccin.catppuccin-vsc

@@ -1,0 +1,29 @@
+#!/bin/bash
+set -e
+
+if ! command -v code &> /dev/null; then
+  echo "==> code CLI not found, skipping VS Code extensions"
+  exit 0
+fi
+
+DESIRED=(
+{{- range .vscode_extensions }}
+  {{ . }}
+{{- end }}
+)
+
+# Uninstall extensions present locally but not in .chezmoidata.yaml.
+INSTALLED=($(code --list-extensions))
+for ext in "${INSTALLED[@]}"; do
+  keep=0
+  for d in "${DESIRED[@]}"; do
+    [[ "$ext" == "$d" ]] && keep=1 && break
+  done
+  if [[ $keep -eq 0 ]]; then
+    code --uninstall-extension "$ext" || true
+  fi
+done
+
+for ext in "${DESIRED[@]}"; do
+  code --install-extension "$ext" --force || true
+done

@@ -46,18 +46,7 @@ mise exec -- agent-browser install
 # (non-zero) if the server already exists — `|| true` keeps re-runs idempotent.
 mise exec -- claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp || true
 
-# --- Font & GUI apps ---
-# On WSL the terminal (WezTerm) runs Windows-side, so the font and GUI apps
-# must be installed on Windows via winget — Linux-side equivalents would be
-# invisible to the host terminal.
 {{ if eq .chezmoi.os "darwin" -}}
-CASKS=(
-{{- range .packages.darwin.casks }}
-  {{ . }}
-{{- end }}
-)
-brew install --cask "${CASKS[@]}"
-
 # Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-
 # level checks but limited DOM/event fidelity -- does NOT reliably drive
 # React's synthetic event handlers, so the default engine stays Chrome.
@@ -70,17 +59,6 @@ if [ ! -x "$HOME/.local/bin/lightpanda" ]; then
     "https://github.com/lightpanda-io/browser/releases/download/nightly/lightpanda-${arch}-macos"
   chmod +x "$HOME/.local/bin/lightpanda"
 fi
-{{ else if stat "/mnt/c/Users" -}}
-WINGET_PKGS=(
-{{- range .packages.windows.winget }}
-  {{ . }}
-{{- end }}
-)
-for p in "${WINGET_PKGS[@]}"; do
-  # winget exits non-zero (0x8A150061) if already installed — || true is required.
-  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements -e --id $p" || true
-done
-echo "NOTE: After first Apple.iCloud install, sign in + tick 'iCloud Drive' so the vault syncs."
 {{ else if eq .chezmoi.os "linux" -}}
 # Font has to be on the host filesystem (flatpak apps see it via the portal).
 if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
@@ -89,34 +67,6 @@ if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
   curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz | tar -xJ -C ~/.local/share/fonts
   fc-cache -f ~/.local/share/fonts
 fi
-# com.visualstudio.code is the unofficial Flathub build — extensions that
-# shell out to host tools (gcc, python, node) won't find them. If you need
-# that, install Code from Microsoft's apt repo instead.
-FLATPAKS=(
-{{- range .packages.linux.flatpaks }}
-  {{ . }}
-{{- end }}
-)
-if command -v flatpak &> /dev/null; then
-  flatpak install -y --noninteractive flathub "${FLATPAKS[@]}"
-else
-  echo "NOTE: flatpak not installed. Run 'sudo apt install -y flatpak' then re-apply."
-fi
-echo "NOTE: Linux has no iCloud client — use Syncthing/git for Obsidian cross-device sync."
 {{ end -}}
-
-# --- VS Code extensions ---
-EXTENSIONS=(
-  anthropic.claude-code
-  bradlc.vscode-tailwindcss
-  buenon.scratchpads
-  catppuccin.catppuccin-vsc
-)
-if command -v code &> /dev/null; then
-  echo "==> Installing VS Code extensions..."
-  for ext in "${EXTENSIONS[@]}"; do
-    code --install-extension "$ext" --force || true
-  done
-fi
 
 echo "==> Done!"
