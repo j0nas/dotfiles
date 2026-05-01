@@ -1,31 +1,34 @@
 packages:
   darwin:
     casks:
+      - amethyst
+      - bambu-studio
+      - brave-browser
       - discord
       - font-jetbrains-mono-nerd-font
-      - wezterm
-      - amethyst
-      - brave-browser
       - obsidian
       - signal
       - visual-studio-code
+      - wezterm
   windows:
     winget:
-      - Discord.Discord
-      - DEVCOM.JetBrainsMonoNerdFont
-      - wez.wezterm
+      - Apple.iCloud
+      - Bambulab.Bambustudio
       - Brave.Brave
+      - DEVCOM.JetBrainsMonoNerdFont
+      - Discord.Discord
+      - Microsoft.VisualStudioCode
       - Obsidian.Obsidian
       - OpenWhisperSystems.Signal
-      - Apple.iCloud
-      - Microsoft.VisualStudioCode
+      - wez.wezterm
   linux:
     flatpaks:
-      - com.discordapp.Discord
+      - com.bambulab.BambuStudio
       - com.brave.Browser
+      - com.discordapp.Discord
+      - com.visualstudio.code
       - md.obsidian.Obsidian
       - org.signal.Signal
-      - com.visualstudio.code
 vscode_extensions:
   - anthropic.claude-code
   - bradlc.vscode-tailwindcss
