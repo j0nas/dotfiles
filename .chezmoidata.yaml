@@ -1,0 +1,28 @@
+packages:
+  darwin:
+    casks:
+      - discord
+      - font-jetbrains-mono-nerd-font
+      - wezterm
+      - amethyst
+      - brave-browser
+      - obsidian
+      - signal
+      - visual-studio-code
+  windows:
+    winget:
+      - Discord.Discord
+      - DEVCOM.JetBrainsMonoNerdFont
+      - wez.wezterm
+      - Brave.Brave
+      - Obsidian.Obsidian
+      - OpenWhisperSystems.Signal
+      - Apple.iCloud
+      - Microsoft.VisualStudioCode
+  linux:
+    flatpaks:
+      - com.discordapp.Discord
+      - com.brave.Browser
+      - md.obsidian.Obsidian
+      - org.signal.Signal
+      - com.visualstudio.code

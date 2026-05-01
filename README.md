@@ -26,7 +26,7 @@ curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | ba
 
 **Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for task management — GTD-friendly)
 
-**Signal** desktop, **VS Code** (brew cask on macOS, winget on Windows, flatpak on Linux)
+**Signal**, **Discord**, **VS Code** desktop apps (brew cask on macOS, winget on Windows, flatpak on Linux). Package lists live in `.chezmoidata.yaml`.
 
 ## Obsidian + iCloud notes
 

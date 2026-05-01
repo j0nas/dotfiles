@@ -52,13 +52,9 @@ mise exec -- claude mcp add --transport stdio --scope user context7 -- npx -y @u
 # invisible to the host terminal.
 {{ if eq .chezmoi.os "darwin" -}}
 CASKS=(
-  font-jetbrains-mono-nerd-font
-  wezterm
-  amethyst
-  brave-browser
-  obsidian
-  signal
-  visual-studio-code
+{{- range .packages.darwin.casks }}
+  {{ . }}
+{{- end }}
 )
 brew install --cask "${CASKS[@]}"
 
@@ -76,13 +72,9 @@ if [ ! -x "$HOME/.local/bin/lightpanda" ]; then
 fi
 {{ else if stat "/mnt/c/Users" -}}
 WINGET_PKGS=(
-  DEVCOM.JetBrainsMonoNerdFont
-  wez.wezterm
-  Brave.Brave
-  Obsidian.Obsidian
-  OpenWhisperSystems.Signal
-  Apple.iCloud
-  Microsoft.VisualStudioCode
+{{- range .packages.windows.winget }}
+  {{ . }}
+{{- end }}
 )
 for p in "${WINGET_PKGS[@]}"; do
   # winget exits non-zero (0x8A150061) if already installed — || true is required.
@@ -100,7 +92,11 @@ fi
 # com.visualstudio.code is the unofficial Flathub build — extensions that
 # shell out to host tools (gcc, python, node) won't find them. If you need
 # that, install Code from Microsoft's apt repo instead.
-FLATPAKS=(com.brave.Browser md.obsidian.Obsidian org.signal.Signal com.visualstudio.code)
+FLATPAKS=(
+{{- range .packages.linux.flatpaks }}
+  {{ . }}
+{{- end }}
+)
 if command -v flatpak &> /dev/null; then
   flatpak install -y --noninteractive flathub "${FLATPAKS[@]}"
 else
