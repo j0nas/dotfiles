@@ -1,10 +1,10 @@
 # dotfiles
 
-Managed with [chezmoi](https://www.chezmoi.io/). Tools managed with [mise](https://mise.jdx.dev/).
+Personal config for macOS, Windows (WSL), and Linux.
 
 ## Setup on a new machine
 
-On Windows, first install WSL from PowerShell: `wsl --install -d Ubuntu`
+Windows: first install WSL from PowerShell with `wsl --install -d Ubuntu`.
 
 Then, on any platform:
 
@@ -12,37 +12,22 @@ Then, on any platform:
 curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
 ```
 
-## What's included
+## How it's wired
 
-**Terminal:** WezTerm (Catppuccin Mocha theme, JetBrains Mono Nerd Font)
+**[chezmoi](https://www.chezmoi.io/)** owns dotfiles. This repo is the source of truth, cloned to `~/.local/share/chezmoi`. Files prefixed `dot_` map to `~/.*` after templates render with per-machine data; `chezmoi apply` propagates changes.
 
-**Configs:** zsh, git, nano, starship (prompt), Claude Code, VS Code
+**[mise](https://mise.jdx.dev/)** owns CLI tool versions (node, gh, starship, zoxide, fzf, claude). Tool list: `dot_config/mise/config.toml`.
 
-**Tools (via mise):** starship, zoxide, fzf, gh, claude, node (LTS)
+**[antidote](https://github.com/mattmc3/antidote)** is the zsh plugin manager; plugins listed in `dot_zsh_plugins.txt`.
 
-**VS Code extensions:** Claude Code, Tailwind CSS, Scratchpads, Catppuccin
-
-**Zsh plugins (via antidote):** zsh-autosuggestions, zsh-syntax-highlighting
-
-**Obsidian** (vault: `Jonas' Vault`, synced via iCloud, with the [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin for task management — GTD-friendly)
-
-**Signal**, **Discord**, **VS Code** desktop apps (brew cask on macOS, winget on Windows, flatpak on Linux). Package lists live in `.chezmoidata.yaml`.
+**GUI app package lists** live in `.chezmoidata.yaml`, ranged over by `run_once_install.sh.tmpl` to install via brew (macOS), winget (Windows), or flatpak (Linux). Add a package: edit the YAML, run `chezmoi apply`.
 
 ## Obsidian + iCloud notes
 
 The vault lives in iCloud. Each platform reaches it differently:
 
-- **macOS** — iCloud Drive is native. Vault path:
-  `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Jonas' Vault`.
-- **Windows (WSL)** — `run_once_install.sh.tmpl` runs `winget install Apple.iCloud`.
-  Sign in to iCloud for Windows and tick *iCloud Drive*; the vault syncs to
-  `C:\Users\<user>\iCloudDrive\iCloud~md~obsidian\Jonas' Vault`. Re-run
-  `chezmoi apply` once the sync completes so the plugin script can find it.
-- **Linux** — no official iCloud client. Obsidian installs via flatpak, but
-  you'll need Obsidian Sync, Syncthing, or git for cross-device sync.
+- **macOS** — iCloud Drive is native. Vault path: `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Jonas' Vault`.
+- **Windows (WSL)** — `run_once_install.sh.tmpl` runs `winget install Apple.iCloud`. Sign in and tick *iCloud Drive*; the vault syncs to `C:\Users\<user>\iCloudDrive\iCloud~md~obsidian\Jonas' Vault`. Re-run `chezmoi apply` once sync completes so the plugin script can find it.
+- **Linux** — no official iCloud client. Use Obsidian Sync, Syncthing, or git for cross-device sync.
 
-`run_onchange_setup-obsidian-tasks.sh.tmpl` drops the pinned Tasks release into
-`<vault>/.obsidian/plugins/obsidian-tasks-plugin/` and enables it in
-`community-plugins.json`. It appends rather than replaces, so existing plugins
-in the vault are preserved and iCloud propagates the change to other devices.
-Bump `PLUGIN_VERSION` in that script to upgrade.
+`run_onchange_setup-obsidian-tasks.sh.tmpl` drops the pinned [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin into the vault and enables it. Appends rather than replaces, so existing plugins survive. Bump `PLUGIN_VERSION` to upgrade.
