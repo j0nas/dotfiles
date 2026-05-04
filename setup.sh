@@ -17,11 +17,16 @@ if [[ "$OS" == "Darwin" ]] && [[ ! -f /etc/pam.d/sudo_local ]]; then
   echo "auth       sufficient     pam_tid.so" | sudo tee /etc/pam.d/sudo_local > /dev/null
 fi
 
-# --- Linux/WSL: install zsh (requires sudo, not handled by chezmoi) ---
+# --- Linux/WSL: install system packages that need sudo (not handled by chezmoi) ---
+# zsh: default shell. age: decrypts chezmoi-managed secrets via SSH key —
+# without it the first `chezmoi apply` would fail on encrypted_* files.
 if [[ "$OS" == "Linux" ]]; then
-  if ! command -v zsh &> /dev/null; then
-    echo "==> Installing zsh (requires sudo)..."
-    sudo apt update -qq && sudo apt install -y zsh
+  PKGS=()
+  command -v zsh &> /dev/null || PKGS+=(zsh)
+  command -v age &> /dev/null || PKGS+=(age)
+  if [[ ${#PKGS[@]} -gt 0 ]]; then
+    echo "==> Installing system packages: ${PKGS[*]}..."
+    sudo apt update -qq && sudo apt install -y "${PKGS[@]}"
   fi
   if [[ "$SHELL" != */zsh ]]; then
     echo "==> Setting zsh as default shell..."
