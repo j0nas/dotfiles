@@ -4,6 +4,7 @@ packages:
       - amethyst
       - bambu-studio
       - brave-browser
+      - calibre  # TEMP: remove once Tora's Kindle (PW1) rescue is done
       - discord
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
