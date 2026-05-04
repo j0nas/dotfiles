@@ -1,3 +1,8 @@
+# Encrypt with age, using your existing SSH key as the identity. Recipients
+# (other machines authorized to decrypt) live in .age-recipients at the
+# repo root — see header of that file for how to add/revoke a machine.
+encryption = "age"
+
 [data]
     email = "jonas.jensen@msn.com"
     name = "Jonas Jensen"
@@ -7,3 +12,7 @@
 [git]
     autoCommit = true
     autoPush = true
+
+[age]
+    identity = "~/.ssh/id_ed25519"
+    recipientsFile = "{{ .chezmoi.sourceDir }}/.age-recipients"
