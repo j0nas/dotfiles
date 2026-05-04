@@ -1,0 +1,11 @@
+{
+  "name": "Violet",
+  "base": "dark",
+  "overrides": {
+    "claude": "#7B4CE8",
+    "claudeShimmer": "#A78BFA",
+    "permission": "#7B4CE8",
+    "selectionBg": "#421691",
+    "userMessageBackground": "#1E0B47"
+  }
+}

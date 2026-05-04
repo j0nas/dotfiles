@@ -6,5 +6,6 @@
     "defaultMode": "bypassPermissions"
   },
   "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "high"
+  "effortLevel": "high",
+  "theme": "custom:violet"
 }
