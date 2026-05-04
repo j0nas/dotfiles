@@ -42,9 +42,11 @@ mise exec -- bash -c '
 # Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
 # `agent-browser skills get core` at runtime, so the workflow content stays
 # version-matched to the installed CLI. `npx skills add` errors on re-add, so
-# guard with a file test.
+# guard with a file test. Two `-y` flags: outer is npx's "ok to download?",
+# inner is skills' "ok to install?". Without the inner one, skills prompts
+# interactively for the install + the find-skills recommendation.
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
-  mise exec -- npx -y skills add vercel-labs/agent-browser
+  mise exec -- npx -y skills add vercel-labs/agent-browser -y
 
 # Context7 MCP server (up-to-date library docs). `claude mcp add` errors
 # (non-zero) if the server already exists — `|| true` keeps re-runs idempotent.
