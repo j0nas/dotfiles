@@ -7,5 +7,8 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "effortLevel": "high",
-  "theme": "custom:violet"
+  "theme": "custom:violet",
+  "attribution": {
+    "commit": ""
+  }
 }
