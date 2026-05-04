@@ -11,24 +11,29 @@ echo "==> Applying macOS defaults..."
 defaults write -g KeyRepeat -int 1
 defaults write -g InitialKeyRepeat -int 10
 
-# Cursor: larger size + purple fill (Accessibility → Display → Pointer).
-# Size range is roughly 1.0 (default) to 4.0 (max slider).
-defaults write com.apple.universalaccess mouseDriverCursorSize -float 2.736793518066406
-defaults write com.apple.universalaccess cursorFill -dict \
-  alpha -float 1 \
-  red   -float 0.2588235294 \
-  green -float 0.0862745098 \
-  blue  -float 0.5686274510
-defaults write com.apple.universalaccess cursorOutline -dict \
-  alpha -float 1 \
-  red   -float 1 \
-  green -float 1 \
-  blue  -float 1
-defaults write com.apple.universalaccess cursorIsCustomized -bool true
-
 # Text selection highlight color (#421691 deep violet).
 # Format: "<r> <g> <b> <label>" — label shows in System Settings → Appearance.
 defaults write -g AppleHighlightColor "0.2588235294 0.0862745098 0.5686274510 Violet"
+
+# Cursor: larger size + violet fill (Accessibility → Display → Pointer).
+# com.apple.universalaccess is TCC-protected: writes require Full Disk Access
+# for the calling terminal (System Settings → Privacy & Security → Full Disk
+# Access). Skip silently if blocked — set manually in System Settings.
+if defaults write com.apple.universalaccess mouseDriverCursorSize -float 2.736793518066406 2>/dev/null; then
+  defaults write com.apple.universalaccess cursorFill -dict \
+    alpha -float 1 \
+    red   -float 0.2588235294 \
+    green -float 0.0862745098 \
+    blue  -float 0.5686274510
+  defaults write com.apple.universalaccess cursorOutline -dict \
+    alpha -float 1 \
+    red   -float 1 \
+    green -float 1 \
+    blue  -float 1
+  defaults write com.apple.universalaccess cursorIsCustomized -bool true
+else
+  echo "==> Skipped cursor settings — grant Full Disk Access to your terminal to apply automatically."
+fi
 
 echo "==> Done. Log out and back in for key repeat changes to take effect."
 {{ end -}}
