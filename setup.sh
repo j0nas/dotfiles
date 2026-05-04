@@ -5,6 +5,18 @@ echo "==> Setting up dotfiles..."
 
 OS="$(uname -s)"
 
+# --- macOS: enable Touch ID for sudo (one-time, before any other sudo) ---
+# Lets brew/installer/chezmoi-driven sudo prompts work in non-TTY contexts
+# (the Touch ID prompt is a system-level GUI dialog, not stdin). Without
+# this, `brew install --cask <pkg-with-.pkg-artifact>` fails when run from
+# any non-interactive shell. /etc/pam.d/sudo_local survives system updates;
+# /etc/pam.d/sudo already includes it (Apple-supplied template at
+# /etc/pam.d/sudo_local.template documents this exact line).
+if [[ "$OS" == "Darwin" ]] && [[ ! -f /etc/pam.d/sudo_local ]]; then
+  echo "==> Enabling Touch ID for sudo (one password prompt, then never again)..."
+  echo "auth       sufficient     pam_tid.so" | sudo tee /etc/pam.d/sudo_local > /dev/null
+fi
+
 # --- Linux/WSL: install zsh (requires sudo, not handled by chezmoi) ---
 if [[ "$OS" == "Linux" ]]; then
   if ! command -v zsh &> /dev/null; then

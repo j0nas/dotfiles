@@ -5,6 +5,7 @@ packages:
       - bambu-studio
       - brave-browser
       - discord
+      - epson-print-layout
       - font-jetbrains-mono-nerd-font
       - obsidian
       - signal

@@ -47,6 +47,10 @@ Example — adding Slack:
   - com.slack.Slack
 ```
 
+## Manual steps (not automated)
+
+- **Epson ET-8550 printer drivers** — install the *Drivers and Utilities Combo Package* manually from [epson.com/Support/.../ET-8550](https://epson.com/Support/Printers/All-In-Ones/ET-Series/Epson-ET-8550/s/SPT_C11CJ21201). Required for color-accurate printing — AirPrint alone breaks ICC profiles, custom paper sizes, and Epson Print Layout. Epson's CDN blocks scripted access (Incapsula WAF), and the Apple-bundled driver pack is pinned to macOS 11. The `epson-print-layout` cask installs the layout app declaratively but only functions once the official driver is present.
+
 ## Obsidian + iCloud notes
 
 The vault lives in iCloud. Each platform reaches it differently:
