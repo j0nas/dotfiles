@@ -31,9 +31,10 @@ fi
 # agent-browser is kept here rather than in mise config because `agent-browser
 # install` (which downloads the matched Chrome for Testing binary) is a
 # required post-install step that mise can't orchestrate.
-# Use `mise exec` to run node/npm since shims may not be in PATH yet.
-mise exec -- npm install -g agent-browser
-mise exec -- agent-browser install
+# Both commands share a single `mise exec` so the just-installed binary is
+# on PATH for the install step. Separate invocations re-resolve PATH and
+# miss the new shim, especially on WSL.
+mise exec -- bash -c 'npm install -g agent-browser && agent-browser install'
 
 # Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
 # `agent-browser skills get core` at runtime, so the workflow content stays
