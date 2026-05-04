@@ -1,5 +1,7 @@
 packages:
   darwin:
+    brews:
+      - age  # decrypts chezmoi-managed secrets via SSH key
     casks:
       - amethyst
       - bambu-studio

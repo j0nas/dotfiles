@@ -5,6 +5,9 @@ set -e
 # brew bundle handles install and (with cleanup --force) uninstall — anything
 # installed as a brew cask but not in .chezmoidata.yaml will be removed.
 BREWFILE=$(cat <<EOF
+{{ range .packages.darwin.brews -}}
+brew {{ . | quote }}
+{{ end -}}
 {{ range .packages.darwin.casks -}}
 cask {{ . | quote }}
 {{ end -}}

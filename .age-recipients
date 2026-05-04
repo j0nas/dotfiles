@@ -1,0 +1,25 @@
+# Age recipients for the commands/.secrets/*.json.age vault files.
+#
+# Each line is an SSH *public* key that should be able to decrypt the
+# vault. Safe to commit — public keys are public by definition.
+#
+# To add a new machine / identity:
+#   1. Append its ssh-rsa or ssh-ed25519 public key below (one per line).
+#   2. Re-encrypt every vault file with the new recipient list:
+#        age -R commands/.secrets/recipients.txt \
+#            -o commands/.secrets/<name>.json.age \
+#            commands/.secrets/<name>.json
+#   3. Commit the updated ciphertext.
+#
+# To remove a machine / revoke access:
+#   1. Delete that line.
+#   2. Re-encrypt every vault file.
+#   3. Commit — the old ciphertext is still decryptable by the revoked
+#      key, so also **rotate every credential** in the affected vault
+#      files on the target services.
+#
+# You can fetch your GitHub-registered public keys with:
+#   curl https://github.com/<username>.keys
+
+ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDS604KiykQMTudhqAJ3dtE9H5032dpg4bPGAw8jy6oSB1hq8/0VH4GbNV1dL/y3eUlnQNcqAuWB3G+9/REYlhBn+Rhf47ShYHM0AXqc/uteJGXZKq/a6uvzmXeu+rqTcXoLdXxGvut+81163Db8Hf3HFwRzLJ2szKl5ovUEBMR5lfgkeg5oHgsFpGUYMIstQDShMse60rQHR5jirye2XFkHyA4embtksoWDQOXR3Idv2TQRxUdiWT7Zu5/sF4EuS13LukX7LG8YjB9fepDkLVi0Oin4TTlFZ8ABr1NsL450IeF/6xMWBPkinE/56893vlUyRcwQcQUMON1Ye0RuRZkKJhd5sqqIL5BUkBPHmKGhdSH1Blbxq8wEsRRT/fupV9RoouKb6lEUb3K+0jFrw5oiNHh2njXI/1xiulkTCUjawE6ZmKL72u5cbYgoHCY8YAep0J+T8GzyUKiRP9GjA2sUlrrzlorgvgUCoXjKc2ng7f/lrK8yUkH4nr3TNyOdu0= jonasjensen@macbook
+ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINXMmSd8EOYRb4hlMNQyPYuDthI1rZxjEd6PDfcEO3tJ jonas@PomeloMadness

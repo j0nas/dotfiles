@@ -15,6 +15,14 @@
 - **`run_once_bootstrap.sh.tmpl`** handles userspace bootstrap (Homebrew, mise, antidote, agent-browser, Claude MCP, lightpanda, Linux font). System-level installs (zsh) go in `setup.sh`.
 - After editing wezterm config, run `chezmoi apply` to sync the Windows copy.
 
+## Claude Code skills, commands, secrets
+
+- **Personal skills** live as real directories at `skills/<name>/` (repo-only — see `.chezmoiignore`). Each is surfaced into `~/.claude/skills/<name>` via a per-skill symlink file at `dot_claude/skills/symlink_<name>.tmpl` whose contents are `{{ .chezmoi.sourceDir }}/skills/<name>`.
+- **Slash commands** follow the same shape: real `commands/<name>.md`, symlinked from `dot_claude/commands/symlink_<name>.md.tmpl`.
+- **Editing a skill or command** via the `~/.claude/...` path edits the source file directly (it's a symlink). After editing, invoke `/dotfiles` to commit + push — chezmoi's autoCommit only fires on `chezmoi edit`, not on direct edits to source.
+- **Third-party skills** installed by `npx skills add` live at `~/.agents/skills/<name>` and surface into `~/.claude/skills/` as symlinks managed by the skills CLI — not by chezmoi. Coexist fine.
+- **Secrets** are age-encrypted, decrypt via your SSH key. Vault files use the `encrypted_private_*` prefix (private = mode 0600 on apply). Recipients (machines authorized to decrypt) live in `.age-recipients` at the repo root — public keys, safe to commit. Edit a vault with `chezmoi edit-encrypted dot_claude/secrets/<file>.json`. `age` is installed via the `brews:` list in `.chezmoidata.yaml`.
+
 ## Package management
 
 GUI apps and VS Code extensions are declared in `.chezmoidata.yaml` and consumed by `run_onchange_*` scripts that re-run when the data changes.
