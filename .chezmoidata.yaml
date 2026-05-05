@@ -12,6 +12,7 @@ packages:
       - font-jetbrains-mono-nerd-font
       - obsidian
       - signal
+      - spotify
       - visual-studio-code
       - wezterm
   windows:
@@ -24,12 +25,14 @@ packages:
       - Microsoft.VisualStudioCode
       - Obsidian.Obsidian
       - OpenWhisperSystems.Signal
+      - Spotify.Spotify
       - wez.wezterm
   linux:
     flatpaks:
       - com.bambulab.BambuStudio
       - com.brave.Browser
       - com.discordapp.Discord
+      - com.spotify.Client
       - com.visualstudio.code
       - md.obsidian.Obsidian
       - org.signal.Signal
