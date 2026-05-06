@@ -3,3 +3,6 @@ README.md
 CLAUDE.md
 skills
 commands
+{{ if ne .chezmoi.os "darwin" -}}
+dot_aerospace.toml
+{{ end -}}

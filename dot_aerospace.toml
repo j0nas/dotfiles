@@ -1,0 +1,85 @@
+# AeroSpace config — Norwegian-Mac-friendly defaults.
+#
+# Why Cmd+Alt for digit-based bindings:
+#   On Norwegian Mac, Alt+8/9 produce `[`/`]` and Alt+Shift+8/9 produce `{`/`}`.
+#   The stock AeroSpace bindings (Alt+1..9, Alt+Shift+1..9) eat those keypresses
+#   before they reach any text field. Cmd+Alt is free on macOS and on the layout.
+#
+# Letter-key bindings (h/j/k/l for focus and move) are kept on plain Alt.
+# Their alt-state characters on Norwegian (˛ √ ª ﬁ) are essentially never typed
+# in practice, so the theoretical conflict isn't painful.
+
+after-startup-command = []
+start-at-login = true
+enable-normalization-flatten-containers = true
+enable-normalization-opposite-orientation-for-nested-containers = true
+accordion-padding = 30
+default-root-container-layout = 'tiles'
+default-root-container-orientation = 'auto'
+
+on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
+
+[gaps]
+inner.horizontal = 6
+inner.vertical = 6
+outer.left = 6
+outer.bottom = 6
+outer.top = 6
+outer.right = 6
+
+[mode.main.binding]
+# Focus — vim-style, plain Alt. Keep these as muscle memory.
+alt-h = 'focus left'
+alt-j = 'focus down'
+alt-k = 'focus up'
+alt-l = 'focus right'
+
+# Move focused window in tree.
+alt-shift-h = 'move left'
+alt-shift-j = 'move down'
+alt-shift-k = 'move up'
+alt-shift-l = 'move right'
+
+# Workspaces — moved off Alt+digit so [ ] { } stay typable on Norwegian.
+cmd-alt-1 = 'workspace 1'
+cmd-alt-2 = 'workspace 2'
+cmd-alt-3 = 'workspace 3'
+cmd-alt-4 = 'workspace 4'
+cmd-alt-5 = 'workspace 5'
+cmd-alt-6 = 'workspace 6'
+cmd-alt-7 = 'workspace 7'
+cmd-alt-8 = 'workspace 8'
+cmd-alt-9 = 'workspace 9'
+
+# Move focused window to workspace.
+cmd-alt-shift-1 = 'move-node-to-workspace 1'
+cmd-alt-shift-2 = 'move-node-to-workspace 2'
+cmd-alt-shift-3 = 'move-node-to-workspace 3'
+cmd-alt-shift-4 = 'move-node-to-workspace 4'
+cmd-alt-shift-5 = 'move-node-to-workspace 5'
+cmd-alt-shift-6 = 'move-node-to-workspace 6'
+cmd-alt-shift-7 = 'move-node-to-workspace 7'
+cmd-alt-shift-8 = 'move-node-to-workspace 8'
+cmd-alt-shift-9 = 'move-node-to-workspace 9'
+
+# Layout. Cmd-Alt prefix again to stay clear of Norwegian alt-state typing.
+cmd-alt-slash = 'layout tiles horizontal vertical'
+cmd-alt-comma = 'layout accordion horizontal vertical'
+cmd-alt-f = 'fullscreen'
+
+# Resize mode — enter with Cmd-Alt-R, then h/j/k/l adjust, esc exits.
+cmd-alt-r = 'mode resize'
+
+# Reload config in place after editing this file.
+cmd-alt-shift-c = 'reload-config'
+
+# Move workspace to monitor (handy on multi-display setups).
+cmd-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+[mode.resize.binding]
+h = 'resize width -50'
+j = 'resize height +50'
+k = 'resize height -50'
+l = 'resize width +50'
+enter = 'mode main'
+esc = 'mode main'

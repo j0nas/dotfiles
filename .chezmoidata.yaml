@@ -3,7 +3,7 @@ packages:
     brews:
       - age  # decrypts chezmoi-managed secrets via SSH key
     casks:
-      - amethyst
+      - nikitabobko/tap/aerospace
       - bambu-studio
       - brave-browser
       - calibre  # TEMP: remove once Tora's Kindle (PW1) rescue is done
