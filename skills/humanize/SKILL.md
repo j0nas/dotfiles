@@ -43,6 +43,15 @@ AI replaces "is/are/has" with status verbs: serves as, stands as, marks, represe
 
 Creates a fake misconception to correct.
 
+### "No X needed" boasts
+Punchy taglines that frame a thing by what it doesn't require:
+- "No AWS console needed"
+- "No private key required"
+- "No service, no account"
+- "Zero config", "no signup", "no installation"
+
+Marketing-pamphlet style. Tries to sound lean but reads as performative minimalism, especially when applied to mundane subjects. Often the closing tagline of a paragraph trying to land a "see how simple this is" punch. If the absence is load-bearing, state the positive: "Adding a secret is a PR" beats "No console needed."
+
 ### Rule of three
 Trinomial phrases appearing constantly: "adj, adj, adj", "phrase, phrase, and phrase". Three-item lists arriving unprompted.
 
@@ -150,6 +159,7 @@ Automated detectors (e.g. GPTZero) beat random chance but have non-trivial error
 - One qualifier per claim. Don't stack hedges.
 - Repeat nouns. Don't synonym-cycle.
 - Drop trailing "-ing" analyses. Replace with a concrete consequence or remove.
+- Replace "No X needed/required" taglines with the positive statement of what is the case, or cut.
 
 ### Source or drop
 - Name the source, or cut the claim.
