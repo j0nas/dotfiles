@@ -13,6 +13,10 @@ end
 config.font = wezterm.font("{{ .font }}")
 config.font_size = 14
 
+-- macOS: let both Option keys compose so Nordic specials (|, \, @, etc.) work
+config.send_composed_key_when_left_alt_is_pressed = true
+config.send_composed_key_when_right_alt_is_pressed = true
+
 -- Theme
 config.color_scheme = "Catppuccin Mocha"
 
