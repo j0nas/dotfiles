@@ -1,0 +1,30 @@
+#!/bin/bash
+set -e
+
+{{ if eq .chezmoi.os "darwin" -}}
+# Fusion 360 MCP (faust-machines/fusion360-mcp-server). Drives Fusion from
+# Claude Code via a uvx-launched stdio server; the in-Fusion side is a Python
+# add-in that listens on localhost:9876. Lives in its own run_onchange_ script
+# rather than run_once_bootstrap so it (a) runs after install-claude-code (we
+# need `claude` on PATH for `claude mcp add`) and (b) self-heals if you install
+# Fusion later -- run_once_ would never re-evaluate.
+
+FUSION_ADDINS="$HOME/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns"
+
+# Add-in side: skip if Fusion isn't installed (no AddIns folder).
+# After this runs you still need to load + start the add-in in Fusion once:
+# Shift+S -> Add-Ins -> Fusion360MCP -> Run, then tick Run on Startup.
+if [ -d "$FUSION_ADDINS" ] && [ ! -d "$FUSION_ADDINS/Fusion360MCP" ]; then
+  echo "==> Installing Fusion360 MCP add-in..."
+  TMP=$(mktemp -d)
+  git clone --depth=1 https://github.com/faust-machines/fusion360-mcp-server.git "$TMP/repo"
+  cp -r "$TMP/repo/addon" "$FUSION_ADDINS/Fusion360MCP"
+  rm -rf "$TMP"
+fi
+
+# MCP registration. `claude mcp add` errors on duplicate; `|| true` keeps
+# re-runs idempotent (same pattern as the context7 registration).
+if command -v claude &>/dev/null; then
+  claude mcp add --scope user fusion360 -- uvx fusion360-mcp-server --mode socket || true
+fi
+{{ end -}}
