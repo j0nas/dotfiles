@@ -2,6 +2,7 @@ packages:
   darwin:
     brews:
       - age  # decrypts chezmoi-managed secrets via SSH key
+      - uv   # uvx launches the Fusion360 MCP server on demand
     casks:
       - nikitabobko/tap/aerospace
       - bambu-studio
