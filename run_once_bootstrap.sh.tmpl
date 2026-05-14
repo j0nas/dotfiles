@@ -49,25 +49,6 @@ mise exec -- bash -c '
   mise exec -- npx -y skills add vercel-labs/agent-browser -y
 
 {{ if eq .chezmoi.os "darwin" -}}
-# Fusion 360 MCP (faust-machines/fusion360-mcp-server). Drives Fusion from
-# Claude Code via a uvx-launched stdio server; the in-Fusion side is a Python
-# add-in that listens on localhost:9876. Install only if Fusion is present
-# (AddIns folder exists). After this runs you still need to load + start the
-# add-in inside Fusion once: Shift+S -> Add-Ins -> Fusion360MCP -> Run, then
-# tick Run on Startup.
-FUSION_ADDINS="$HOME/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns"
-if [ -d "$FUSION_ADDINS" ] && [ ! -d "$FUSION_ADDINS/Fusion360MCP" ]; then
-  echo "==> Installing Fusion360 MCP add-in..."
-  TMP=$(mktemp -d)
-  git clone --depth=1 https://github.com/faust-machines/fusion360-mcp-server.git "$TMP/repo"
-  cp -r "$TMP/repo/addon" "$FUSION_ADDINS/Fusion360MCP"
-  rm -rf "$TMP"
-fi
-if command -v claude &>/dev/null && ! claude mcp list 2>/dev/null | grep -q '^fusion360:'; then
-  echo "==> Registering Fusion360 MCP with Claude Code..."
-  claude mcp add --scope user fusion360 -- uvx fusion360-mcp-server --mode socket
-fi
-
 # Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-
 # level checks but limited DOM/event fidelity -- does NOT reliably drive
 # React's synthetic event handlers, so the default engine stays Chrome.
