@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+# Claude Code installs via Anthropic's native installer rather than mise so the
+# built-in background auto-updater can keep it current. mise-managed installs
+# can't self-update -- you'd have to schedule `mise upgrade claude` yourself.
+export PATH="$HOME/.local/bin:$PATH"
+if ! command -v claude &> /dev/null; then
+  echo "==> Installing Claude Code (native installer)..."
+  curl -fsSL https://claude.ai/install.sh | bash
+fi
+
+# Context7 MCP server (up-to-date library docs). `claude mcp add` errors
+# (non-zero) if the server already exists -- `|| true` keeps re-runs idempotent.
+claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp || true

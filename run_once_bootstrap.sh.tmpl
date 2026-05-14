@@ -48,10 +48,6 @@ mise exec -- bash -c '
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
   mise exec -- npx -y skills add vercel-labs/agent-browser -y
 
-# Context7 MCP server (up-to-date library docs). `claude mcp add` errors
-# (non-zero) if the server already exists — `|| true` keeps re-runs idempotent.
-mise exec -- claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp || true
-
 {{ if eq .chezmoi.os "darwin" -}}
 # Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-
 # level checks but limited DOM/event fidelity -- does NOT reliably drive
