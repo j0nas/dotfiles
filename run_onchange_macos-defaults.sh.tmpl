@@ -15,6 +15,12 @@ defaults write -g InitialKeyRepeat -int 10
 # Format: "<r> <g> <b> <label>" — label shows in System Settings → Appearance.
 defaults write -g AppleHighlightColor "0.2588235294 0.0862745098 0.5686274510 Violet"
 
+# AeroSpace requires "Displays have separate Spaces" OFF — without it, the
+# tiler loses track of windows on monitor (dis)connect. The defaults key is
+# inverted: spans-displays = true means separate Spaces is off.
+# Requires logout/login to take effect.
+defaults write com.apple.spaces spans-displays -bool true
+
 # Cursor: larger size + violet fill (Accessibility → Display → Pointer).
 # com.apple.universalaccess is TCC-protected: writes require Full Disk Access
 # for the calling terminal (System Settings → Privacy & Security → Full Disk
