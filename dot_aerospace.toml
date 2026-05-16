@@ -27,6 +27,26 @@ outer.bottom = 6
 outer.top = 6
 outer.right = 6
 
+# Pin every workspace number (1..9) to a specific monitor so cmd-alt-N is
+# deterministic on both displays and AeroSpace stops drifting new windows
+# onto auto-created workspaces 10/11.
+#
+# The ultrawide is matched by exact name regex on purpose: the LC49G95T is an
+# unusual 49" panel and any layout decisions tuned for it shouldn't silently
+# inherit to whatever generic external happens to be plugged in next. When the
+# ultrawide is unplugged, workspaces 1-5 fall back to the focused (sole)
+# monitor — the built-in — so nothing is lost.
+[workspace-to-monitor-force-assignment]
+1 = '^LC49G95T$'
+2 = '^LC49G95T$'
+3 = '^LC49G95T$'
+4 = '^LC49G95T$'
+5 = '^LC49G95T$'
+6 = '^Built-in'
+7 = '^Built-in'
+8 = '^Built-in'
+9 = '^Built-in'
+
 [mode.main.binding]
 # Focus — vim-style, plain Alt. Keep these as muscle memory.
 alt-h = 'focus left'
