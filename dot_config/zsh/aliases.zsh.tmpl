@@ -30,6 +30,7 @@ alias desktop='cd /mnt/c/Users/{{ .chezmoi.username }}/Desktop'
 {{ else -}}
 alias desktop='cd ~/Desktop'
 {{ end -}}
+mcd() { mkdir -p -- "$1" && cd -- "$1"; }
 
 # tools
 alias c='claude'
