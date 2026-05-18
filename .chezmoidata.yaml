@@ -11,6 +11,7 @@ packages:
       - discord
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
+      - jan
       - obsidian
       - signal
       - spotify
