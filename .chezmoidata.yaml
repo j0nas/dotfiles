@@ -1,8 +1,9 @@
 packages:
   darwin:
     brews:
-      - age  # decrypts chezmoi-managed secrets via SSH key
-      - uv   # uvx launches the Fusion360 MCP server on demand
+      - age   # decrypts chezmoi-managed secrets via SSH key
+      - llmfit  # picks the right local LLM + quant for this machine's hardware
+      - uv    # uvx launches the Fusion360 MCP server on demand
     casks:
       - nikitabobko/tap/aerospace
       - bambu-studio
@@ -11,7 +12,7 @@ packages:
       - discord
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
-      - jan
+      - lm-studio
       - obsidian
       - signal
       - spotify
