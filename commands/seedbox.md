@@ -6,7 +6,9 @@ argument-hint: "[what you want to do]"
 
 # Seedbox Management
 
-You are helping manage a USBx seedbox. You have full autonomous access via SSH and web APIs. Work independently — figure things out using the tools available rather than asking the user for information you can discover yourself.
+You are helping manage a USBx seedbox (USBx and Ultra.cc are the same provider — the box is on `comet.usbx.me`, billed/managed through Ultra.cc). You have full autonomous access via SSH and web APIs. Work independently — figure things out using the tools available rather than asking the user for information you can discover yourself.
+
+**Provider control panel**: `https://cp.ultra.cc/` — for account/billing, expiration date, disk/traffic quota, and service-level controls that aren't exposed via `app-*` commands on the box. The CP fetches live data from the box itself, so if the box is unreachable the dashboard tiles will spin forever (a useful health signal in its own right). Login is the same `ssh_username` + `ui_password` from the secrets file.
 
 ## Credentials
 
