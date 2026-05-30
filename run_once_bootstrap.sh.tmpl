@@ -28,15 +28,16 @@ if [[ ! -d "$HOME/.antidote" ]]; then
 fi
 
 # --- Node CLI tools (on top of mise-installed Node) ---
-# agent-browser is kept here rather than in mise config because `agent-browser
-# install` (which downloads the matched Chrome for Testing binary) is a
-# required post-install step that mise can't orchestrate.
-# Invoke the just-installed binary by absolute path via `npm config get
-# prefix` — mise (esp. on WSL) doesn't auto-shim arbitrary npm globals,
-# so a freshly-installed bin isn't on PATH even within the same shell.
+# agent-browser is installed via npm rather than `mise use npm:agent-browser`
+# because its post-install step — `agent-browser install`, which downloads the
+# matched Chrome for Testing binary — isn't something mise can orchestrate.
+# With the default npm prefix (mise's per-version Node dir) the global bin is
+# already on PATH under mise, so the freshly-installed binary is callable by
+# name. Do NOT set `prefix` in ~/.npmrc: it diverts globals to a dir nothing
+# puts on PATH, which is the only reason this ever needed an absolute path.
 mise exec -- bash -c '
   npm install -g agent-browser
-  "$(npm config get prefix)/bin/agent-browser" install
+  agent-browser install
 '
 
 # Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
