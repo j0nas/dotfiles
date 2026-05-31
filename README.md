@@ -9,7 +9,7 @@ Windows: first install WSL from PowerShell with `wsl --install -d Ubuntu`.
 Then, on any platform:
 
 ```sh
-curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/master/setup.sh | bash
+curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/main/setup.sh | bash
 ```
 
 ## How it's wired
