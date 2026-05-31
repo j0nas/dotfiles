@@ -15,5 +15,19 @@
   },
   "attribution": {
     "commit": ""
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "$HOME/.claude/hooks/intercept-installs.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
   }
 }
