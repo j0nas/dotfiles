@@ -22,8 +22,9 @@
 - **Personal skills** live as real directories at `skills/<name>/` (repo-only — see `.chezmoiignore`). Each is surfaced into `~/.claude/skills/<name>` via a per-skill symlink file at `dot_claude/skills/symlink_<name>.tmpl` whose contents are `{{ .chezmoi.sourceDir }}/skills/<name>`.
 - **Slash commands** follow the same shape: real `commands/<name>.md`, symlinked from `dot_claude/commands/symlink_<name>.md.tmpl`.
 - **Editing a skill or command** via the `~/.claude/...` path edits the source file directly (it's a symlink). After editing, invoke `/dotfiles` to commit + push — chezmoi's autoCommit only fires on `chezmoi edit`, not on direct edits to source.
-- **Third-party skills** installed by `npx skills add` live at `~/.agents/skills/<name>` and surface into `~/.claude/skills/` as symlinks managed by the skills CLI — not by chezmoi. Coexist fine.
+- **Third-party skills** installed by `pnpm dlx skills add` live at `~/.agents/skills/<name>` and surface into `~/.claude/skills/` as symlinks managed by the skills CLI — not by chezmoi. Coexist fine.
 - **Secrets** are age-encrypted, decrypt via your SSH key. Vault files use the `encrypted_private_*` prefix (private = mode 0600 on apply). Recipients (machines authorized to decrypt) live in `.age-recipients` at the repo root — public keys, safe to commit. Edit a vault with `chezmoi edit-encrypted dot_claude/secrets/<file>.json`. `age` is installed via the `brews:` list in `.chezmoidata.yaml`.
+- **Install-intercept hook** (`dot_claude/hooks/executable_intercept-installs.sh`, wired via `PreToolUse`/`Bash` in `dot_claude/settings.json`): denies Claude's *direct* global/system install commands (`brew install`, `mise use`, `npm/pnpm -g`, `pipx/cargo/flatpak install`, …) and points to `/dotfiles` so they get persisted. It's silent (exit 0, no output) for everything else. Escape hatch: append `# one-off` to the command for an explicit throwaway. Installs nested inside `chezmoi apply` don't trigger it (they run in chezmoi's process, not a Bash tool call), so /dotfiles never blocks itself.
 
 ## Package management
 

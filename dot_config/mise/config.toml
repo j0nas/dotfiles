@@ -3,6 +3,7 @@ starship = "latest"
 zoxide = "latest"
 fzf = "latest"
 gh = "latest"
+jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Claude hook)
 # Node itself is delegated to fnm (installed below) — the Node-native version
 # manager auto-switches per .node-version/.nvmrc and allows on-the-fly `fnm use`.
 "aqua:Schniz/fnm" = "latest"
