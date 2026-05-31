@@ -14,3 +14,7 @@ jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Clau
 # pnpm then auto-switches to each project's pinned version. Version here is
 # irrelevant for that reason; "latest" keeps the baseline current.
 pnpm = "latest"
+# ccusage: analyzes Claude Code token usage from local JSONL logs. npm-backed
+# so it lands on PATH (vs `npx` re-downloading each run) — the Claude Code
+# statusLine spawns `ccusage statusline` on every prompt render.
+"npm:ccusage" = "latest"
