@@ -6,3 +6,10 @@ gh = "latest"
 # Node itself is delegated to fnm (installed below) — the Node-native version
 # manager auto-switches per .node-version/.nvmrc and allows on-the-fly `fnm use`.
 "aqua:Schniz/fnm" = "latest"
+# pnpm as a standalone tool. Corepack (the old way to provision pnpm) was
+# removed from the Node distribution in v25+, and pnpm now self-manages its
+# version from a project's package.json "packageManager" field (pmOnFail:
+# download, the default). So this just needs to put *some* pnpm on PATH —
+# pnpm then auto-switches to each project's pinned version. Version here is
+# irrelevant for that reason; "latest" keeps the baseline current.
+pnpm = "latest"
