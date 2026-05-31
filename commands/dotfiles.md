@@ -40,6 +40,6 @@ Find and persist any uncommitted edits in the source dir.
 ## Commit
 - Stage explicitly named files. Never `git add -A` or `git add .`.
 - Generate a focused commit message in the existing repo style: short imperative subject, body explaining the WHY (not the WHAT) in 1-2 sentences. Skim `git log --oneline -10` if you're unsure of tone.
-- Commit with the Co-Authored-By trailer for Claude Code.
+- Do **not** add a `Co-Authored-By: Claude` or `🤖 Generated with Claude Code` trailer — attribution is intentionally disabled globally (`attribution.commit: ""` in `dot_claude/settings.json`). Keep the message clean.
 - Push explicitly with `git -C ~/.local/share/chezmoi push` and confirm it succeeded. Don't rely on chezmoi's autoCommit/autoPush — those only fire on `chezmoi edit`-driven commits, not the direct `git commit` above.
 - Report the new commit SHA and a one-line summary of what landed.
