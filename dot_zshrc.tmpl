@@ -43,6 +43,13 @@ if command -v mise &> /dev/null; then
   eval "$(mise activate zsh)"
 fi
 
+# fnm (Node version manager) — installed via mise, but owns Node so mise doesn't.
+# Must come after mise activation (mise provides the fnm binary). --use-on-cd
+# auto-switches the active Node per .node-version / .nvmrc on directory change.
+if command -v fnm &> /dev/null; then
+  eval "$(fnm env --use-on-cd)"
+fi
+
 # starship prompt
 if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"

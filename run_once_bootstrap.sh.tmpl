@@ -21,21 +21,30 @@ echo "==> Installing tools via mise..."
 export PATH="$HOME/.local/bin:$PATH"
 mise install
 
+# --- Node via fnm (mise installs fnm; fnm owns Node versions) ---
+# Node is delegated to fnm so versions auto-switch per .node-version/.nvmrc and
+# can be swapped on the fly. fnm is a mise-managed tool, so it's on PATH via
+# `mise exec`. Set 26 as the global default for shells with no project pin.
+echo "==> Installing default Node (26) via fnm..."
+mise exec -- bash -c 'fnm install 26 && fnm default 26'
+
 # --- antidote (zsh plugin manager) ---
 if [[ ! -d "$HOME/.antidote" ]]; then
   echo "==> Installing antidote..."
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
-# --- Node CLI tools (on top of mise-installed Node) ---
-# agent-browser is installed via npm rather than `mise use npm:agent-browser`
+# --- Node CLI tools (on top of fnm-managed Node) ---
+# agent-browser is installed via npm rather than as a mise/fnm-managed tool
 # because its post-install step — `agent-browser install`, which downloads the
-# matched Chrome for Testing binary — isn't something mise can orchestrate.
-# With the default npm prefix (mise's per-version Node dir) the global bin is
-# already on PATH under mise, so the freshly-installed binary is callable by
-# name. Do NOT set `prefix` in ~/.npmrc: it diverts globals to a dir nothing
-# puts on PATH, which is the only reason this ever needed an absolute path.
+# matched Chrome for Testing binary — isn't something a version manager can
+# orchestrate. `fnm use default` puts the default Node on PATH inside this
+# subshell; with the default npm prefix the global bin lands on PATH too, so the
+# freshly-installed binary is callable by name. Do NOT set `prefix` in ~/.npmrc:
+# it diverts globals to a dir nothing puts on PATH.
 mise exec -- bash -c '
+  eval "$(fnm env)"
+  fnm use default
   npm install -g agent-browser
   agent-browser install
 '
@@ -47,7 +56,7 @@ mise exec -- bash -c '
 # inner is skills' "ok to install?". Without the inner one, skills prompts
 # interactively for the install + the find-skills recommendation.
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
-  mise exec -- npx -y skills add vercel-labs/agent-browser -y
+  mise exec -- bash -c 'eval "$(fnm env)"; fnm use default; npx -y skills add vercel-labs/agent-browser -y'
 
 {{ if eq .chezmoi.os "darwin" -}}
 # Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-
