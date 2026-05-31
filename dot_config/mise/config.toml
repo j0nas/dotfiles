@@ -3,4 +3,6 @@ starship = "latest"
 zoxide = "latest"
 fzf = "latest"
 gh = "latest"
-node = "lts"
+# Node itself is delegated to fnm (installed below) — the Node-native version
+# manager auto-switches per .node-version/.nvmrc and allows on-the-fly `fnm use`.
+"aqua:Schniz/fnm" = "latest"
