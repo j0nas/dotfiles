@@ -6,6 +6,10 @@ argument-hint: "[change you want to make, or empty to catch up on dirty state]"
 
 You are working in the user's chezmoi dotfiles repo at `~/.local/share/chezmoi`. Read `~/.local/share/chezmoi/CLAUDE.md` first if you haven't already this session — it documents the conventions you must follow.
 
+## Step 0 — Sync first (always)
+
+Before reading or editing anything, sync the source dir with its remote so your commit doesn't diverge: `git -C ~/.local/share/chezmoi pull --rebase --autostash`. chezmoi's autoPush means another `chezmoi edit` (here or on another machine) can leave the remote ahead; pulling first avoids the rebase-conflict dance at push time. `--autostash` keeps any in-progress working-tree edits (catch-up mode) safe. If the rebase surfaces a conflict, resolve it before starting the requested change.
+
 ## Two modes
 
 ### Forward mode (argument provided)
