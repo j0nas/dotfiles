@@ -50,6 +50,16 @@ if command -v fnm &> /dev/null; then
   eval "$(fnm env --use-on-cd)"
 fi
 
+# pnpm: globals install into PNPM_HOME (a fixed dir, not a per-Node prefix), so
+# a globally-installed CLI survives fnm Node switches. pnpm itself comes from
+# mise — Node 25+ no longer bundles corepack — and auto-uses each project's
+# "packageManager" version. The case guard keeps PATH dedup'd on re-source.
+export PNPM_HOME="$HOME/.local/share/pnpm"
+case ":$PATH:" in
+  *":$PNPM_HOME/bin:"*) ;;
+  *) export PATH="$PNPM_HOME/bin:$PATH" ;;
+esac
+
 # starship prompt
 if command -v starship &> /dev/null; then
   eval "$(starship init zsh)"

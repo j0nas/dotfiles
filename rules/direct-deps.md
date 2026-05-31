@@ -10,7 +10,7 @@ Real example: a project removed `eslint` from root `package.json` after noticing
 
 ## How to apply
 
-- Anything invoked from an npm script, CI command, or import statement in the workspace's source must be in that workspace's (or root's) `dependencies`/`devDependencies`.
+- Anything invoked from a package.json script, CI command, or import statement in the workspace's source must be in that workspace's (or root's) `dependencies`/`devDependencies`.
 - Peer-only installation is fine for *libraries* declaring what their *consumers* need to bring; it is not fine for *applications* declaring what they themselves use.
 - When tempted to drop a dep because "it works without it via peer install", ask: do *we* call this package, or does only the intermediate use it? If we call it, pin it.
 - This applies even when the package version turns out to be identical to the peer-resolved version — pinning is about the contract, not just the current resolved bytes.
