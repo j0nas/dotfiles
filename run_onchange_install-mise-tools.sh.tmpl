@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+# Converge mise-managed tools whenever the tool list changes, so `chezmoi apply`
+# picks up additions/removals without needing a fresh run_once bootstrap. Mirrors
+# how install-packages / install-vscode-extensions stay in sync with their data.
+# mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
+
+echo "==> Converging mise-managed tools..."
+mise install
+
+# Node is delegated to fnm (itself a mise tool); ensure the default version
+# exists so shells with no project .node-version still resolve a Node.
+echo "==> Ensuring default Node ({{ .node_default }}) via fnm..."
+mise exec -- bash -c 'fnm install {{ .node_default }} && fnm default {{ .node_default }}'

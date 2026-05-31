@@ -25,8 +25,8 @@ mise install
 # Node is delegated to fnm so versions auto-switch per .node-version/.nvmrc and
 # can be swapped on the fly. fnm is a mise-managed tool, so it's on PATH via
 # `mise exec`. Set 26 as the global default for shells with no project pin.
-echo "==> Installing default Node (26) via fnm..."
-mise exec -- bash -c 'fnm install 26 && fnm default 26'
+echo "==> Installing default Node ({{ .node_default }}) via fnm..."
+mise exec -- bash -c 'fnm install {{ .node_default }} && fnm default {{ .node_default }}'
 
 # --- antidote (zsh plugin manager) ---
 if [[ ! -d "$HOME/.antidote" ]]; then
