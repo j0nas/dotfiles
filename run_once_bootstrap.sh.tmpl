@@ -35,28 +35,30 @@ if [[ ! -d "$HOME/.antidote" ]]; then
 fi
 
 # --- Node CLI tools (on top of fnm-managed Node) ---
-# agent-browser is installed via npm rather than as a mise/fnm-managed tool
-# because its post-install step — `agent-browser install`, which downloads the
-# matched Chrome for Testing binary — isn't something a version manager can
-# orchestrate. `fnm use default` puts the default Node on PATH inside this
-# subshell; with the default npm prefix the global bin lands on PATH too, so the
-# freshly-installed binary is callable by name. Do NOT set `prefix` in ~/.npmrc:
-# it diverts globals to a dir nothing puts on PATH.
+# agent-browser is installed as a pnpm global rather than a mise/fnm-managed
+# tool because its post-install step — `agent-browser install`, which downloads
+# the matched Chrome for Testing binary — isn't something a version manager can
+# orchestrate. pnpm puts global bins in PNPM_HOME (a fixed dir, not per-Node),
+# so the install survives fnm Node switches; putting PNPM_HOME on PATH makes the
+# freshly-installed binary callable by name. `fnm use default` provides the Node
+# the agent-browser shim runs against.
 mise exec -- bash -c '
   eval "$(fnm env)"
   fnm use default
-  npm install -g agent-browser
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME/bin:$PATH"
+  pnpm add -g agent-browser
   agent-browser install
 '
 
 # Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
 # `agent-browser skills get core` at runtime, so the workflow content stays
-# version-matched to the installed CLI. `npx skills add` errors on re-add, so
-# guard with a file test. Two `-y` flags: outer is npx's "ok to download?",
-# inner is skills' "ok to install?". Without the inner one, skills prompts
-# interactively for the install + the find-skills recommendation.
+# version-matched to the installed CLI. `pnpm dlx skills add` errors on re-add,
+# so guard with a file test. The `-y` is skills' own "ok to install?" — without
+# it, skills prompts interactively for the install + the find-skills
+# recommendation. (pnpm dlx, unlike npx, needs no separate download-confirm flag.)
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
-  mise exec -- bash -c 'eval "$(fnm env)"; fnm use default; npx -y skills add vercel-labs/agent-browser -y'
+  mise exec -- bash -c 'eval "$(fnm env)"; fnm use default; pnpm dlx skills add vercel-labs/agent-browser -y'
 
 {{ if eq .chezmoi.os "darwin" -}}
 # Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-

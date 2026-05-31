@@ -10,6 +10,9 @@ if ! command -v claude &> /dev/null; then
   curl -fsSL https://claude.ai/install.sh | bash
 fi
 
-# Context7 MCP server (up-to-date library docs). `claude mcp add` errors
-# (non-zero) if the server already exists -- `|| true` keeps re-runs idempotent.
-claude mcp add --transport stdio --scope user context7 -- npx -y @upstash/context7-mcp || true
+# Context7 MCP server (up-to-date library docs). Remove-then-add so re-runs are
+# idempotent AND actually re-register the launch command when it changes here
+# (`claude mcp add` alone errors when the server already exists). Launched with
+# `pnpm dlx` — corepack/npx is gone in Node 25+; pnpm comes from mise.
+claude mcp remove context7 2>/dev/null || true
+claude mcp add --transport stdio --scope user context7 -- pnpm dlx @upstash/context7-mcp || true

@@ -15,7 +15,7 @@ The user called it out as "sloppy researching."
 
 - For any claim about a specific line or function existing/doing X: read the file at that line and confirm before listing.
 - For any count (e.g. "47 files import X"): run `grep -c` / `wc -l` and use the actual number.
-- For any "package X is abandoned / version Y doesn't exist": run `npm view X time --json` and check publish dates against today's date.
+- For any "package X is abandoned / version Y doesn't exist": run `pnpm view X time --json` and check publish dates against today's date.
 - For any "this code is broken / a security bypass": trace it to the actual call sites to confirm it's reachable. Dead code with bad bodies is not a live bug.
 - When delegating to subagents, instruct them to show verification evidence (file:line, grep counts, publish dates) alongside every finding, and to tag findings as "verified" vs. "needs follow-up".
 - Distinguish empirically-confirmed claims from speculative pattern-matches in the report itself. Don't blur the two.
