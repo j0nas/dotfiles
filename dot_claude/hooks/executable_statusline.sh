@@ -18,10 +18,12 @@ ctx="$(printf '%s' "$input" | ccusage statusline 2>/dev/null \
 
 # color a usage %: <50 green, 50-79 yellow, >=80 red
 col() { if [ "$1" -ge 80 ]; then printf '\033[31m'; elif [ "$1" -ge 50 ]; then printf '\033[33m'; else printf '\033[32m'; fi; }
-# countdown to an epoch reset: "{H}h{mm}m" when under a day out, else "{D}d{HH}h".
+# countdown to an epoch reset, unpadded for terseness: "{D}d{H}h" a day+ out,
+# "{H}h{M}m" within the day, "{M}m" under an hour.
 left() { local r=$(( ${1%.*} - $(date +%s) )); [ "$r" -lt 0 ] && r=0
-  if [ "$r" -ge 86400 ]; then printf '%dd%02dh' $((r / 86400)) $(((r % 86400) / 3600))
-  else                        printf '%dh%02dm' $((r / 3600)) $(((r % 3600) / 60)); fi; }
+  if   [ "$r" -ge 86400 ]; then printf '%dd%dh' $((r / 86400)) $(((r % 86400) / 3600))
+  elif [ "$r" -ge 3600 ];  then printf '%dh%dm' $((r / 3600)) $(((r % 3600) / 60))
+  else                          printf '%dm' $((r / 60)); fi; }
 
 IFS=$'\t' read -r f5 r5 w7 r7 < <(printf '%s' "$input" \
   | jq -r '[.rate_limits.five_hour.used_percentage, .rate_limits.five_hour.resets_at,
