@@ -1,5 +1,20 @@
 {
   "$schema": "https://opencode.ai/config.json",
+  "model": "lmstudio/qwen/qwen3-coder-next",
+  "provider": {
+    "lmstudio": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "LM Studio (local)",
+      "options": {
+        "baseURL": "http://127.0.0.1:1234/v1"
+      },
+      "models": {
+        "qwen/qwen3-coder-next": {
+          "name": "Qwen3 Coder Next 8-bit (local)"
+        }
+      }
+    }
+  },
   "mcp": {
     "context7": {
       "type": "local",
