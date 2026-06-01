@@ -24,6 +24,16 @@ left() { local r=$(( ${1%.*} - $(date +%s) )); [ "$r" -lt 0 ] && r=0
   if   [ "$r" -ge 86400 ]; then printf '%dd%dh' $((r / 86400)) $(((r % 86400) / 3600))
   elif [ "$r" -ge 3600 ];  then printf '%dh%dm' $((r / 3600)) $(((r % 3600) / 60))
   else                          printf '%dm' $((r / 60)); fi; }
+# pace alert: a colored "!" when, at the average rate since this window opened,
+# the quota would be exhausted before it resets. projected end-of-window % =
+# used% / elapsed-fraction. Silent until >=10% elapsed (too noisy before that).
+# args: used% resets_at window_seconds. Integer math in basis points (ef = frac*1e4).
+pace() { [ -z "$2" ] && return; local used=$1 dur=$3
+  local rem=$(( ${2%.*} - $(date +%s) )); [ "$rem" -lt 0 ] && rem=0
+  local ef=$(( (dur - rem) * 10000 / dur )); [ "$ef" -lt 1000 ] && return
+  local proj=$(( used * 10000 / ef ))
+  if   [ "$proj" -gt 150 ]; then printf '\033[31m!\033[0m'
+  elif [ "$proj" -gt 110 ]; then printf '\033[33m!\033[0m'; fi; }
 
 IFS=$'\t' read -r f5 r5 w7 r7 < <(printf '%s' "$input" \
   | jq -r '[.rate_limits.five_hour.used_percentage, .rate_limits.five_hour.resets_at,
@@ -39,6 +49,6 @@ if [ -n "$ctx" ]; then
   fi
   out="${out:+$out | }ctx $ctx"
 fi
-[ -n "$f5" ] && { p=$(printf '%.0f' "$f5"); s="5h $(col "$p")${p}%\033[0m"; [ -n "$r5" ] && s="$s/$(left "$r5")"; out="${out:+$out | }$s"; }
-[ -n "$w7" ] && { p=$(printf '%.0f' "$w7"); s="7d $(col "$p")${p}%\033[0m"; [ -n "$r7" ] && s="$s/$(left "$r7")"; out="${out:+$out | }$s"; }
+[ -n "$f5" ] && { p=$(printf '%.0f' "$f5"); s="5h $(col "$p")${p}%\033[0m$(pace "$p" "$r5" 18000)"; [ -n "$r5" ] && s="$s/$(left "$r5")"; out="${out:+$out | }$s"; }
+[ -n "$w7" ] && { p=$(printf '%.0f' "$w7"); s="7d $(col "$p")${p}%\033[0m$(pace "$p" "$r7" 604800)"; [ -n "$r7" ] && s="$s/$(left "$r7")"; out="${out:+$out | }$s"; }
 printf '%b' "$out"
