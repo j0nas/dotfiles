@@ -32,6 +32,6 @@ IFS=$'\t' read -r f5 r5 w7 r7 < <(printf '%s' "$input" \
 
 out="$model"
 [ -n "$ctx" ] && out="${out:+$out | }ctx $ctx"
-[ -n "$f5" ] && { p=$(printf '%.0f' "$f5"); s="5h $(col "$p")${p}%\033[0m"; [ -n "$r5" ] && s="$s ($(left "$r5"))"; out="${out:+$out | }$s"; }
-[ -n "$w7" ] && { p=$(printf '%.0f' "$w7"); s="7d $(col "$p")${p}%\033[0m"; [ -n "$r7" ] && s="$s ($(left "$r7"))"; out="${out:+$out | }$s"; }
+[ -n "$f5" ] && { p=$(printf '%.0f' "$f5"); s="5h $(col "$p")${p}%\033[0m"; [ -n "$r5" ] && s="$s/$(left "$r5")"; out="${out:+$out | }$s"; }
+[ -n "$w7" ] && { p=$(printf '%.0f' "$w7"); s="7d $(col "$p")${p}%\033[0m"; [ -n "$r7" ] && s="$s/$(left "$r7")"; out="${out:+$out | }$s"; }
 printf '%b' "$out"
