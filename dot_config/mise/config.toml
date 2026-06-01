@@ -18,3 +18,6 @@ pnpm = "latest"
 # so it lands on PATH (vs `npx` re-downloading each run) — the Claude Code
 # statusLine spawns `ccusage statusline` on every prompt render.
 "npm:ccusage" = "latest"
+# opencode: open-source terminal AI coding agent (anomalyco/opencode, formerly
+# sst/opencode). Registry short name resolves to the aqua-backed release binary.
+opencode = "latest"
