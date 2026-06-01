@@ -16,8 +16,10 @@ model="$(printf '%s' "$input" | jq -r '.model.display_name // empty' 2>/dev/null
 ctx="$(printf '%s' "$input" | ccusage statusline 2>/dev/null \
   | awk -v RS=' \\| ' '/🧠/{sub(/^🧠[[:space:]]*/,""); print; exit}')"
 
-# color a usage %: <50 green, 50-79 yellow, >=80 red
+# color a quota usage %: <50 green, 50-79 yellow, >=80 red
 col() { if [ "$1" -ge 80 ]; then printf '\033[31m'; elif [ "$1" -ge 50 ]; then printf '\033[33m'; else printf '\033[32m'; fi; }
+# context fills benignly — only warn as it nears auto-compaction: <80 green, 80-91 yellow, >=92 red
+colc() { if [ "$1" -ge 92 ]; then printf '\033[31m'; elif [ "$1" -ge 80 ]; then printf '\033[33m'; else printf '\033[32m'; fi; }
 # countdown to an epoch reset, unpadded for terseness: "{D}d{H}h" a day+ out,
 # "{H}h{M}m" within the day, "{M}m" under an hour.
 left() { local r=$(( ${1%.*} - $(date +%s) )); [ "$r" -lt 0 ] && r=0
@@ -31,7 +33,14 @@ IFS=$'\t' read -r f5 r5 w7 r7 < <(printf '%s' "$input" \
            | map(. // "") | @tsv' 2>/dev/null)
 
 out="$model"
-[ -n "$ctx" ] && out="${out:+$out | }ctx $ctx"
+if [ -n "$ctx" ]; then
+  # ccusage gives "150,462 (75%)"; reshape to "{pct}%/{tokens}K" to match 5h/7d.
+  if [[ "$ctx" =~ ^(.+)[[:space:]]\(([0-9]+)%\)$ ]]; then
+    tok="${BASH_REMATCH[1]//,/}"; cp="${BASH_REMATCH[2]}"
+    ctx="$(colc "$cp")${cp}%\033[0m/$(( (tok + 500) / 1000 ))K"
+  fi
+  out="${out:+$out | }ctx $ctx"
+fi
 [ -n "$f5" ] && { p=$(printf '%.0f' "$f5"); s="5h $(col "$p")${p}%\033[0m"; [ -n "$r5" ] && s="$s/$(left "$r5")"; out="${out:+$out | }$s"; }
 [ -n "$w7" ] && { p=$(printf '%.0f' "$w7"); s="7d $(col "$p")${p}%\033[0m"; [ -n "$r7" ] && s="$s/$(left "$r7")"; out="${out:+$out | }$s"; }
 printf '%b' "$out"
