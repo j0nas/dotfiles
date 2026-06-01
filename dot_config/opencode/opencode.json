@@ -1,0 +1,9 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "mcp": {
+    "context7": {
+      "type": "local",
+      "command": ["pnpm", "dlx", "@upstash/context7-mcp"]
+    }
+  }
+}
