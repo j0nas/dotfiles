@@ -78,5 +78,24 @@ done < <(git ls-files '*.sh.tmpl')
 [ "$sc_ok" -eq 1 ] && ok "all shell scripts pass shellcheck"
 rm -f err
 
+# 5. bash 3.2 compatibility -------------------------------------------------
+# macOS ships /bin/bash 3.2, so scripts with a `#!/bin/bash` shebang must avoid
+# bash-4+ builtins. shellcheck assumes a modern bash and won't flag these.
+b4="mapfile|readarray|declare[[:space:]]+-A|local[[:space:]]+-A"
+b4_ok=1
+check_bash4() { # <label> <script-text>
+  printf '%s\n' "$2" | head -1 | grep -q '^#!/bin/bash' || return 0   # only system-bash scripts
+  # grep -n keeps real line numbers; drop comment lines so a comment that merely
+  # mentions a banned builtin doesn't false-positive.
+  local hits
+  hits="$(printf '%s\n' "$2" | grep -nE "(^|[^[:alnum:]_])($b4)([^[:alnum:]_]|=|\$)" | grep -vE '^[0-9]+:[[:space:]]*#')"
+  [ -n "$hits" ] || return 0
+  fail "bash-4 builtin in a /bin/bash script (breaks macOS bash 3.2): $1"
+  printf '%s\n' "$hits" | sed 's/^/      /'; b4_ok=0
+}
+while IFS= read -r f; do [ -n "$f" ] && check_bash4 "$f" "$(cat "$f")"; done < <(git ls-files '*.sh')
+while IFS= read -r f; do [ -n "$f" ] && check_bash4 "$f" "$(render "$f")"; done < <(git ls-files '*.sh.tmpl')
+[ "$b4_ok" -eq 1 ] && ok "no bash-4 builtins in /bin/bash scripts"
+
 [ "$status" -ne 0 ] && printf '\n\033[31mvalidation failed.\033[0m\n' >&2
 exit "$status"

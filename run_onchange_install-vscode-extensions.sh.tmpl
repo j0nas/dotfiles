@@ -12,9 +12,11 @@ DESIRED=(
 {{- end }}
 )
 
-# Uninstall extensions present locally but not in .chezmoidata.yaml.
-mapfile -t INSTALLED < <(code --list-extensions)
-for ext in "${INSTALLED[@]}"; do
+# Uninstall extensions present locally but not in .chezmoidata.yaml. Read line
+# by line — no `mapfile`, since macOS ships bash 3.2 which lacks it (and a bare
+# `INSTALLED=($(...))` trips shellcheck SC2207).
+while IFS= read -r ext; do
+  [ -z "$ext" ] && continue
   keep=0
   for d in "${DESIRED[@]}"; do
     [[ "$ext" == "$d" ]] && keep=1 && break
@@ -22,7 +24,7 @@ for ext in "${INSTALLED[@]}"; do
   if [[ $keep -eq 0 ]]; then
     code --uninstall-extension "$ext" || true
   fi
-done
+done < <(code --list-extensions)
 
 for ext in "${DESIRED[@]}"; do
   code --install-extension "$ext" --force || true
