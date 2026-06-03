@@ -1,0 +1,82 @@
+#!/usr/bin/env bash
+# Single source of truth for dotfiles validation. Run by the pre-commit hook
+# and by CI (.github/workflows/validate.yml) so both enforce identical checks.
+#
+#   1. every *.tmpl renders via `chezmoi execute-template`
+#   2. every JSON config is well-formed (jq)
+#   3. configs with a published schema validate against the PINNED vendored copy
+#      in .githooks/schemas/ (check-jsonschema for JSON, taplo for TOML)
+#   4. every shell script passes shellcheck (templates rendered first)
+#
+# Renders for the CURRENT OS — OS-gated branches are only checked on their own
+# platform, which is why CI runs a macOS + Linux matrix. Scripts gated behind a
+# real WSL filesystem (`stat /mnt/c/Users`) render empty off-WSL and are skipped.
+set -uo pipefail
+
+repo="$(git rev-parse --show-toplevel)" && cd "$repo" || exit 1
+schemas="$repo/.githooks/schemas"
+export PATH="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
+for t in chezmoi jq taplo check-jsonschema shellcheck; do
+  command -v "$t" >/dev/null 2>&1 || { echo "validate: '$t' not on PATH — run 'chezmoi apply' (local) or check the CI tool install"; exit 1; }
+done
+
+# --source keeps this portable: works against the user's config locally and
+# against a `chezmoi init --apply=false` config in CI.
+render() { chezmoi execute-template --source "$repo" < "$1" 2>&1; }
+is_blank() { [ -z "${1//[$'\n\t ']/}" ]; }
+
+status=0
+fail() { printf '  \033[31m✗\033[0m %s\n' "$1"; status=1; }
+ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
+
+# 1. Templates render -------------------------------------------------------
+render_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  if ! out="$(render "$f")"; then
+    fail "template render: $f"; printf '%s\n' "$out" | sed 's/^/      /'; render_ok=0
+  fi
+done < <(git ls-files '*.tmpl')
+[ "$render_ok" -eq 1 ] && ok "all templates render"
+
+# 2. JSON well-formed (skips the vendored schemas) --------------------------
+json_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$f" in .githooks/*) continue ;; esac
+  jq empty "$f" 2>/dev/null || { fail "invalid JSON: $f"; json_ok=0; }
+done < <(git ls-files '*.json')
+[ "$json_ok" -eq 1 ] && ok "all JSON well-formed"
+
+# 3. Schema validation ------------------------------------------------------
+# opencode.json is syntax-only: its schema pins a closed model enum that rejects
+# local models. VS Code settings are syntax-only: no static schema exists.
+if check-jsonschema --schemafile "$schemas/claude-code-settings.json" dot_claude/settings.json >/dev/null 2>err; then
+  ok "schema: dot_claude/settings.json"; else fail "schema: dot_claude/settings.json"; sed 's/^/      /' err; fi
+taplo_schema() { # <file> <schema-basename>
+  if taplo check --schema "file://$schemas/$2" "$1" >/dev/null 2>err; then ok "schema: $1"; else fail "schema: $1"; sed 's/^/      /' err; fi
+}
+taplo_schema dot_config/starship.toml    starship.json
+taplo_schema dot_config/mise/config.toml mise.json
+if taplo check dot_aerospace.toml >/dev/null 2>err; then ok "syntax: dot_aerospace.toml"; else fail "syntax: dot_aerospace.toml"; sed 's/^/      /' err; fi
+
+# 4. shellcheck -------------------------------------------------------------
+# Plain scripts directly; templates rendered first (shellcheck reads the shebang
+# from stdin). --severity=warning: errors + warnings, not style/info noise.
+sc_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  shellcheck --severity=warning "$f" 2>err >/dev/null || { fail "shellcheck: $f"; sed 's/^/      /' err; sc_ok=0; }
+done < <(git ls-files '*.sh')
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  rendered="$(render "$f")" || continue          # render errors already reported in step 1
+  is_blank "$rendered" && continue                # OS-gated to a platform we're not on
+  printf '%s' "$rendered" | shellcheck --severity=warning - 2>err >/dev/null \
+    || { fail "shellcheck (rendered): $f"; sed 's/^/      /' err; sc_ok=0; }
+done < <(git ls-files '*.sh.tmpl')
+[ "$sc_ok" -eq 1 ] && ok "all shell scripts pass shellcheck"
+rm -f err
+
+[ "$status" -ne 0 ] && printf '\n\033[31mvalidation failed.\033[0m\n' >&2
+exit "$status"

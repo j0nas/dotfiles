@@ -13,7 +13,7 @@ DESIRED=(
 )
 
 # Uninstall extensions present locally but not in .chezmoidata.yaml.
-INSTALLED=($(code --list-extensions))
+mapfile -t INSTALLED < <(code --list-extensions)
 for ext in "${INSTALLED[@]}"; do
   keep=0
   for d in "${DESIRED[@]}"; do
