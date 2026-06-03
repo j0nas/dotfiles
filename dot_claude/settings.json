@@ -1,25 +1,12 @@
 {
+  "attribution": {
+    "commit": ""
+  },
   "permissions": {
     "allow": [
       "WebSearch"
     ],
     "defaultMode": "bypassPermissions"
-  },
-  "skipDangerousModePermissionPrompt": true,
-  "effortLevel": "high",
-  "theme": "custom:violet",
-  "voiceEnabled": true,
-  "voice": {
-    "enabled": true,
-    "mode": "hold"
-  },
-  "attribution": {
-    "commit": ""
-  },
-  "statusLine": {
-    "type": "command",
-    "command": "$HOME/.claude/hooks/statusline.sh",
-    "padding": 0
   },
   "hooks": {
     "PreToolUse": [
@@ -34,5 +21,19 @@
         ]
       }
     ]
-  }
+  },
+  "statusLine": {
+    "type": "command",
+    "command": "$HOME/.claude/hooks/statusline.sh",
+    "padding": 0
+  },
+  "effortLevel": "high",
+  "voice": {
+    "enabled": true,
+    "mode": "hold"
+  },
+  "skipDangerousModePermissionPrompt": true,
+  "theme": "custom:violet",
+  "voiceEnabled": true,
+  "model": "sonnet"
 }
