@@ -10,6 +10,7 @@ jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Clau
 # vendored schemas in .githooks/schemas/. jq above does JSON syntax checks.
 taplo = "latest"
 "pipx:check-jsonschema" = "latest"  # pipx backend; uv (brew) provides the venv
+shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook + CI
 # Node itself is delegated to fnm (installed below) — the Node-native version
 # manager auto-switches per .node-version/.nvmrc and allows on-the-fly `fnm use`.
 "aqua:Schniz/fnm" = "latest"

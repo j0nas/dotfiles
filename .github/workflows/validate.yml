@@ -1,0 +1,40 @@
+name: validate
+
+# Enforces the same checks as the local pre-commit hook (.githooks/validate),
+# independent of local git config — covers `--no-verify` commits and fresh
+# clones. The macOS + Linux matrix lints each platform's rendered templates,
+# closing the gap where the local hook only sees the committer's OS.
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: jdx/mise-action@v2
+        with:
+          cache: true
+
+      # Pinned-to-latest like the repo's mise config; schemas themselves are
+      # vendored, so validation behaviour is stable regardless of tool version.
+      - name: Install validators
+        run: mise use -g jq@latest taplo@latest shellcheck@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest"
+
+      # Generate a config from .chezmoi.toml.tmpl (no apply) so execute-template
+      # resolves [data] vars; --source then also loads .chezmoidata.yaml.
+      - name: Initialise chezmoi (no apply)
+        run: chezmoi init --source "$PWD" --apply=false
+
+      - name: Validate
+        run: ./.githooks/validate
