@@ -26,7 +26,7 @@ The argument describes a change the user wants persisted across machines.
    - re-runs on content change → `run_onchange_<name>.sh.tmpl`
 2. **Apply repo rules** from AGENTS.md: idempotency, no hardcoded usernames, OS gating with `{{ if eq .chezmoi.os "darwin" -}}`, shared data via `.chezmoi.toml.tmpl` / `.chezmoidata.yaml`.
 3. **Make the edit** in the chezmoi source dir.
-4. **Verify** with `chezmoi apply` and read the output for errors.
+4. **Apply** with `chezmoi apply` and read the output for errors. This both validates the template and lands the change locally.
 5. Proceed to **Commit**.
 
 ### Catch-up mode (no argument)
@@ -35,11 +35,16 @@ Find and persist any uncommitted edits in the source dir.
 1. `git -C ~/.local/share/chezmoi status` and `git diff` to see what's there.
 2. If the working tree is clean, say so and exit.
 3. Skim the diff. If anything looks accidental — a non-managed file appearing, an obviously half-finished edit, a hardcoded secret in plaintext — pause and ask before continuing.
-4. Otherwise, proceed to **Commit**.
+4. `chezmoi apply` to land any pending source-dir changes locally before committing.
+5. Otherwise, proceed to **Commit**.
 
 ## Commit
 - Stage explicitly named files. Never `git add -A` or `git add .`.
 - Generate a focused commit message in the existing repo style: short imperative subject, body explaining the WHY (not the WHAT) in 1-2 sentences. Skim `git log --oneline -10` if you're unsure of tone.
 - Do **not** add a `Co-Authored-By: Claude` or `🤖 Generated with Claude Code` trailer — attribution is intentionally disabled globally (`attribution.commit: ""` in `dot_claude/settings.json`). Keep the message clean.
 - Push explicitly with `git -C ~/.local/share/chezmoi push` and confirm it succeeded. Don't rely on chezmoi's autoCommit/autoPush — those only fire on `chezmoi edit`-driven commits, not the direct `git commit` above.
+
+## Post-commit apply (always)
+After every successful push, run `chezmoi apply` to converge the local machine to the committed state. Since apply is idempotent this is always safe, and it catches any `run_onchange_` scripts whose hash changed (e.g. a new tool added to mise config, a new package added to `.chezmoidata.yaml`). Read the output and report anything non-trivial that ran.
+
 - Report the new commit SHA and a one-line summary of what landed.
