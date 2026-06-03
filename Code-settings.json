@@ -1,0 +1,14 @@
+{
+  "editor.fontFamily": "JetBrains Mono",
+  "editor.fontSize": 14,
+  "editor.fontLigatures": true,
+  "editor.minimap.enabled": false,
+  "editor.formatOnSave": true,
+  "editor.tabSize": 2,
+  "workbench.colorTheme": "Catppuccin Mocha",
+  "workbench.startupEditor": "none",
+  "terminal.integrated.fontFamily": "JetBrains Mono",
+  "terminal.integrated.fontSize": 14,
+  "files.autoSave": "afterDelay",
+  "files.autoSaveDelay": 1000
+}
