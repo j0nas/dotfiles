@@ -80,3 +80,8 @@ fi
 
 # Vite+ bin (https://viteplus.dev)
 [ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
+
+# LM Studio CLI (`lms`) — the installer drops the binary in ~/.lmstudio/bin but
+# leaves PATH to `lms bootstrap`, which would edit this chezmoi-managed .zshrc.
+# Add it here instead. typeset -U path (above) keeps it dedup'd on re-source.
+[[ -d "$HOME/.lmstudio/bin" ]] && path+=("$HOME/.lmstudio/bin")
