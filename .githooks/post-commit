@@ -1,0 +1,4 @@
+#!/bin/sh
+# Auto-push after every commit. Migrated into version control from the old
+# per-machine .git/hooks/post-commit when core.hooksPath was pointed at .githooks.
+git push

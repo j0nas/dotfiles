@@ -1,0 +1,74 @@
+#!/usr/bin/env bash
+# Deterministic, offline config validation for the dotfiles repo.
+#
+# Runs on every commit — manual `git commit`, the /dotfiles skill, and chezmoi's
+# autoCommit all go through git, so all are covered. Installed by pointing
+# core.hooksPath at this dir (see run_onchange_install-git-hooks.sh.tmpl).
+#
+#   1. every *.tmpl renders via `chezmoi execute-template`
+#   2. every JSON config is well-formed (jq)
+#   3. configs with a published schema validate against the PINNED vendored copy
+#      in .githooks/schemas/ (no network — see schemas/README.md to refresh)
+#
+# Validates the working tree (personal repo; commits are wholesale). Bypass a
+# known-good edge case with `git commit --no-verify`.
+set -uo pipefail
+
+repo="$(git rev-parse --show-toplevel)" && cd "$repo" || exit 1
+schemas="$repo/.githooks/schemas"
+
+# mise-managed validators. Prepend the shims dir so the hook resolves them even
+# from a minimal env (e.g. chezmoi autoCommit not launched from an active shell).
+export PATH="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
+for t in chezmoi jq taplo check-jsonschema; do
+  command -v "$t" >/dev/null 2>&1 || { echo "pre-commit: '$t' not on PATH — run 'chezmoi apply' to install tools"; exit 1; }
+done
+
+status=0
+fail() { printf '  \033[31m✗\033[0m %s\n' "$1"; status=1; }
+ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
+
+# 1. Templates render -------------------------------------------------------
+render_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  if ! err="$(chezmoi execute-template < "$f" 2>&1 >/dev/null)"; then
+    fail "template render: $f"; printf '%s\n' "$err" | sed 's/^/      /'; render_ok=0
+  fi
+done < <(git ls-files '*.tmpl')
+[ "$render_ok" -eq 1 ] && ok "all templates render"
+
+# 2. JSON well-formed (skips the vendored schemas) --------------------------
+json_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$f" in .githooks/*) continue ;; esac
+  jq empty "$f" 2>/dev/null || { fail "invalid JSON: $f"; json_ok=0; }
+done < <(git ls-files '*.json')
+[ "$json_ok" -eq 1 ] && ok "all JSON well-formed"
+
+# 3. Schema validation ------------------------------------------------------
+# JSON via check-jsonschema. opencode.json is intentionally syntax-only: its
+# schema pins a closed enum of model names that rejects local/custom models.
+if check-jsonschema --schemafile "$schemas/claude-code-settings.json" dot_claude/settings.json >/dev/null 2>err; then
+  ok "schema: dot_claude/settings.json"
+else
+  fail "schema: dot_claude/settings.json"; sed 's/^/      /' err
+fi
+
+# TOML via taplo (--schema takes a URL; point at the vendored file://).
+taplo_schema() {  # <file> <schema-basename>
+  if taplo check --schema "file://$schemas/$2" "$1" >/dev/null 2>err; then
+    ok "schema: $1"
+  else
+    fail "schema: $1"; sed 's/^/      /' err
+  fi
+}
+taplo_schema dot_config/starship.toml    starship.json
+taplo_schema dot_config/mise/config.toml mise.json
+# aerospace has no published schema — syntax-only.
+if taplo check dot_aerospace.toml >/dev/null 2>err; then ok "syntax: dot_aerospace.toml"; else fail "syntax: dot_aerospace.toml"; sed 's/^/      /' err; fi
+rm -f err
+
+[ "$status" -ne 0 ] && printf '\n\033[31mpre-commit: config validation failed.\033[0m Fix the above, or `git commit --no-verify` to bypass.\n' >&2
+exit "$status"

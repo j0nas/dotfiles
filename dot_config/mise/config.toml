@@ -4,6 +4,12 @@ zoxide = "latest"
 fzf = "latest"
 gh = "latest"
 jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Claude hook)
+# taplo + check-jsonschema power the repo's pre-commit config validation hook
+# (.githooks/pre-commit). taplo schema-checks TOML (starship, mise) and
+# check-jsonschema schema-checks JSON (Claude settings, opencode) against the
+# vendored schemas in .githooks/schemas/. jq above does JSON syntax checks.
+taplo = "latest"
+"pipx:check-jsonschema" = "latest"  # pipx backend; uv (brew) provides the venv
 # Node itself is delegated to fnm (installed below) — the Node-native version
 # manager auto-switches per .node-version/.nvmrc and allows on-the-fly `fnm use`.
 "aqua:Schniz/fnm" = "latest"
