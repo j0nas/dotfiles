@@ -5,6 +5,15 @@ AGENTS.md
 skills
 commands
 rules
+.githooks
+.taplo.toml
 {{ if ne .chezmoi.os "darwin" -}}
 dot_aerospace.toml
+{{ end -}}
+{{/* VS Code: symlinked settings.json points here; repo-only content file */}}
+Code-settings.json
+{{ if eq .chezmoi.os "darwin" -}}
+.config/Code/User/settings.json
+{{ else -}}
+Library
 {{ end -}}

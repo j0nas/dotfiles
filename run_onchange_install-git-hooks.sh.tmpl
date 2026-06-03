@@ -1,0 +1,14 @@
+#!/bin/bash
+set -e
+
+# Point this repo's hooks at the tracked .githooks/ dir, so the pre-commit
+# config validator and the post-commit auto-push are version-controlled and
+# identical on every machine. Idempotent; re-runs when a hook changes.
+# pre-commit:  {{ include ".githooks/pre-commit" | sha256sum }}
+# post-commit: {{ include ".githooks/post-commit" | sha256sum }}
+
+SRC="{{ .chezmoi.sourceDir }}"
+if [ -d "$SRC/.git" ]; then
+  git -C "$SRC" config core.hooksPath .githooks
+  echo "==> git hooks: core.hooksPath -> .githooks"
+fi
