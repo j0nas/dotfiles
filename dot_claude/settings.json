@@ -27,7 +27,7 @@
     "command": "$HOME/.claude/hooks/statusline.sh",
     "padding": 0
   },
-  "effortLevel": "high",
+  "effortLevel": "xhigh",
   "voice": {
     "enabled": true,
     "mode": "hold"
