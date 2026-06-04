@@ -13,10 +13,13 @@ input="$(cat)"
 # thing only ccusage knows (it reads the transcript), so pull just that segment
 # out of ccusage's " | " line and relabel it "ctx" (RS=" | " splits the line).
 model="$(printf '%s' "$input" | jq -r '.model.display_name // empty' 2>/dev/null)"
-# Reasoning effort (low/medium/high/xhigh/max). The .effort object is absent for
-# models without a reasoning-effort knob, so this stays empty and we skip it.
+# Reasoning effort, appended as "{model}/{level}" to match the "/"-joined
+# sub-values in the other segments. Whatever string .effort.level holds is shown
+# verbatim — no value list is hardcoded, so provider effort-level renames pass
+# through untouched. The .effort object is absent for models without a
+# reasoning-effort knob, so this stays empty and we skip it.
 effort="$(printf '%s' "$input" | jq -r '.effort.level // empty' 2>/dev/null)"
-[ -n "$effort" ] && model="$model ($effort)"
+[ -n "$effort" ] && model="$model/$effort"
 ctx="$(printf '%s' "$input" | ccusage statusline 2>/dev/null \
   | awk -v RS=' \\| ' '/🧠/{sub(/^🧠[[:space:]]*/,""); print; exit}')"
 
