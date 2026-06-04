@@ -1,5 +1,5 @@
 #!/bin/bash
-# Claude Code statusLine. Shows model + context window usage (via ccusage) plus
+# Claude Code statusLine. Shows model + reasoning effort + context window usage (via ccusage) plus
 # the REAL 5h and weekly rate-limit pacing, read straight from the JSON Claude
 # Code pipes to stdin (rate_limits.five_hour / .seven_day). Deliberately drops
 # ccusage's API-equivalent cost and burn-rate segments — those are meaningless
@@ -13,6 +13,10 @@ input="$(cat)"
 # thing only ccusage knows (it reads the transcript), so pull just that segment
 # out of ccusage's " | " line and relabel it "ctx" (RS=" | " splits the line).
 model="$(printf '%s' "$input" | jq -r '.model.display_name // empty' 2>/dev/null)"
+# Reasoning effort (low/medium/high/xhigh/max). The .effort object is absent for
+# models without a reasoning-effort knob, so this stays empty and we skip it.
+effort="$(printf '%s' "$input" | jq -r '.effort.level // empty' 2>/dev/null)"
+[ -n "$effort" ] && model="$model ($effort)"
 ctx="$(printf '%s' "$input" | ccusage statusline 2>/dev/null \
   | awk -v RS=' \\| ' '/🧠/{sub(/^🧠[[:space:]]*/,""); print; exit}')"
 
