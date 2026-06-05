@@ -39,6 +39,14 @@ fi
 # --- Aliases ---
 source "$HOME/.config/zsh/aliases.zsh"
 
+# --- Keybindings ---
+# Opt+Left/Right → jump by word. WezTerm sends the xterm CSI sequence
+# \e[1;3{C,D} for Option/Alt+Arrow (modifier 3 = Alt); zsh has no default
+# binding for it, so without these the tail self-inserts (you'd see ";3D" at
+# the prompt). zsh's built-in word motions live on \eb/\ef (Alt+b/Alt+f).
+bindkey '^[[1;3C' forward-word    # Opt+Right
+bindkey '^[[1;3D' backward-word   # Opt+Left
+
 # --- Tools ---
 
 # mise (runtime manager) — must be first, other tools are installed via mise
