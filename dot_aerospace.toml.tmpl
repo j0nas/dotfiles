@@ -19,6 +19,11 @@ default-root-container-orientation = 'auto'
 
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
+# Refresh the SwiftBar workspace-label indicator the instant the focused
+# workspace changes, so the menu bar always reflects where you are. The plugin
+# itself lives at ~/.config/swiftbar/plugins/aerospace.10s.sh.
+exec-on-workspace-change = ['/usr/bin/open', '-g', 'swiftbar://refreshplugin?name=aerospace']
+
 [gaps]
 inner.horizontal = 6
 inner.vertical = 6
@@ -95,6 +100,13 @@ cmd-alt-shift-c = 'reload-config'
 
 # Move workspace to monitor (handy on multi-display setups).
 cmd-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+
+# Ad-hoc workspace labels — AeroSpace has no native rename, so these drive a
+# sidecar label store shown in the SwiftBar menu bar. n = name (prompt + set),
+# u = unname (clear). The path is the SwiftBar plugin acting as its own CLI;
+# keep it in sync with the plugin filename if its refresh interval changes.
+cmd-alt-shift-n = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.10s.sh set'
+cmd-alt-shift-u = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.10s.sh clear'
 
 [mode.resize.binding]
 h = 'resize width -50'

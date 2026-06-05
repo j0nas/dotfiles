@@ -58,7 +58,8 @@ taplo_schema() { # <file> <schema-basename>
 }
 taplo_schema dot_config/starship.toml    starship.json
 taplo_schema dot_config/mise/config.toml mise.json
-if taplo check dot_aerospace.toml >/dev/null 2>err; then ok "syntax: dot_aerospace.toml"; else fail "syntax: dot_aerospace.toml"; sed 's/^/      /' err; fi
+# aerospace config is templated (embeds an absolute path) — render then check syntax.
+if render dot_aerospace.toml.tmpl | taplo check - >/dev/null 2>err; then ok "syntax: dot_aerospace.toml.tmpl"; else fail "syntax: dot_aerospace.toml.tmpl"; sed 's/^/      /' err; fi
 
 # 4. shellcheck -------------------------------------------------------------
 # Plain scripts directly; templates rendered first (shellcheck reads the shebang
