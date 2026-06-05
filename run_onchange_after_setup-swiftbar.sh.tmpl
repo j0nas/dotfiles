@@ -1,0 +1,36 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# SwiftBar setup — make the menu-bar host fully reproducible, no GUI clicks.
+#
+#   1. Point its plugin folder at the chezmoi-managed dir. SwiftBar stores this
+#      as a plain string under the `PluginDirectory` defaults key (it isn't
+#      sandboxed, so no security-scoped bookmark is involved) — so a plain
+#      `defaults write` replaces the one-time folder picker.
+#   2. Start it at login via the tracked LaunchAgent, and load that agent now so
+#      no logout is needed.
+#
+# run_onchange: re-runs when this script changes. _after_: runs once every other
+# target (the LaunchAgent plist, the plugin itself) is already written.
+
+plugin_dir="{{ .chezmoi.homeDir }}/.config/swiftbar/plugins"
+agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/com.ameba.swiftbar.autostart.plist"
+label="com.ameba.swiftbar.autostart"
+
+# A running SwiftBar caches its prefs and flushes them on exit, which would
+# clobber the value we write. Quit it and wait for the process to actually go.
+killall SwiftBar 2>/dev/null || true
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx SwiftBar || break; sleep 0.2; done
+
+echo "==> Pointing SwiftBar at $plugin_dir"
+defaults write com.ameba.SwiftBar PluginDirectory -string "$plugin_dir"
+
+# Reload the login agent (idempotent: bootout is a no-op the first time).
+# bootstrap honours RunAtLoad, so this also (re)launches SwiftBar right now.
+echo "==> Loading SwiftBar login agent"
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$agent"
+
+echo "==> SwiftBar configured — workspace label shows in the menu bar."
+{{ end -}}
