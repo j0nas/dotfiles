@@ -20,6 +20,7 @@ packages:
       - obsidian
       - signal
       - spotify
+      - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
       - visual-studio-code
       - wezterm
   windows:
