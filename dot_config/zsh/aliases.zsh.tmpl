@@ -1,24 +1,25 @@
-alias g='git'
-alias ga='git add'
-alias gaa='git add --all'
-alias gb='git branch'
-alias gcb='git checkout -b'
-alias gco='git checkout'
-alias gc='git commit --verbose'
-alias gcam='git commit --all --message'
-alias gcmsg='git commit --message'
-alias gc!='git commit --verbose --amend'
-alias gd='git diff'
-alias gds='git diff --staged'
-alias gl='git pull'
-alias gp='git push'
-alias gst='git status'
-alias glog='git log --oneline --decorate --graph'
+alias g='git'                                      # sc: g | git | Git
+alias ga='git add'                                 # sc: ga | git add | Git
+alias gaa='git add --all'                          # sc: gaa | git add --all | Git
+alias gb='git branch'                              # sc: gb | git branch | Git
+alias gcb='git checkout -b'                        # sc: gcb | git checkout -b | Git
+alias gco='git checkout'                           # sc: gco | git checkout | Git
+alias gc='git commit --verbose'                    # sc: gc | git commit --verbose | Git
+alias gcam='git commit --all --message'            # sc: gcam | git commit --all --message | Git
+alias gcmsg='git commit --message'                 # sc: gcmsg | git commit --message | Git
+alias gc!='git commit --verbose --amend'           # sc: gc! | git commit --verbose --amend | Git
+alias gd='git diff'                                # sc: gd | git diff | Git
+alias gds='git diff --staged'                      # sc: gds | git diff --staged | Git
+alias gl='git pull'                                # sc: gl | git pull | Git
+alias gp='git push'                                # sc: gp | git push | Git
+alias gst='git status'                             # sc: gst | git status | Git
+alias glog='git log --oneline --decorate --graph'  # sc: glog | git log --oneline --decorate --graph | Git
 
 # docker
-alias dc='docker compose'
+alias dc='docker compose'                          # sc: dc | docker compose | Docker
 
 # clipboard
+# sc: x | Copy stdin to the clipboard | Clipboard
 {{ if eq .chezmoi.os "darwin" -}}
 alias x='pbcopy'
 {{ else -}}
@@ -26,16 +27,18 @@ alias x='xclip -selection clipboard'
 {{ end -}}
 
 # navigation
+# sc: desktop | cd to your Desktop | Navigation
 {{ if stat "/mnt/c/Users" -}}
 alias desktop='cd /mnt/c/Users/{{ .chezmoi.username }}/Desktop'
 {{ else -}}
 alias desktop='cd ~/Desktop'
 {{ end -}}
-mcd() { mkdir -p -- "$1" && cd -- "$1"; }
+mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 
 mcd() { mkdir -p "$1" && cd "$1"; }
 
 # tools
-alias c='claude'
-alias cr='claude --resume'
-alias oc='opencode'
+alias c='claude'                                   # sc: c | claude | Tools
+alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
+alias oc='opencode'                                # sc: oc | opencode | Tools
+alias keys='${PAGER:-less} "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools

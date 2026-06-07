@@ -44,8 +44,8 @@ source "$HOME/.config/zsh/aliases.zsh"
 # \e[1;3{C,D} for Option/Alt+Arrow (modifier 3 = Alt); zsh has no default
 # binding for it, so without these the tail self-inserts (you'd see ";3D" at
 # the prompt). zsh's built-in word motions live on \eb/\ef (Alt+b/Alt+f).
-bindkey '^[[1;3C' forward-word    # Opt+Right
-bindkey '^[[1;3D' backward-word   # Opt+Left
+bindkey '^[[1;3C' forward-word    # sc: Opt+→ | Jump forward a word | Word motion
+bindkey '^[[1;3D' backward-word   # sc: Opt+← | Jump back a word | Word motion
 
 # --- Tools ---
 
@@ -77,11 +77,17 @@ if command -v starship &> /dev/null; then
 fi
 
 # zoxide (smarter cd)
+# sc: z <dir> | Jump to a frecent directory | Navigation
+# sc: zi | Interactive directory pick | Navigation
 if command -v zoxide &> /dev/null; then
   eval "$(zoxide init zsh)"
 fi
 
-# fzf
+# fzf — these chords come from `fzf --zsh` (defaults, not bound here); tagged so
+# they show on the cheat sheet too.
+# sc: Ctrl+R | Fuzzy-search command history | fzf
+# sc: Ctrl+T | Fuzzy-pick a file onto the command line | fzf
+# sc: Alt+C | Fuzzy-cd into a subdirectory | fzf
 if command -v fzf &> /dev/null; then
   source <(fzf --zsh)
 fi

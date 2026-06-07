@@ -57,18 +57,21 @@ outer.right = 6
 
 [mode.main.binding]
 # Focus — vim-style, plain Alt. Keep these as muscle memory.
+# sc: Alt+H / J / K / L | Focus window left / down / up / right | Focus & move
 alt-h = 'focus left'
 alt-j = 'focus down'
 alt-k = 'focus up'
 alt-l = 'focus right'
 
 # Move focused window in tree.
+# sc: Alt+Shift+H / J / K / L | Move window left / down / up / right | Focus & move
 alt-shift-h = 'move left'
 alt-shift-j = 'move down'
 alt-shift-k = 'move up'
 alt-shift-l = 'move right'
 
 # Workspaces — moved off Alt+digit so [ ] { } stay typable on Norwegian.
+# sc: Cmd+Alt+1…9 | Switch to workspace 1–9 | Workspaces
 cmd-alt-1 = 'workspace 1'
 cmd-alt-2 = 'workspace 2'
 cmd-alt-3 = 'workspace 3'
@@ -80,6 +83,7 @@ cmd-alt-8 = 'workspace 8'
 cmd-alt-9 = 'workspace 9'
 
 # Move focused window to workspace.
+# sc: Cmd+Alt+Shift+1…9 | Send focused window to workspace 1–9 | Workspaces
 cmd-alt-shift-1 = 'move-node-to-workspace 1'
 cmd-alt-shift-2 = 'move-node-to-workspace 2'
 cmd-alt-shift-3 = 'move-node-to-workspace 3'
@@ -91,30 +95,31 @@ cmd-alt-shift-8 = 'move-node-to-workspace 8'
 cmd-alt-shift-9 = 'move-node-to-workspace 9'
 
 # Layout. Cmd-Alt prefix again to stay clear of Norwegian alt-state typing.
-cmd-alt-slash = 'layout tiles horizontal vertical'
-cmd-alt-comma = 'layout accordion horizontal vertical'
-cmd-alt-f = 'fullscreen'
+cmd-alt-slash = 'layout tiles horizontal vertical'      # sc: Cmd+Alt+/ | Toggle tiles layout (h/v) | Layout
+cmd-alt-comma = 'layout accordion horizontal vertical'  # sc: Cmd+Alt+, | Toggle accordion layout (h/v) | Layout
+cmd-alt-f = 'fullscreen'                                # sc: Cmd+Alt+F | Toggle fullscreen | Layout
 
 # Resize mode — enter with Cmd-Alt-R, then h/j/k/l adjust, esc exits.
-cmd-alt-r = 'mode resize'
+cmd-alt-r = 'mode resize'   # sc: Cmd+Alt+R | Enter resize mode (then H/J/K/L) | Resize
 
 # Reload config in place after editing this file.
-cmd-alt-shift-c = 'reload-config'
+cmd-alt-shift-c = 'reload-config'   # sc: Cmd+Alt+Shift+C | Reload AeroSpace config | Window mgmt
 
 # Move workspace to monitor (handy on multi-display setups).
-cmd-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
+cmd-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'   # sc: Cmd+Alt+Shift+Tab | Move workspace to next monitor | Window mgmt
 
 # Ad-hoc workspace labels — AeroSpace has no native rename, so these drive a
 # sidecar label store shown in the SwiftBar menu bar. n = name (prompt + set),
 # u = unname (clear). The path is the SwiftBar plugin acting as its own CLI;
 # keep it in sync with the plugin filename.
-cmd-alt-shift-n = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh set'
-cmd-alt-shift-u = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh clear'
+cmd-alt-shift-n = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh set'    # sc: Cmd+Alt+Shift+N | Set / name workspace label | Labels
+cmd-alt-shift-u = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh clear'  # sc: Cmd+Alt+Shift+U | Clear workspace label | Labels
 
 [mode.resize.binding]
+# sc: H / J / K / L (in resize mode) | Shrink / grow width & height | Resize
 h = 'resize width -50'
 j = 'resize height +50'
 k = 'resize height -50'
 l = 'resize width +50'
 enter = 'mode main'
-esc = 'mode main'
+esc = 'mode main'   # sc: Esc / Enter (in resize mode) | Exit resize mode | Resize
