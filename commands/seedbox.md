@@ -204,12 +204,13 @@ Torrent states: `completed`, `stalledDL`, `forcedDL`, `downloading`, `pausedUP`
 ## Current Setup Notes
 
 - **Download clients**: Both Sonarr and Radarr use qBittorrent via reverse proxy (host: `<ssh_host>`, port: `443`, SSL: on, URL base: `/qbittorrent`)
-- **removeCompletedDownloads**: Enabled on both — downloads are auto-removed after import
+- **Completed downloads**: retained for seeding (not auto-removed) — see Hardlinks
 - **Plex notifications**: Configured on both Sonarr and Radarr (uses `172.17.0.1:12625`)
-- **Prowlarr active indexers**: The Pirate Bay, TorrentGalaxyClone, LimeTorrents, TorrentDownload, Knaben, showRSS, Torrent9
+- **Prowlarr active indexers** (7): The Pirate Bay, LimeTorrents, TorrentDownload, TorrentProject2, Knaben, showRSS, Torrent9 (TorrentGalaxyClone removed — TGx is defunct)
+- **Custom formats**: TRaSH "unwanted" formats (BR-DISK, LQ, LQ Release Title, x265-HD, 3D) applied at `-10000` across all Radarr/Sonarr profiles to block junk; `minFormatScore=0`. No positive-scoring TRaSH/Recyclarr profile set up yet.
 - **Cloudflare-blocked indexers**: EZTV, 1337x, KickassTorrents — blocked from seedbox IP, not worth adding
 - **Subtitles**: Bazarr handles subtitles — do NOT enable `importExtraFiles` in Sonarr/Radarr
-- **Hardlinks**: Enabled in Sonarr, but imports have been copying rather than hardlinking in practice
+- **Hardlinks**: working — `copyUsingHardlinks` on in both, and media + downloads share one filesystem (`/home30`), so imports hardlink (verified ~90% of library files hardlinked to their seeding copy — no 2× space)
 - **No recycle bin** configured — deletions are permanent
 
 ### Manual Import (Sonarr/Radarr)
