@@ -96,6 +96,19 @@ curl -s 'URL' | python3 -c "import json,sys; data=json.load(sys.stdin); print(da
 
 The UI login (web dashboards) uses `ssh_username` + `ui_password`.
 
+## Documentation (Context7)
+
+Context7 has authoritative, up-to-date docs for this stack — prefer it over guessing endpoints or hand-tuning configs. The hand-maintained API reference below is a quick cheat sheet; Context7 is ground truth. Resolve with `mcp__context7__query-docs` using these library IDs:
+
+| Topic | Library ID | Use for |
+| ----- | ---------- | ------- |
+| Seerr (repo) | `/seerr-team/seerr` | Request-manager internals, troubleshooting (e.g. download tracker), notifications |
+| Seerr (docs site) | `/websites/seerr_dev` | Setup, settings, migration, reverse-proxy guidance (`docs.seerr.dev`) |
+| Sonarr | `/sonarr/sonarr` · `/devopsarr/sonarr-py` | API v3 endpoints + Python client |
+| Radarr | `/websites/radarr_video_api` · `/devopsarr/radarr-py` | API docs + Python client |
+| Pyarr | `/totaldebug/pyarr` | One client covering Sonarr/Radarr/Prowlarr/Bazarr/Lidarr |
+| TRaSH Guides | `/websites/trash-guides_info` | Canonical quality-profile, naming, and hardlink/config tuning for the *arr family |
+
 ## API Reference
 
 ### Sonarr API (`/sonarr/api/v3/`)
