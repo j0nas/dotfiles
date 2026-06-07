@@ -70,7 +70,7 @@ Services are managed with `app-<name>` commands (e.g. `app-radarr`, `app-plex`, 
 
 - **Ports**: Check nginx proxy configs at `~/.apps/nginx/proxy.d/<service>.conf` for `proxy_pass` lines
 - **Plex port**: Not in nginx — check `~/.config/plex/.../Preferences.xml` for `ManualPortMappingPort`, then test with curl
-- **Sonarr/Radarr run in Docker** — use `172.17.0.1` instead of `localhost` when configuring connections from within those containers
+- **Sonarr/Radarr/Seerr run in Docker containers** — when configuring connections *between* them (e.g. Seerr → Radarr/Sonarr), use the docker bridge `172.17.0.1:<port>/<urlbase>` (e.g. `172.17.0.1:12627/radarr`, `172.17.0.1:12626/sonarr`), never `localhost` (that's the container's own loopback) or the public hostname
 - **Real home dir**: `/home30/<ssh_username>/` (not `/home/<ssh_username>/` which is a symlink)
 - **Media**: `/home30/<ssh_username>/media/` (TV Shows, Movies, Music)
 - **Downloads**: `/home30/<ssh_username>/downloads/qbittorrent/`
@@ -141,7 +141,7 @@ Auth header: `X-Api-Key: <radarr_api_key>`
 
 ### Seerr API (`/seerr/api/v1/`)
 
-Seerr is the fork that succeeded Overseerr; it keeps the same Overseerr-compatible `/api/v1/` endpoints. Also reachable at the dedicated subdomain `https://seerr-<ssh_username>.comet.usbx.me`. Managed with `app-seerr` (install/start/stop/restart/upgrade/backup/version).
+Request manager (Overseerr-compatible `/api/v1/`). Also at the subdomain `https://seerr-<ssh_username>.comet.usbx.me`. Managed via the CP or `app-seerr` (start/stop/restart/upgrade/backup/version).
 
 - Auth header: `X-Api-Key: <seerr_api_key>`
 - `GET /request?take=20&skip=0` — list requests
