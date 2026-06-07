@@ -2,4 +2,12 @@
 # Validate config + scripts before every commit. Shares its logic with CI via
 # .githooks/validate (the single source of truth). `git commit --no-verify`
 # bypasses a known-good edge case.
-exec "$(git rev-parse --show-toplevel)/.githooks/validate"
+set -eu
+repo="$(git rev-parse --show-toplevel)"
+
+# Keep the shortcuts cheat sheet in sync with the `# sc:` tags automatically, so
+# it never needs hand-editing. validate then asserts it matches.
+"$repo/.githooks/generate-shortcuts" > "$repo/SHORTCUTS.md"
+git add "$repo/SHORTCUTS.md"
+
+exec "$repo/.githooks/validate"

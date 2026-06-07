@@ -98,5 +98,15 @@ while IFS= read -r f; do [ -n "$f" ] && check_bash4 "$f" "$(cat "$f")"; done < <
 while IFS= read -r f; do [ -n "$f" ] && check_bash4 "$f" "$(render "$f")"; done < <(git ls-files '*.sh.tmpl')
 [ "$b4_ok" -eq 1 ] && ok "no bash-4 builtins in /bin/bash scripts"
 
+# 6. Shortcuts cheat sheet --------------------------------------------------
+# SHORTCUTS.md is generated from `# sc:` tags by .githooks/generate-shortcuts.
+# The pre-commit hook regenerates + stages it; assert the committed copy still
+# matches, so --no-verify commits and drift get caught here and in CI.
+if [ -f SHORTCUTS.md ] && diff <("$repo/.githooks/generate-shortcuts") SHORTCUTS.md >/dev/null 2>&1; then
+  ok "SHORTCUTS.md up to date"
+else
+  fail "SHORTCUTS.md stale — run: .githooks/generate-shortcuts > SHORTCUTS.md"
+fi
+
 [ "$status" -ne 0 ] && printf '\n\033[31mvalidation failed.\033[0m\n' >&2
 exit "$status"
