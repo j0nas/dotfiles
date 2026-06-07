@@ -20,8 +20,11 @@ default-root-container-orientation = 'auto'
 on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 
 # Refresh the SwiftBar workspace-label indicator the instant the focused
-# workspace changes, so the menu bar always reflects where you are. The plugin
-# itself lives at ~/.config/swiftbar/plugins/aerospace.10s.sh.
+# workspace changes, so the menu bar always reflects where you are. This is the
+# *only* thing that updates the label — the plugin (aerospace.sh) carries no
+# refresh interval, so it never polls; it renders once at launch and then only
+# on this hook (and on set/clear). The plugin lives at
+# ~/.config/swiftbar/plugins/aerospace.sh.
 exec-on-workspace-change = ['/usr/bin/open', '-g', 'swiftbar://refreshplugin?name=aerospace']
 
 [gaps]
@@ -104,9 +107,9 @@ cmd-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'
 # Ad-hoc workspace labels — AeroSpace has no native rename, so these drive a
 # sidecar label store shown in the SwiftBar menu bar. n = name (prompt + set),
 # u = unname (clear). The path is the SwiftBar plugin acting as its own CLI;
-# keep it in sync with the plugin filename if its refresh interval changes.
-cmd-alt-shift-n = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.10s.sh set'
-cmd-alt-shift-u = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.10s.sh clear'
+# keep it in sync with the plugin filename.
+cmd-alt-shift-n = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh set'
+cmd-alt-shift-u = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh clear'
 
 [mode.resize.binding]
 h = 'resize width -50'

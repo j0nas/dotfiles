@@ -8,9 +8,11 @@ set -e
 #
 # Why this matters: AeroSpace reads its config once at launch (start-at-login).
 # When an apply adds a callback — e.g. the exec-on-workspace-change hook that
-# instantly refreshes the SwiftBar workspace label — the running AeroSpace keeps
-# using the old config, so the hook stays dormant and the menu bar only updates
-# on the plugin's 10s poll. That looks like the label "lagging" behind switches.
+# refreshes the SwiftBar workspace label — the running AeroSpace keeps using the
+# old config, so the hook stays dormant. The label plugin no longer polls (no
+# refresh interval in its filename), so a dormant hook leaves the menu bar
+# frozen until AeroSpace restarts — this reload is the only thing that prevents
+# that on a config-changing apply.
 #
 # Keyed on the config's hash so it re-runs exactly when the config changes
 # (run_onchange), and _after_ so the new ~/.aerospace.toml is already written:

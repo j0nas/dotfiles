@@ -13,9 +13,12 @@
 # set/clear; the menu bar refreshes on workspace change (exec-on-workspace-change
 # in dot_aerospace.toml) and after each set/clear via the refreshplugin URL.
 #
-# The filename encodes SwiftBar's refresh interval (aerospace.10s.sh) and the
-# refresh URL name ("aerospace", the part before the first dot). If you rename
-# it, update the exec paths in dot_aerospace.toml to match.
+# The filename has no time component (aerospace.sh, not aerospace.10s.sh), so
+# SwiftBar never polls this plugin: it renders once at launch and then only when
+# explicitly refreshed — the exec-on-workspace-change hook in dot_aerospace.toml
+# and the set/clear actions below. "aerospace" (the part before the first dot)
+# is the name the refresh URL targets; if you rename the file, update the exec
+# paths in dot_aerospace.toml to match.
 
 # GUI-launched processes (SwiftBar, AeroSpace) inherit a minimal PATH; make jq
 # and aerospace resolvable explicitly. mise owns jq; Homebrew owns aerospace.
