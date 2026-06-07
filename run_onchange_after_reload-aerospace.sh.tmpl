@@ -1,0 +1,28 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# Reload AeroSpace whenever its config changes, so a `chezmoi apply` that edits
+# the config takes effect in the already-running instance instead of waiting for
+# the next login/restart.
+#
+# Why this matters: AeroSpace reads its config once at launch (start-at-login).
+# When an apply adds a callback — e.g. the exec-on-workspace-change hook that
+# instantly refreshes the SwiftBar workspace label — the running AeroSpace keeps
+# using the old config, so the hook stays dormant and the menu bar only updates
+# on the plugin's 10s poll. That looks like the label "lagging" behind switches.
+#
+# Keyed on the config's hash so it re-runs exactly when the config changes
+# (run_onchange), and _after_ so the new ~/.aerospace.toml is already written:
+# {{ include "dot_aerospace.toml.tmpl" | sha256sum }}
+
+export PATH="/opt/homebrew/bin:$PATH"
+
+# reload-config validates first and keeps the old config if the new one is bad.
+# Before the login launch (or if AeroSpace isn't running) it just no-ops.
+if aerospace reload-config 2>/dev/null; then
+  echo "==> Reloaded running AeroSpace config."
+else
+  echo "==> AeroSpace not running — config will load on next launch."
+fi
+{{ end -}}
