@@ -1,6 +1,6 @@
 ---
 name: seedbox
-description: Interact with your USBx seedbox — manage Sonarr (TV), Radarr (movies), Overseerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), and Plex.
+description: Interact with your USBx seedbox — manage Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), and Plex.
 argument-hint: "[what you want to do]"
 ---
 
@@ -21,7 +21,7 @@ Every service below needs auth. Before making any API call or SSH connection, **
   "ssh_password": "...",
   "sonarr_api_key": "...",
   "radarr_api_key": "...",
-  "overseerr_api_key": "...",
+  "seerr_api_key": "...",
   "bazarr_api_key": "...",
   "plex_token": "...",
   "prowlarr_api_key": "...",
@@ -87,7 +87,7 @@ curl -s 'URL' | python3 -c "import json,sys; data=json.load(sys.stdin); print(da
 | ----------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
 | Sonarr      | `https://<ssh_host>/sonarr`                                                 | `sonarr_api_key`                                |
 | Radarr      | `https://<ssh_host>/radarr`                                                 | `radarr_api_key`                                |
-| Overseerr   | `https://<ssh_host>/overseerr`                                              | `overseerr_api_key`                             |
+| Seerr       | `https://<ssh_host>/seerr`                                                  | `seerr_api_key`                                 |
 | Bazarr      | `https://<ssh_host>/bazarr`                                                 | `bazarr_api_key`                                |
 | Plex        | `http://localhost:12625` (from host; `172.17.0.1:12625` from inside Docker) | `plex_token`                                    |
 | Prowlarr    | `https://<ssh_host>/prowlarr`                                               | `prowlarr_api_key`                              |
@@ -126,9 +126,11 @@ Auth header: `X-Api-Key: <radarr_api_key>`
 - `GET /qualityprofile` — available quality profiles
 - `GET /rootfolder` — available root folders
 
-### Overseerr API (`/overseerr/api/v1/`)
+### Seerr API (`/seerr/api/v1/`)
 
-- Auth header: `X-Api-Key: <overseerr_api_key>`
+Seerr is the fork that succeeded Overseerr; it keeps the same Overseerr-compatible `/api/v1/` endpoints. Also reachable at the dedicated subdomain `https://seerr-<ssh_username>.comet.usbx.me`. Managed with `app-seerr` (install/start/stop/restart/upgrade/backup/version).
+
+- Auth header: `X-Api-Key: <seerr_api_key>`
 - `GET /request?take=20&skip=0` — list requests
 - `GET /request?filter=pending` — pending requests
 - `POST /request` — create a request (`mediaType: movie|tv`, `mediaId: TMDB_ID`)
