@@ -1,5 +1,5 @@
 {
-  "editor.fontFamily": "JetBrains Mono",
+  "editor.fontFamily": "JetBrainsMono Nerd Font, JetBrains Mono, Menlo, Monaco, monospace",
   "editor.fontSize": 14,
   "editor.fontLigatures": true,
   "editor.minimap.enabled": false,
@@ -7,7 +7,7 @@
   "editor.tabSize": 2,
   "workbench.colorTheme": "Catppuccin Mocha",
   "workbench.startupEditor": "none",
-  "terminal.integrated.fontFamily": "JetBrains Mono",
+  "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font, JetBrains Mono, Menlo, Monaco, monospace",
   "terminal.integrated.fontSize": 14,
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000
