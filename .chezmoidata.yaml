@@ -23,6 +23,7 @@ packages:
       - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
       - visual-studio-code
       - wezterm
+      - xtool-studio  # xTool Studio (formerly Creative Space) — design/control for the xTool P2 laser
   windows:
     winget:
       - Apple.iCloud
