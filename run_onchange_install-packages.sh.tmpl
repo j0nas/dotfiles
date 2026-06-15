@@ -13,6 +13,19 @@ cask {{ . | quote }}
 {{ end -}}
 EOF
 )
+# Homebrew 6.0 added tap-trust: it refuses to evaluate a third-party tap's Ruby
+# (which `brew bundle` does) until the tap is explicitly trusted. Trust the tap
+# behind every fully-qualified cask (user/repo/cask). Idempotent.
+CASKS=(
+{{- range .packages.darwin.casks }}
+  {{ . | quote }}
+{{- end }}
+)
+for c in "${CASKS[@]}"; do
+  case "$c" in
+    */*/*) brew trust --tap "${c%/*}" >/dev/null 2>&1 || true ;;
+  esac
+done
 echo "$BREWFILE" | brew bundle --file=/dev/stdin
 echo "$BREWFILE" | brew bundle cleanup --force --file=/dev/stdin
 {{ else if stat "/mnt/c/Users" -}}
