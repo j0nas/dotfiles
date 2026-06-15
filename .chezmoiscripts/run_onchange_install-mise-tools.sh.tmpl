@@ -6,13 +6,14 @@ set -e
 # how install-packages / install-vscode-extensions stay in sync with their data.
 # mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
 
-# Install Node first. The npm-backed tools (npm:ccusage, npm:vite-plus) shell out
-# to npm at install time, and on a fresh machine no Node exists yet, so a plain
-# `mise install` could fail building the npm backend. mise's npm backend uses
-# mise's own node, so installing node up front is all that's needed — no external
-# version manager.
-echo "==> Installing Node (for the npm-backed tools)..."
-mise install node
+# Install the backend prerequisites first. The npm-backed tools (npm:ccusage,
+# npm:vite-plus) shell out to npm, and the pipx-backed tool (check-jsonschema)
+# shells out to uv; on a fresh machine neither node nor uv exists yet, so a plain
+# `mise install` could fail building those backends. mise's npm/pipx backends use
+# mise's own node/uv, so installing both up front is all that's needed — no
+# external version manager.
+echo "==> Installing backend prerequisites (Node, uv)..."
+mise install node uv
 
 echo "==> Converging mise-managed tools..."
 mise install

@@ -9,7 +9,15 @@ jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Clau
 # check-jsonschema schema-checks JSON (Claude settings, opencode) against the
 # vendored schemas in .githooks/schemas/. jq above does JSON syntax checks.
 taplo = "latest"
-"pipx:check-jsonschema" = "latest"  # pipx backend; uv (brew) provides the venv
+# uv: the deterministic venv/installer for mise's pipx backend below. Declared
+# here (not only as a darwin brew) so check-jsonschema resolves on EVERY OS —
+# Linux/WSL have no Homebrew, and without uv the pipx backend falls back to
+# pipx→pip, whose "upgrade shared libraries" step intermittently fails (the exact
+# flake CI's validate.yml already works around with `mise use -g uv`). The darwin
+# brew uv stays too, for a different reason: it puts `uvx` on the broad system
+# PATH for the Fusion MCP, which Claude Code spawns where mise shims aren't.
+uv = "latest"
+"pipx:check-jsonschema" = "latest"  # pipx backend; uv (above) provides the venv
 shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook + CI
 # node: managed directly by mise (no separate fnm layer). mise's shell-activation
 # hook auto-switches Node per project on cd; idiomatic_version_file_enable_tools

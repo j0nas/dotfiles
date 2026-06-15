@@ -35,8 +35,6 @@ alias desktop='cd ~/Desktop'
 {{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 
-mcd() { mkdir -p "$1" && cd "$1"; }
-
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools

@@ -3,7 +3,7 @@ packages:
     brews:
       - age   # decrypts chezmoi-managed secrets via SSH key
       - llmfit  # picks the right local LLM + quant for this machine's hardware
-      - uv    # uvx launches the Fusion360 MCP server on demand
+      - uv    # darwin-only: puts `uvx` on the broad system PATH so the Claude-spawned Fusion360 MCP launches (mise's uv shim isn't on PATH in that spawn). The validator's uv is mise-managed — see dot_config/mise/config.toml.
     casks:
       - nikitabobko/tap/aerospace
       - bambu-studio
