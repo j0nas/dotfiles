@@ -21,9 +21,9 @@ The argument describes a change the user wants persisted across machines.
    - new personal skill → `skills/<name>/SKILL.md` + `dot_claude/skills/symlink_<name>.tmpl` (contents `{{ .chezmoi.sourceDir }}/skills/<name>`)
    - new slash command → `commands/<name>.md` + `dot_claude/commands/symlink_<name>.md.tmpl` (contents `{{ .chezmoi.sourceDir }}/commands/<name>.md`)
    - secret → `chezmoi edit-encrypted dot_claude/secrets/<file>.json`
-   - macOS default → `run_onchange_macos-defaults.sh.tmpl`
-   - one-time setup task → `run_once_<name>.sh.tmpl` (alphabetical sort matters)
-   - re-runs on content change → `run_onchange_<name>.sh.tmpl`
+   - macOS default → `.chezmoiscripts/run_onchange_macos-defaults.sh.tmpl`
+   - one-time setup task → `.chezmoiscripts/run_once_<name>.sh.tmpl` (alphabetical sort matters)
+   - re-runs on content change → `.chezmoiscripts/run_onchange_<name>.sh.tmpl`
 2. **Apply repo rules** from AGENTS.md: idempotency, no hardcoded usernames, OS gating with `{{ if eq .chezmoi.os "darwin" -}}`, shared data via `.chezmoi.toml.tmpl` / `.chezmoidata.yaml`.
 3. **Make the edit** in the chezmoi source dir.
 4. **Apply** with `chezmoi apply` and read the output for errors. This both validates the template and lands the change locally.
