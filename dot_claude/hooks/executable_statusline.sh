@@ -20,7 +20,16 @@ model="$(printf '%s' "$input" | jq -r '.model.display_name // empty' 2>/dev/null
 # reasoning-effort knob, so this stays empty and we skip it.
 effort="$(printf '%s' "$input" | jq -r '.effort.level // empty' 2>/dev/null)"
 [ -n "$effort" ] && model="$model/$effort"
-ctx="$(printf '%s' "$input" | ccusage statusline 2>/dev/null \
+# ccusage is a Node script (`#!/usr/bin/env node`). Claude Code spawns this
+# statusline in a non-interactive shell that never ran `mise activate`, so bare
+# `node` isn't on PATH and ccusage's shebang dies — silently (2>/dev/null), which
+# is why the ctx segment vanished while the jq-only segments below kept working.
+# Invoke ccusage through its mise shim (an absolute symlink to the mise binary,
+# which sets node up itself); scoped to ccusage so the jq calls stay direct and
+# don't pay mise's per-invocation overhead on every prompt render. Data-dir
+# resolution mirrors mise's own: MISE_DATA_DIR > XDG_DATA_HOME > ~/.local/share.
+mise_data="${MISE_DATA_DIR:-${XDG_DATA_HOME:-$HOME/.local/share}/mise}"
+ctx="$(printf '%s' "$input" | "$mise_data/shims/ccusage" statusline 2>/dev/null \
   | awk -v RS=' \\| ' '/🧠/{sub(/^🧠[[:space:]]*/,""); print; exit}')"
 
 # color a usage %: <50 green, 50-79 yellow, >=80 red. Same scale for context.
