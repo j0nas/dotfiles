@@ -10,5 +10,6 @@
   "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font, JetBrains Mono, Menlo, Monaco, monospace",
   "terminal.integrated.fontSize": 14,
   "files.autoSave": "afterDelay",
-  "files.autoSaveDelay": 1000
+  "files.autoSaveDelay": 1000,
+  "workbench.secondarySideBar.defaultVisibility": "hidden"
 }
