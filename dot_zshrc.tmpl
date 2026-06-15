@@ -54,15 +54,12 @@ if command -v mise &> /dev/null; then
   eval "$(mise activate zsh)"
 fi
 
-# fnm (Node version manager) — installed via mise, but owns Node so mise doesn't.
-# Must come after mise activation (mise provides the fnm binary). --use-on-cd
-# auto-switches the active Node per .node-version / .nvmrc on directory change.
-if command -v fnm &> /dev/null; then
-  eval "$(fnm env --use-on-cd)"
-fi
+# Node is managed by mise (dot_config/mise/config.toml) — the `mise activate`
+# above already puts the right Node on PATH and auto-switches it per project on
+# cd, via idiomatic_version_file_enable_tools reading .node-version / .nvmrc.
 
 # pnpm: globals install into PNPM_HOME (a fixed dir, not a per-Node prefix), so
-# a globally-installed CLI survives fnm Node switches. pnpm itself comes from
+# a globally-installed CLI survives Node switches. pnpm itself comes from
 # mise — Node 25+ no longer bundles corepack — and auto-uses each project's
 # "packageManager" version. The case guard keeps PATH dedup'd on re-source.
 export PNPM_HOME="$HOME/.local/share/pnpm"

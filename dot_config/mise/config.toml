@@ -11,9 +11,14 @@ jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Clau
 taplo = "latest"
 "pipx:check-jsonschema" = "latest"  # pipx backend; uv (brew) provides the venv
 shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook + CI
-# Node itself is delegated to fnm (installed below) — the Node-native version
-# manager auto-switches per .node-version/.nvmrc and allows on-the-fly `fnm use`.
-"aqua:Schniz/fnm" = "latest"
+# node: managed directly by mise (no separate fnm layer). mise's shell-activation
+# hook auto-switches Node per project on cd; idiomatic_version_file_enable_tools
+# (see [settings] below) makes it honour .node-version / .nvmrc / package.json
+# devEngines the way fnm did out of the box. Loose major "26" tracks the latest
+# 26.x — bump here to roll the global default across machines. The npm-backed
+# tools above build against this node (mise's npm backend uses mise's own node),
+# so it must resolve before them.
+node = "26"
 # pnpm as a standalone tool. Corepack (the old way to provision pnpm) was
 # removed from the Node distribution in v25+, and pnpm now self-manages its
 # version from a project's package.json "packageManager" field (pmOnFail:
@@ -35,3 +40,10 @@ pnpm = "latest"
 # opencode: open-source terminal AI coding agent (anomalyco/opencode, formerly
 # sst/opencode). Registry short name resolves to the aqua-backed release binary.
 opencode = "latest"
+
+[settings]
+# Honour .node-version / .nvmrc / package.json devEngines for per-project Node,
+# matching the cd auto-switch fnm gave natively. mise keeps idiomatic version
+# files off by default (it prefers its own mise.toml), so without this only a
+# mise.toml pin would switch Node.
+idiomatic_version_file_enable_tools = ["node"]

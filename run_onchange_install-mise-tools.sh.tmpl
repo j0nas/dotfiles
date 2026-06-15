@@ -6,15 +6,13 @@ set -e
 # how install-packages / install-vscode-extensions stay in sync with their data.
 # mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
 
-# Node is delegated to fnm (itself a mise tool). Install fnm + the default Node
-# FIRST and activate it, because npm-backed mise tools (e.g. npm:ccusage) need
-# node+npm on PATH at install time — on a fresh machine no Node exists yet, so a
-# plain `mise install` would fail building the npm backend. fnm env provides both
-# node and npm (the agent-browser `~/.local/bin/node` symlink does not ship npm).
-echo "==> Installing fnm + default Node ({{ .node_default }})..."
-mise install aqua:Schniz/fnm
-mise exec -- bash -c 'fnm install {{ .node_default }} && fnm default {{ .node_default }}'
-eval "$(mise exec aqua:Schniz/fnm -- fnm env --shell bash)"
+# Install Node first. The npm-backed tools (npm:ccusage, npm:vite-plus) shell out
+# to npm at install time, and on a fresh machine no Node exists yet, so a plain
+# `mise install` could fail building the npm backend. mise's npm backend uses
+# mise's own node, so installing node up front is all that's needed — no external
+# version manager.
+echo "==> Installing Node (for the npm-backed tools)..."
+mise install node
 
 echo "==> Converging mise-managed tools..."
 mise install

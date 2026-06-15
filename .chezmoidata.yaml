@@ -1,7 +1,3 @@
-# Default Node version for fnm (used by the bootstrap + the mise-tools converge
-# script). Bump here to roll the global default across machines on next apply.
-node_default: "26"
-
 packages:
   darwin:
     brews:
