@@ -92,8 +92,9 @@ if command -v fzf &> /dev/null; then
   source <(fzf --zsh)
 fi
 
-# Vite+ bin (https://viteplus.dev)
-[ -f "$HOME/.vite-plus/env" ] && . "$HOME/.vite-plus/env"
+# Vite+ (vp) is provisioned via mise (npm:vite-plus), so its bin is already on
+# PATH through mise's shims — no need to source the curl installer's
+# ~/.vite-plus/env here.
 
 # LM Studio CLI (`lms`) — the installer drops the binary in ~/.lmstudio/bin but
 # leaves PATH to `lms bootstrap`, which would edit this chezmoi-managed .zshrc.

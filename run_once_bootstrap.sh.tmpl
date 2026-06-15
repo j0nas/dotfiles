@@ -60,11 +60,9 @@ mise exec -- bash -c '
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
   mise exec -- bash -c 'eval "$(fnm env)"; fnm use default; pnpm dlx skills add vercel-labs/agent-browser -y'
 
-# --- Vite+ (vp) ---
-if ! command -v vp &> /dev/null; then
-  echo "==> Installing Vite+..."
-  curl -fsSL https://vite.plus | bash
-fi
+# Vite+ (vp) is provisioned declaratively via mise (npm:vite-plus in
+# dot_config/mise/config.toml), installed by the `mise install` above — no
+# separate curl|bash step here.
 
 {{ if eq .chezmoi.os "darwin" -}}
 # Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-

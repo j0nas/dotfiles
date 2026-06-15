@@ -25,6 +25,13 @@ pnpm = "latest"
 # so it lands on PATH (vs `npx` re-downloading each run) — the Claude Code
 # statusLine spawns `ccusage statusline` on every prompt render.
 "npm:ccusage" = "latest"
+# vite-plus (vp): the Vite+ unified web toolchain — Vite/Rolldown build, Oxc
+# lint/format/typecheck, Vitest. npm-backed so the `vp` bin lands on PATH on
+# every OS (the official npm dist pulls the native binaries via optional deps),
+# replacing the earlier `curl https://vite.plus | bash` bootstrap step so the
+# version is mise-managed rather than a network self-install. The `viteplus`
+# rule (~/.claude/rules) assumes this is present — keep them in sync.
+"npm:vite-plus" = "latest"
 # opencode: open-source terminal AI coding agent (anomalyco/opencode, formerly
 # sst/opencode). Registry short name resolves to the aqua-backed release binary.
 opencode = "latest"
