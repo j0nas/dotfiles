@@ -46,3 +46,10 @@ vscode_extensions:
   - bradlc.vscode-tailwindcss
   - buenon.scratchpads
   - catppuccin.catppuccin-vsc
+  # Vite+ IDE integration (viteplus.dev/guide/ide-integration). The Vite+ pack
+  # bundles oxc (format/lint via `vp check`) + vitest (`vp test`); all three are
+  # listed explicitly so the strict-declarative prune in install-vscode-extensions
+  # doesn't uninstall the bundled members as "undeclared" on the next apply.
+  - oxc.oxc-vscode
+  - vitest.explorer
+  - voidzero.vite-plus-extension-pack
