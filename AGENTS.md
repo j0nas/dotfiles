@@ -6,7 +6,7 @@
 - **Three OS targets**: macOS, Linux, and WSL. WSL is NOT the same as Linux — it has Windows-specific quirks (ConPTY, `/mnt/c`, symlinks don't cross OS boundary).
 - **Don't hardcode usernames**. Use `{{ .chezmoi.username }}` in templates or `${USER}` in shell scripts.
 - **chezmoi naming**: dotfiles use `dot_` prefix, templates end in `.tmpl`. Files in `.chezmoiignore` are repo-only (not applied).
-- **Script execution order is alphabetical by *stripped* name** (without the `run_*` prefix). `run_once_bootstrap.sh.tmpl` must sort before `run_onchange_install-*.sh.tmpl` so the package manager exists before package install runs.
+- **`run_*` scripts live in `.chezmoiscripts/`** — a chezmoi special dir whose scripts execute but create no target file (keeps the repo root uncluttered). **Execution order is alphabetical by *stripped* name** (without the `run_*` prefix), across that whole dir: `run_once_bootstrap.sh.tmpl` must sort before `run_onchange_install-*.sh.tmpl` so the package manager exists before package install runs. (Note: relocating a `run_onchange_` script re-runs it once — its state key includes the target path — which is safe given the idempotency rule above; `run_once_` is keyed on content alone and is unaffected.)
 - **All aliases go in** `dot_config/zsh/aliases.zsh.tmpl` — nowhere else.
 - **Shared data** lives in `.chezmoi.toml.tmpl` (`font`, `name`, `email`) and `.chezmoidata.yaml` (package + extension lists). Use template variables instead of hardcoding.
 - **WezTerm config** (`dot_wezterm.lua.tmpl`) is a chezmoi template. Use `wezterm.target_triple:find("windows")` for Windows-specific Lua logic. On WSL, this file is copied (not symlinked) to the Windows home by `run_onchange_sync-wezterm.sh.tmpl`.
