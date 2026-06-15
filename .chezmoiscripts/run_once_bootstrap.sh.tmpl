@@ -17,11 +17,12 @@ if ! command -v mise &> /dev/null; then
   echo "==> Installing mise..."
   curl -fsSL https://mise.run | sh
 fi
-# Node first, so the npm-backed mise tools have node/npm available when they
-# build. mise owns the global default Node version (node = ... in its config).
-echo "==> Installing tools via mise (Node first)..."
+# Backend prerequisites first, so the npm-backed mise tools have node/npm and the
+# pipx-backed tool has uv available when they build. mise owns the global default
+# Node version (node = ... in its config).
+echo "==> Installing tools via mise (backend prerequisites first)..."
 export PATH="$HOME/.local/bin:$PATH"
-mise install node
+mise install node uv
 mise install
 
 # --- antidote (zsh plugin manager) ---
