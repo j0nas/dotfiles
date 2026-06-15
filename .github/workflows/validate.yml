@@ -28,8 +28,16 @@ jobs:
 
       # Pinned-to-latest like the repo's mise config; schemas themselves are
       # vendored, so validation behaviour is stable regardless of tool version.
+      #
+      # uv goes in FIRST and on its own line: mise's pipx backend installs via
+      # `uv tool install` when uv is present (as it is locally via brew), which
+      # is deterministic. Without uv the backend falls back to pipx→pip, whose
+      # "upgrade shared libraries" step intermittently fails on the ubuntu runner
+      # — the actual cause of the red `validate` runs (the checks never ran).
       - name: Install validators
-        run: mise use -g jq@latest taplo@latest shellcheck@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest"
+        run: |
+          mise use -g uv@latest
+          mise use -g jq@latest taplo@latest shellcheck@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest"
 
       # Generate a config from .chezmoi.toml.tmpl (no apply) so execute-template
       # resolves [data] vars; --source then also loads .chezmoidata.yaml.
