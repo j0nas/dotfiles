@@ -17,16 +17,12 @@ if ! command -v mise &> /dev/null; then
   echo "==> Installing mise..."
   curl -fsSL https://mise.run | sh
 fi
-echo "==> Installing tools via mise..."
+# Node first, so the npm-backed mise tools have node/npm available when they
+# build. mise owns the global default Node version (node = ... in its config).
+echo "==> Installing tools via mise (Node first)..."
 export PATH="$HOME/.local/bin:$PATH"
+mise install node
 mise install
-
-# --- Node via fnm (mise installs fnm; fnm owns Node versions) ---
-# Node is delegated to fnm so versions auto-switch per .node-version/.nvmrc and
-# can be swapped on the fly. fnm is a mise-managed tool, so it's on PATH via
-# `mise exec`. Set 26 as the global default for shells with no project pin.
-echo "==> Installing default Node ({{ .node_default }}) via fnm..."
-mise exec -- bash -c 'fnm install {{ .node_default }} && fnm default {{ .node_default }}'
 
 # --- antidote (zsh plugin manager) ---
 if [[ ! -d "$HOME/.antidote" ]]; then
@@ -34,17 +30,14 @@ if [[ ! -d "$HOME/.antidote" ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
-# --- Node CLI tools (on top of fnm-managed Node) ---
-# agent-browser is installed as a pnpm global rather than a mise/fnm-managed
-# tool because its post-install step — `agent-browser install`, which downloads
-# the matched Chrome for Testing binary — isn't something a version manager can
+# --- Node CLI tools (on top of mise-managed Node) ---
+# agent-browser is installed as a pnpm global rather than a mise-managed tool
+# because its post-install step — `agent-browser install`, which downloads the
+# matched Chrome for Testing binary — isn't something a version manager can
 # orchestrate. pnpm puts global bins in PNPM_HOME (a fixed dir, not per-Node),
-# so the install survives fnm Node switches; putting PNPM_HOME on PATH makes the
-# freshly-installed binary callable by name. `fnm use default` provides the Node
-# the agent-browser shim runs against.
+# so the install survives Node switches; putting PNPM_HOME on PATH makes the
+# freshly-installed binary callable by name. `mise exec` provides node + pnpm.
 mise exec -- bash -c '
-  eval "$(fnm env)"
-  fnm use default
   export PNPM_HOME="$HOME/.local/share/pnpm"
   export PATH="$PNPM_HOME/bin:$PATH"
   pnpm add -g agent-browser
@@ -58,7 +51,7 @@ mise exec -- bash -c '
 # it, skills prompts interactively for the install + the find-skills
 # recommendation. (pnpm dlx, unlike npx, needs no separate download-confirm flag.)
 [ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
-  mise exec -- bash -c 'eval "$(fnm env)"; fnm use default; pnpm dlx skills add vercel-labs/agent-browser -y'
+  mise exec -- bash -c 'pnpm dlx skills add vercel-labs/agent-browser -y'
 
 # Vite+ (vp) is provisioned declaratively via mise (npm:vite-plus in
 # dot_config/mise/config.toml), installed by the `mise install` above — no
