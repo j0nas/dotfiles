@@ -1,21 +1,15 @@
-When scaffolding a **new** web / frontend project, default to Vite+ (https://viteplus.dev/) via its `vp create` command — not plain `npm create vite`, `create-react-app`, hand-rolled tooling, or a bespoke build/lint/test stack assembled per repo.
+When scaffolding a **new** web/frontend project, default to Vite+ (https://viteplus.dev/) via `vp create` — not `npm create vite`, CRA, or a hand-rolled build/lint/test stack. Vite+ is one CLI over Vite/Rolldown builds, Oxc lint/format/typecheck, Vitest, monorepo task caching, and library packaging; supports React, Vue, Svelte, Solid, etc.
 
-Vite+ is a unified toolchain behind one `vp` CLI: Vite/Rolldown builds, Oxc lint+format+typecheck, Vitest, monorepo task running with caching, and library packaging. It supports all major frameworks (React, Vue, Svelte, Solid, …).
+`vp` is already provisioned by this dotfiles repo (mise `npm:vite-plus`) — assume it's on PATH; don't re-install or gate on `command -v vp`.
 
-`vp` is already installed — it's provisioned by this dotfiles repo, so assume it's on `PATH` and just run it; don't re-install or gate on `command -v vp`.
+## Commands
 
-Commands:
-
-- **Create a project**: `vp create` (interactive picker). Non-interactive / scripted: `vp create vite:application --no-interactive`, `vp create vite:monorepo`, `vp create vite:library`. Framework shorthands: `vp create vite`, `vp create @tanstack/start`, `vp create react-router`.
-- **Common flags**: `--directory <dir>`, `--package-manager <name>`, `--git`, `--no-interactive`.
-- After scaffolding, day-to-day commands run through `vp`: `vp install`, `vp dev`, `vp check`, `vp build`, `vp run`.
-
-## Why
-
-Standardizing new projects on one declarative toolchain keeps tooling consistent across repos and stops me re-assembling the same Vite + ESLint + Vitest + tsconfig stack by hand each time. The Oxc-based lint/typecheck path is dramatically faster than ESLint/tsc, which matters for the machine-checkable guardrails the user wants baked into every project.
+- Create: `vp create` (interactive). Scripted: `vp create vite:application --no-interactive`, `vite:monorepo`, `vite:library`. Shorthands: `vp create vite`, `@tanstack/start`, `react-router`.
+- Flags: `--directory <dir>`, `--package-manager <name>`, `--git`, `--no-interactive`.
+- Day-to-day: `vp install` / `dev` / `check` / `build` / `run`.
 
 ## How to apply
 
-- For any request to "start / scaffold / spin up a new web app, frontend, SPA, monorepo, or component library", reach for `vp create` first. Confirm the template (`application` / `monorepo` / `library`) and framework with the user if it isn't obvious.
-- This is the default for *new* projects. Do **not** rip out and replace the toolchain of an existing project just to adopt Vite+ unless the user asks — migrations are their own decision.
-- Prefer `--no-interactive` with an explicit template name in any scripted/CI context; reserve the bare `vp create` interactive picker for hands-on local setup.
+- For "start/scaffold/spin up a new web app, SPA, monorepo, or component library", reach for `vp create` first; confirm template + framework if unclear.
+- New projects only — don't rip out an existing project's toolchain to adopt Vite+ unless asked.
+- In scripted/CI contexts prefer `--no-interactive` with an explicit template; reserve the bare picker for hands-on setup.
