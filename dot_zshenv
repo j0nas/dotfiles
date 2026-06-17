@@ -1,0 +1,17 @@
+# ~/.zshenv — sourced by EVERY zsh invocation (login, interactive, AND
+# non-interactive), unlike ~/.zshrc which runs only for interactive shells.
+#
+# `mise activate` (in ~/.zshrc) sets up PATH only in interactive shells. Non-
+# interactive shells — Claude Code's Bash tool, IDE-spawned shells, CI runners,
+# `zsh -c …` — never source ~/.zshrc, so mise-managed tools (node, vp, pnpm, …)
+# are absent there and you'd have to fall back to `mise exec -- <cmd>`. Putting
+# mise's shims dir on PATH here closes that gap: each shim resolves the correct
+# per-project tool version on every call, so mise is opaque in every shell.
+# This is mise's own recommendation for non-interactive / IDE / CI use; the dir
+# need not exist yet (a fresh machine before bootstrap just skips it). Interactive
+# shells still get the faster `mise activate` install paths, which ~/.zshrc
+# prepends ahead of these shims. The case guard keeps PATH dedup'd on re-source.
+case ":$PATH:" in
+  *":$HOME/.local/share/mise/shims:"*) ;;
+  *) export PATH="$HOME/.local/share/mise/shims:$PATH" ;;
+esac
