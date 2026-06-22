@@ -221,6 +221,15 @@ Torrent states: `completed`, `stalledDL`, `forcedDL`, `downloading`, `pausedUP`
 - **Hardlinks**: working — `copyUsingHardlinks` on in both, and media + downloads share one filesystem (`/home30`), so imports hardlink (verified ~90% of library files hardlinked to their seeding copy — no 2× space)
 - **No recycle bin** configured — deletions are permanent
 
+### Jellyfin (web theming — two gotchas before touching Custom CSS)
+
+Jellyfin is a CP-managed app (10.11.x; internal `127.0.0.1:12602/jellyfin`). Custom CSS lives in the branding config: `GET/POST /System/Configuration/branding` (field `CustomCss`), served at `GET /Branding/Css`; auth as admin (`ssh_username` + `jellyfin_password`, which == `ui_password` — the CP install provisions admin with the UI password). Themes affect the **web client only**, never native apps (Swiftfin etc.). Two traps that make a theme look like it "does nothing":
+
+1. **Branding CSS is cached HARD by the web client** (PWA service worker + browser HTTP cache). A server-side `CustomCss` change does **not** appear on a normal reload — the browser keeps re-injecting the *previously cached* stylesheet (confirmed: server was serving the new theme while the page still had the old one injected). Verify/see a change only via an **incognito window**, or DevTools → Application → unregister service worker + Clear site data. With `/agent-browser`, use a **fresh `--profile <new-path>`** every run (a normal reload shows stale CSS and will fool you); to compare values fast, live-override in the DOM instead of re-fetching: `document.documentElement.style.setProperty('--main-color','#xxxxxx','important')`.
+2. **Injected CSS does NOT recurse nested `@import`s.** A first-level `@import` (e.g. a theme's preset/wrapper file) loads, but the `@import`s *inside that file* never fetch — so almost no styling lands. Flatten: import each module directly in `CustomCss` (one level). Catppuccin (`theme.css` + a flavor file) is already flat; Ultrachromic presets are nested → use the explicit module list, not the preset.
+
+Also: abandoned themes fail silently (CSS loads, but selectors no longer match the current web client markup) — check repo activity first (JellySkin is dead: last commit 2024, targets JF 10.9; Catppuccin / Ultrachromic / Scyfin are active). **Current theme:** Catppuccin Mocha (`theme.css` + `catppuccin-mocha.css`), accent `--main-color: #8e5ae7` (a lightened brand violet #421691 — the raw deep violet is unreadable as an accent on a dark theme).
+
 ### Manual Import (Sonarr/Radarr)
 
 The autoimport cron handles the common "matched by ID" block; to do it by hand:
