@@ -1,242 +1,89 @@
 ---
 name: seedbox
-description: Interact with your USBx seedbox — manage Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), and Plex.
+description: Interact with your USBx seedbox — manage Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), Plex, and Jellyfin.
 argument-hint: "[what you want to do]"
 ---
 
 # Seedbox Management
 
-You are helping manage a USBx seedbox (USBx and Ultra.cc are the same provider — the box is on `comet.usbx.me`, billed/managed through Ultra.cc). You have full autonomous access via SSH and web APIs. Work independently — figure things out using the tools available rather than asking the user for information you can discover yourself.
-
-**Provider control panel**: `https://cp.ultra.cc/` — for account/billing, expiration date, disk/traffic quota, and service-level controls that aren't exposed via `app-*` commands on the box. The CP fetches live data from the box itself, so if the box is unreachable the dashboard tiles will spin forever (a useful health signal in its own right). Login is the same `ssh_username` + `ui_password` from the secrets file.
+USBx/Ultra.cc seedbox on `comet.usbx.me` (billed via Ultra.cc). Full autonomous SSH + API access — discover things yourself, don't ask. **Control panel** `https://cp.ultra.cc/` (login `ssh_username`+`ui_password`): billing, quota, expiration, app install/uninstall. CP tiles spinning forever = box unreachable (a health signal).
 
 ## Credentials
 
-Every service below needs auth. Before making any API call or SSH connection, **read `~/.claude/secrets/seedbox.json`** with the Read tool and pull values from it. The JSON schema is:
+Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_username`, `ssh_password`, `ui_password`, `{sonarr,radarr,seerr,bazarr,prowlarr}_api_key`, `plex_token`, `qbittorrent_username`, `qbittorrent_password`, `jellyfin_password`. Web UI login = `ssh_username`+`ui_password`. Never echo or commit secrets. Missing file → `chezmoi apply` (decrypts `dot_claude/private_secrets/encrypted_private_seedbox.json.age`). Substitute `<ssh_host>`/`<ssh_username>` below.
 
-```json
-{
-  "ssh_host": "<seedbox hostname>",
-  "ssh_username": "<your username>",
-  "ssh_password": "...",
-  "sonarr_api_key": "...",
-  "radarr_api_key": "...",
-  "seerr_api_key": "...",
-  "bazarr_api_key": "...",
-  "plex_token": "...",
-  "prowlarr_api_key": "...",
-  "qbittorrent_username": "<your username>",
-  "qbittorrent_password": "...",
-  "ui_password": "..."
-}
-```
+## SSH
 
-The file is decrypted by `chezmoi apply` from the age vault at `dot_claude/private_secrets/encrypted_private_seedbox.json.age`. If it's missing, run `chezmoi apply` (the SSH key configured in `.chezmoi.toml.tmpl` must be available). Never echo any of these values back to the user or write them to a file you're about to commit.
+`paramiko` (installed), creds from secrets file. `jq` NOT available → parse JSON with `python3`. Long/interactive cmds: `invoke_shell()`, wait ~15s.
 
-In every URL, code snippet, and path below, replace `<ssh_host>` and `<ssh_username>` with the actual values from the secrets file at runtime.
+## Apps (`app-<name>`)
 
-## Autonomous Operation
+`app-<name> start|stop|restart|upgrade|backup|version`; `app-<name> password <pw>` (reset UI pw); `app-plex claim`.
 
-### SSH Access
+**Install only via CP → Installers, never `app-<name> install` over SSH.** SSH/manual installs run but aren't registered with the panel (no CP tile/controls/auto-update, port hidden) — this is how Jellyfin got orphaned. Use the CLI only to *manage* CP-installed apps.
+- **Is `<name>` managed?** `command -v app-<name>` (exists → managed; full list `ls /usr/bin/app-*`) and `app-ports show` (official app→port table, e.g. Jellyfin 12602).
+- **Orphaned install** = on disk (`~/.apps/<name>`, `app-<name> version` works) but absent from CP → Apps. Fix: `app-<name> uninstall` (`--keep-config` keeps settings; `~/media` untouched) → reinstall via CP.
 
-Use `paramiko` for SSH (it's installed). `jq` is NOT available — use `python3` for JSON parsing. Load credentials from the secrets file:
+## Finding things
 
-```python
-import json, os, paramiko
-creds = json.load(open(os.path.expanduser('~/.claude/secrets/seedbox.json')))
-client = paramiko.SSHClient()
-client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
-client.connect(
-    creds['ssh_host'],
-    username=creds['ssh_username'],
-    password=creds['ssh_password'],
-)
-_, stdout, stderr = client.exec_command('your command here')
-print(stdout.read().decode())
-client.close()
-```
-
-For interactive/long-running commands use `invoke_shell()` and wait ~15s for output.
-
-### USBx App Management
-
-Services are managed with `app-<name>` commands (e.g. `app-radarr`, `app-plex`, `app-sonarr`):
-
-- `app-radarr restart` / `stop` / `start`
-- `app-radarr password <newpassword>` — reset UI password
-- `app-plex claim` etc.
-
-**Installing apps — route through the CP, never `app-<name> install` over SSH.** Ultra.cc-managed apps must be installed from the **Control Panel → Installers** tab (green **Install** button), not via SSH or any hand-rolled Docker/binary setup. An SSH/manual install *runs* but is **never registered with the panel**: it won't show under CP → Apps, gets no CP start/stop/upgrade buttons and no auto-update toggle, and the panel can't report its port (you'll have to dig it out of nginx/`ps`). This is exactly how Jellyfin ended up orphaned. Use the `app-<name>` CLI only to *manage* an app already CP-installed (start/stop/restart/upgrade/password/backup), never for the first install.
-
-**Automated check — is `<name>` Ultra.cc-managed?** (box-side, no panel access needed)
-
-- `command -v app-<name>` → if the CLI exists in `/usr/bin`, the app is Ultra.cc-managed (81-app catalog; list all with `ls /usr/bin/app-* | sed 's#.*/app-##' | sort`).
-- `app-ports show` → authoritative table of every official app + its reserved port (e.g. Jellyfin → 12602). Check one: `app-ports show | grep -i <name>`.
-
-Decision flow before any install: if `command -v app-<name>` succeeds → it's managed → have the user click **Install** in the CP (a fresh CP install regenerates the nginx proxy and assigns the port); do **not** install it yourself. Spotting an **orphaned** install: it's on disk (`~/.apps/<name>` exists, `app-<name> version` returns a version) but absent from CP → Apps. Fix by `app-<name> uninstall` (add `--keep-config` to preserve settings; `~/media` is never touched), then reinstall via the CP.
-
-### Finding Things
-
-- **Ports**: Check nginx proxy configs at `~/.apps/nginx/proxy.d/<service>.conf` for `proxy_pass` lines
-- **Plex port**: Not in nginx — check `~/.config/plex/.../Preferences.xml` for `ManualPortMappingPort`, then test with curl
-- **Sonarr/Radarr/Seerr run in Docker containers** — when configuring connections *between* them (e.g. Seerr → Radarr/Sonarr), use the docker bridge `172.17.0.1:<port>/<urlbase>` (e.g. `172.17.0.1:12626/sonarr`, `172.17.0.1:12627/radarr`, `172.17.0.1:12631/bazarr`; Plex `12625`), never `localhost` (that's the container's own loopback) or the public hostname. These same internal ports on `127.0.0.1` dodge the public proxy's query-param mangling.
-- **Real home dir**: `/home30/<ssh_username>/` (not `/home/<ssh_username>/` which is a symlink)
-- **Media**: `/home30/<ssh_username>/media/` (TV Shows, Movies, Music)
-- **Downloads**: `/home30/<ssh_username>/downloads/qbittorrent/`
-
-### JSON Parsing Pattern
-
-```bash
-curl -s 'URL' | python3 -c "import json,sys; data=json.load(sys.stdin); print(data['field'])"
-```
+- **Ports**: `~/.apps/nginx/proxy.d/<service>.conf` → `proxy_pass`. Plex isn't in nginx → `~/.config/plex/.../Preferences.xml` `ManualPortMappingPort`.
+- **Sonarr/Radarr/Seerr/Jellyfin are Docker.** Between-app connections use docker bridge `172.17.0.1:<port>/<urlbase>` (`12626/sonarr`, `12627/radarr`, `12631/bazarr`, Plex `12625`, Jellyfin `12602`) — never `localhost` (container loopback) or public host. Same ports on `127.0.0.1` also dodge the public proxy's query-param mangling.
+- **Real home** `/home30/<ssh_username>/` (`/home/<ssh_username>/` is a symlink). **Media** `…/media/` (TV Shows, Movies, Music). **Downloads** `…/downloads/qbittorrent/`.
 
 ## Services
 
-| Service     | URL                                                                         | Secrets key                                     |
-| ----------- | --------------------------------------------------------------------------- | ----------------------------------------------- |
-| Sonarr      | `https://<ssh_host>/sonarr`                                                 | `sonarr_api_key`                                |
-| Radarr      | `https://<ssh_host>/radarr`                                                 | `radarr_api_key`                                |
-| Seerr       | `https://<ssh_host>/seerr`                                                  | `seerr_api_key`                                 |
-| Bazarr      | `https://<ssh_host>/bazarr`                                                 | `bazarr_api_key`                                |
-| Plex        | `http://localhost:12625` (from host; `172.17.0.1:12625` from inside Docker) | `plex_token`                                    |
-| Prowlarr    | `https://<ssh_host>/prowlarr`                                               | `prowlarr_api_key`                              |
-| qBittorrent | `https://<ssh_host>/qbittorrent`                                            | `qbittorrent_username` + `qbittorrent_password` |
-| SSH         | `<ssh_host>`                                                                | `ssh_username` + `ssh_password`                 |
+| Service | URL | Secrets |
+|-|-|-|
+| Sonarr | `https://<ssh_host>/sonarr` | `sonarr_api_key` |
+| Radarr | `https://<ssh_host>/radarr` | `radarr_api_key` |
+| Seerr | `https://<ssh_host>/seerr` | `seerr_api_key` |
+| Bazarr | `https://<ssh_host>/bazarr` | `bazarr_api_key` |
+| Prowlarr | `https://<ssh_host>/prowlarr` | `prowlarr_api_key` |
+| qBittorrent | `https://<ssh_host>/qbittorrent` | `qbittorrent_username`+`_password` |
+| Plex | `http://localhost:12625` (Docker `172.17.0.1:12625`) | `plex_token` |
+| Jellyfin | `https://<ssh_host>/jellyfin` (internal `127.0.0.1:12602`) | `jellyfin_password` |
 
-The UI login (web dashboards) uses `ssh_username` + `ui_password`.
+## Docs (Context7)
 
-## Documentation (Context7)
+Prefer Context7 over guessing endpoints/configs. IDs: Sonarr `/sonarr/sonarr` (+py `/devopsarr/sonarr-py`), Radarr `/websites/radarr_video_api` (+py `/devopsarr/radarr-py`), Seerr `/seerr-team/seerr` & `/websites/seerr_dev`, Pyarr `/totaldebug/pyarr`, TRaSH `/websites/trash-guides_info`.
 
-Context7 has authoritative, up-to-date docs for this stack — prefer it over guessing endpoints or hand-tuning configs. The hand-maintained API reference below is a quick cheat sheet; Context7 is ground truth. Resolve with `mcp__context7__query-docs` using these library IDs:
+## API cheat-sheet
 
-| Topic | Library ID | Use for |
-| ----- | ---------- | ------- |
-| Seerr (repo) | `/seerr-team/seerr` | Request-manager internals, troubleshooting (e.g. download tracker), notifications |
-| Seerr (docs site) | `/websites/seerr_dev` | Setup, settings, migration, reverse-proxy guidance (`docs.seerr.dev`) |
-| Sonarr | `/sonarr/sonarr` · `/devopsarr/sonarr-py` | API v3 endpoints + Python client |
-| Radarr | `/websites/radarr_video_api` · `/devopsarr/radarr-py` | API docs + Python client |
-| Pyarr | `/totaldebug/pyarr` | One client covering Sonarr/Radarr/Prowlarr/Bazarr/Lidarr |
-| TRaSH Guides | `/websites/trash-guides_info` | Canonical quality-profile, naming, and hardlink/config tuning for the *arr family |
+Auth header `X-Api-Key: <…_api_key>` unless noted.
 
-## API Reference
+- **Sonarr** `/sonarr/api/v3/`: `GET /series`, `/series/lookup?term=`, `POST /series`; `GET /wanted/missing`, `/queue`, `/health`, `/qualityprofile`, `/rootfolder`, `/downloadclient`, `/notification`.
+- **Radarr** `/radarr/api/v3/`: same shape — `/movie`, `/movie/lookup?term=`, `POST /movie`, `/wanted/missing`, `/queue`, `/health`, `/qualityprofile`, `/rootfolder`.
+- **Seerr** `/seerr/api/v1/` (Overseerr-compatible; also `https://seerr-<ssh_username>.comet.usbx.me`): `GET /request[?filter=pending]`, `POST /request` (`mediaType:movie|tv`, `mediaId:TMDB_ID`), `GET /search?query=`, `/user`.
+- **Bazarr** `/bazarr/api/` — header `X-API-KEY` (key in `~/.apps/bazarr/config/config.yaml` `auth.apikey`; internal `http://127.0.0.1:12631/bazarr/api`): `GET /system/status|health`, `/providers`; `/episodes?seriesid[]=<sonarrId>`, `/movies`, `/episodes/wanted`, `/movies/wanted`; `/system/languages/profiles` (profiles live in DB `table_languages_profiles`, NOT config.yaml); assign via `POST /series`(`seriesid`+`profileid`) / `POST /movies`(`radarrid`+`profileid`); `POST /system/tasks taskid=<id>` (`wanted_search_missing_subtitles_series|_movies`, `series_full_scan_subtitles`).
+- **Prowlarr** `/prowlarr/api/v1/`: `GET /indexer`, `POST /indexer` (needs `appProfileId:1`), `DELETE /indexer/{id}`, `GET /indexer/schema`, `/health`.
+- **Plex** `http://localhost:12625/` (append `?X-Plex-Token=<plex_token>`): `GET /library/sections` (1=Movies, 2=TV, 3=Music), `/library/sections/<id>/refresh`, `/library/sections/<id>/all`.
+- **qBittorrent** `/qbittorrent/api/v2/`: `POST /auth/login` (`username=&password=`, save cookie) first; `GET /torrents/info[?filter=downloading]`, `POST /torrents/pause|resume|delete` (`deleteFiles=`), `GET /transfer/info`. States: completed, stalledDL, forcedDL, downloading, pausedUP.
+- **Jellyfin** internal `127.0.0.1:12602/jellyfin`: `POST /Users/AuthenticateByName` `{"Username":<ssh_username>,"Pw":<jellyfin_password>}` + header `Authorization: MediaBrowser Client="..",Device="..",DeviceId="..",Version=".."` → then `Authorization: MediaBrowser Token="<token>"`. Libraries `GET/POST /Library/VirtualFolders` (dedupe by path, not name). Custom CSS = branding: `GET/POST /System/Configuration/branding` (`CustomCss`), served `GET /Branding/Css`. `jellyfin_password` == `ui_password`.
 
-### Sonarr API (`/sonarr/api/v3/`)
+## Current setup
 
-Auth header: `X-Api-Key: <sonarr_api_key>`
+- **Download client**: Sonarr+Radarr → qBittorrent via reverse proxy (`<ssh_host>:443`, SSL, urlbase `/qbittorrent`). Completed downloads kept for seeding.
+- **Plex notifications** on Sonarr+Radarr (`172.17.0.1:12625`).
+- **Prowlarr indexers (7)**: The Pirate Bay, LimeTorrents, TorrentDownload, TorrentProject2, Knaben, showRSS, Torrent9. Cloudflare-blocked from seedbox IP (skip): EZTV, 1337x, KAT.
+- **Scoring**: TRaSH unwanted formats (BR-DISK, LQ, x265-HD, 3D) at `-10000`; `minFormatScore=0`. **Recyclarr** (`~/bin/recyclarr`, cfg `~/.config/recyclarr/configs/main.yml`, weekly cron) adds preferred-release-group scores (WEB + HD-Bluray Tier 01-03) to the **Any** profile. Re-sync needs explicit service: `recyclarr sync sonarr -c <cfg>` then `radarr` (no-service form no-ops); use `--log debug`, verify via API.
+- **Auto-import fix**: `~/scripts/autoimport_fix.py` (cron /15min) clears Sonarr/Radarr queue items stuck on "Automatic import is not possible" via manual-import by downloadId (`importMode=copy`); logs `~/scripts/autoimport_fix.log` (on action only). Self-heals.
+- **Subtitles (Bazarr)**: English profile (id 1) on all + default. Do NOT enable `importExtraFiles` in Sonarr/Radarr (Bazarr owns subs). Only provider opensubtitlescom (free ~20/day; big backfills throttle 6h over days — add Gestdown/Podnapisi to speed up). Junk packs bundle `.srt`: hardlink `<base>.srt` → `<libdir>/<base>.en.srt`, then `series_full_scan_subtitles` for instant subs at zero quota.
+- **Hardlinks** work (`copyUsingHardlinks` on; media+downloads share `/home30` fs; ~90% hardlinked, no 2× space). **No recycle bin** — deletions permanent.
 
-- `GET /series` — list all shows
-- `GET /series/lookup?term=NAME` — search for a show to add
-- `POST /series` — add a show
-- `GET /wanted/missing` — episodes not yet downloaded
-- `GET /queue` — current download queue
-- `GET /health` — system health
-- `GET /qualityprofile` — available quality profiles
-- `GET /rootfolder` — available root folders
-- `GET /downloadclient` — download client config
-- `GET /notification` — configured notifications
+### Jellyfin theming (web client only — never affects native apps)
 
-### Radarr API (`/radarr/api/v3/`)
+Custom CSS = branding `CustomCss` (see API). Two traps that make a theme look dead:
+1. **Branding CSS is cached hard** (PWA service worker + HTTP cache) — server-side changes don't show on a normal reload (browser re-injects the stale sheet). Verify only via incognito or DevTools → Application → unregister SW + Clear site data. With `/agent-browser` use a **fresh `--profile <new-path>`** each run; compare shades fast by live-overriding `document.documentElement.style.setProperty('--main-color','#…','important')`.
+2. **Nested `@import`s don't recurse** — a top-level `@import` of a preset/wrapper loads, but its inner `@import`s don't fetch. Flatten: import each module directly. Catppuccin (`theme.css`+flavor) is flat; Ultrachromic presets are nested (use the module list).
 
-Auth header: `X-Api-Key: <radarr_api_key>`
+Abandoned themes fail silently (CSS loads, selectors miss current markup) — check repo activity (JellySkin dead/2024/JF10.9; Catppuccin/Ultrachromic/Scyfin active). Current: Catppuccin Mocha + `--main-color:#8e5ae7` (lightened brand violet #421691; raw is unreadable on dark).
 
-- `GET /movie` — list all movies
-- `GET /movie/lookup?term=NAME` — search for a movie to add
-- `POST /movie` — add a movie
-- `GET /wanted/missing` — movies not yet downloaded
-- `GET /queue` — current download queue
-- `GET /health` — system health
-- `GET /qualityprofile` — available quality profiles
-- `GET /rootfolder` — available root folders
+### Manual import (Sonarr/Radarr)
 
-### Seerr API (`/seerr/api/v1/`)
-
-Request manager (Overseerr-compatible `/api/v1/`). Also at the subdomain `https://seerr-<ssh_username>.comet.usbx.me`. Managed via the CP or `app-seerr` (start/stop/restart/upgrade/backup/version).
-
-- Auth header: `X-Api-Key: <seerr_api_key>`
-- `GET /request?take=20&skip=0` — list requests
-- `GET /request?filter=pending` — pending requests
-- `POST /request` — create a request (`mediaType: movie|tv`, `mediaId: TMDB_ID`)
-- `GET /search?query=NAME` — search media
-- `GET /user` — list users
-
-### Bazarr API (`/bazarr/api/`)
-
-- Auth header: `X-API-KEY: <bazarr_api_key>` (key in `~/.apps/bazarr/config/config.yaml` `auth.apikey`; distinct from UI password). Internal endpoint `http://127.0.0.1:12631/bazarr/api`.
-- `GET /system/status` · `/system/health` · `/providers` — up / health issues / providers
-- `GET /episodes?seriesid[]=<sonarrId>` · `/movies` — subtitle status; `/episodes/wanted` · `/movies/wanted` — missing-subtitle lists
-- `GET /system/languages/profiles` — language profiles (stored in the DB `table_languages_profiles`, **not** config.yaml — its `languages:` section is empty). Assign: `POST /series` (`seriesid`+`profileid`) / `POST /movies` (`radarrid`+`profileid`)
-- `POST /system/tasks` `taskid=<id>` — run a task: `wanted_search_missing_subtitles_series`/`_movies` (search missing), `series_full_scan_subtitles` (index existing on-disk subs)
-
-### Plex API (`http://localhost:12625/`)
-
-- Always append `?X-Plex-Token=<plex_token>`
-- `GET /library/sections` — list libraries (1=Movies, 2=TV Shows, 3=Music)
-- `GET /library/sections/2/refresh` — trigger TV library scan
-- `GET /library/sections/1/refresh` — trigger Movies library scan
-- `GET /library/sections/2/all` — list all TV content
-
-### Prowlarr API (`/prowlarr/api/v1/`)
-
-Auth header: `X-Api-Key: <prowlarr_api_key>`
-
-- `GET /indexer` — list indexers
-- `POST /indexer` — add indexer (requires `appProfileId: 1`)
-- `DELETE /indexer/{id}` — remove indexer
-- `GET /indexer/schema` — all available indexer definitions (parse with python3)
-- `GET /health` — system health
-
-### qBittorrent API (`/qbittorrent/api/v2/`)
-
-- Login first: `POST /auth/login` with `username=<qbittorrent_username>&password=<qbittorrent_password>`, save cookie
-- `GET /torrents/info` — list all torrents
-- `GET /torrents/info?filter=downloading` — active downloads
-- `POST /torrents/pause` / `/torrents/resume` — pause/resume
-- `POST /torrents/delete` — delete torrent (`deleteFiles=true/false`)
-- `GET /transfer/info` — global transfer stats
-
-```bash
-# qBittorrent login pattern — pull creds from the secrets file first.
-SECRETS=~/.claude/secrets/seedbox.json
-QBT_USER=$(python3 -c "import json,os; print(json.load(open(os.path.expanduser('$SECRETS')))['qbittorrent_username'])")
-QBT_PASS=$(python3 -c "import json,os; print(json.load(open(os.path.expanduser('$SECRETS')))['qbittorrent_password'])")
-SSH_HOST=$(python3 -c "import json,os; print(json.load(open(os.path.expanduser('$SECRETS')))['ssh_host'])")
-curl -s -c /tmp/qbt_cookies.txt -X POST \
-  "https://${SSH_HOST}/qbittorrent/api/v2/auth/login" \
-  -d "username=${QBT_USER}&password=${QBT_PASS}"
-# Then use -b /tmp/qbt_cookies.txt for subsequent requests
-```
-
-Torrent states: `completed`, `stalledDL`, `forcedDL`, `downloading`, `pausedUP`
-
-## Current Setup Notes
-
-- **Download clients**: Both Sonarr and Radarr use qBittorrent via reverse proxy (host: `<ssh_host>`, port: `443`, SSL: on, URL base: `/qbittorrent`)
-- **Completed downloads**: retained for seeding (not auto-removed) — see Hardlinks
-- **Plex notifications**: Configured on both Sonarr and Radarr (uses `172.17.0.1:12625`)
-- **Prowlarr active indexers** (7): The Pirate Bay, LimeTorrents, TorrentDownload, TorrentProject2, Knaben, showRSS, Torrent9 (TorrentGalaxyClone removed — TGx is defunct)
-- **Custom formats / scoring**: TRaSH "unwanted" formats (BR-DISK, LQ, x265-HD, 3D) at `-10000` block junk; `minFormatScore=0`. **Recyclarr** (`~/bin/recyclarr`, config `~/.config/recyclarr/configs/main.yml`, weekly cron) adds positive "preferred release group" scores (WEB + HD-Bluray Tier 01-03) to the **Any** profile (≈all media uses it) so clean releases beat anonymous junk packs. Re-sync needs an explicit service arg — `recyclarr sync sonarr -c <cfg>` then `radarr` (the no-service form silently no-ops); INFO output is near-silent, use `--log debug` and verify via API.
-- **Auto-import fix**: `~/scripts/autoimport_fix.py` (cron, every 15 min) auto-resolves Sonarr/Radarr queue items stuck on "Automatic import is not possible" (junk season-packs matched by ID) via manual-import by downloadId, `importMode=copy`. Logs to `~/scripts/autoimport_fix.log` (on action only) — these stalls now self-heal, don't expect them to sit.
-- **Cloudflare-blocked indexers**: EZTV, 1337x, KickassTorrents — blocked from seedbox IP, not worth adding
-- **Subtitles (Bazarr)**: English profile (id 1) assigned to all shows+movies and set as serie/movie default. Do NOT enable `importExtraFiles` in Sonarr/Radarr — Bazarr owns subs. Only provider is **opensubtitlescom (free, ~20 downloads/day)** — big backfills throttle 6h and finish over days; add providers (Gestdown, Podnapisi) to speed up. Junk packs often bundle `.srt`: hardlink `<base>.srt` from the download folder to `<libdir>/<base>.en.srt`, then run the `series_full_scan_subtitles` task for instant subs at zero quota.
-- **Hardlinks**: working — `copyUsingHardlinks` on in both, and media + downloads share one filesystem (`/home30`), so imports hardlink (verified ~90% of library files hardlinked to their seeding copy — no 2× space)
-- **No recycle bin** configured — deletions are permanent
-
-### Jellyfin (web theming — two gotchas before touching Custom CSS)
-
-Jellyfin is a CP-managed app (10.11.x; internal `127.0.0.1:12602/jellyfin`). Custom CSS lives in the branding config: `GET/POST /System/Configuration/branding` (field `CustomCss`), served at `GET /Branding/Css`; auth as admin (`ssh_username` + `jellyfin_password`, which == `ui_password` — the CP install provisions admin with the UI password). Themes affect the **web client only**, never native apps (Swiftfin etc.). Two traps that make a theme look like it "does nothing":
-
-1. **Branding CSS is cached HARD by the web client** (PWA service worker + browser HTTP cache). A server-side `CustomCss` change does **not** appear on a normal reload — the browser keeps re-injecting the *previously cached* stylesheet (confirmed: server was serving the new theme while the page still had the old one injected). Verify/see a change only via an **incognito window**, or DevTools → Application → unregister service worker + Clear site data. With `/agent-browser`, use a **fresh `--profile <new-path>`** every run (a normal reload shows stale CSS and will fool you); to compare values fast, live-override in the DOM instead of re-fetching: `document.documentElement.style.setProperty('--main-color','#xxxxxx','important')`.
-2. **Injected CSS does NOT recurse nested `@import`s.** A first-level `@import` (e.g. a theme's preset/wrapper file) loads, but the `@import`s *inside that file* never fetch — so almost no styling lands. Flatten: import each module directly in `CustomCss` (one level). Catppuccin (`theme.css` + a flavor file) is already flat; Ultrachromic presets are nested → use the explicit module list, not the preset.
-
-Also: abandoned themes fail silently (CSS loads, but selectors no longer match the current web client markup) — check repo activity first (JellySkin is dead: last commit 2024, targets JF 10.9; Catppuccin / Ultrachromic / Scyfin are active). **Current theme:** Catppuccin Mocha (`theme.css` + `catppuccin-mocha.css`), accent `--main-color: #8e5ae7` (a lightened brand violet #421691 — the raw deep violet is unreadable as an accent on a dark theme).
-
-### Manual Import (Sonarr/Radarr)
-
-The autoimport cron handles the common "matched by ID" block; to do it by hand:
-
-- **Scan**: `GET /api/v3/manualimport?downloadId=<HASH>&filterExistingFiles=true`. **Do NOT add `seriesId`/`movieId`** — that ignores the download and returns the series' *existing* library files instead. `folder=<path>` also works but percent-encode it (`%20`, not `+`) and use Docker `/home/<ssh_username>/` paths. Run against the internal endpoint (`127.0.0.1:12626/sonarr`, `12627/radarr`).
-- **Import**: `POST /api/v3/command` with `{"name":"ManualImport","importMode":"copy","files":[{path, seriesId|movieId, episodeIds, quality, languages, releaseGroup, downloadId, indexerFlags}]}`. `importMode:"copy"` = hardlink (keeps the seed). Only import items mapped to an episode/movie with zero `rejections`. Get `downloadId` (the torrent hash) from the queue record.
+Cron handles the common "matched by ID" stall; by hand, against internal (`127.0.0.1:12626/sonarr`, `12627/radarr`):
+- **Scan** `GET /api/v3/manualimport?downloadId=<HASH>&filterExistingFiles=true`. **Never add `seriesId`/`movieId`** (returns the library's existing files, ignores the download). `folder=<path>` works if percent-encoded (`%20` not `+`, Docker `/home/<ssh_username>/` paths).
+- **Import** `POST /api/v3/command` `{"name":"ManualImport","importMode":"copy","files":[{path,seriesId|movieId,episodeIds,quality,languages,releaseGroup,downloadId,indexerFlags}]}`. `copy`=hardlink (keeps seed). Only import items with zero `rejections`; `downloadId`=torrent hash from queue.
 
 ## Task: $ARGUMENTS
 
-Handle the user's request using SSH and/or the APIs above. Work autonomously — discover what you need rather than asking. Confirm before destructive actions (deleting files, removing shows/movies, etc.).
+Handle via SSH/APIs above. Work autonomously — discover, don't ask. Confirm before destructive actions (deleting files, removing media).
