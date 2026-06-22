@@ -78,6 +78,12 @@ Custom CSS = branding `CustomCss` (see API). Two traps that make a theme look de
 
 Abandoned themes fail silently (CSS loads, selectors miss current markup) — check repo activity (JellySkin dead/2024/JF10.9; Catppuccin/Ultrachromic/Scyfin active). Current: Catppuccin Mocha + `--main-color:#8e5ae7` (lightened brand violet #421691; raw is unreadable on dark).
 
+### Jellyfin Enhanced (plugin — Seerr-in-search, shortcuts; web-client only, SW-cached like CSS)
+
+**Installed.** Canonical = Jellyfin Dashboard/API, NOT Ultra.cc CP. Add repos (`POST /Repositories`) then install (`POST /Packages/Installed/<Name>`) + `app-jellyfin restart`: File Transformation (`iamparadox.dev/jellyfin/plugins/manifest.json`, the server-side injection dep) + Jellyfin Enhanced (`raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/10.11/manifest.json`). Config `GET/POST /Plugins/f69e946a4b3c4e9a8f0a8d7c1b2c4d9b/Configuration` (POST replaces whole obj). Seerr fields: `JellyseerrEnabled`, `JellyseerrUrls`=PUBLIC `https://<ssh_host>/seerr` (direct internal port 307s→/login), `JellyseerrApiKey`.
+
+**"unlinked" 404**: Seerr is Plex-mode (`mediaServerType=1`), unaware of Jellyfin users. Hybrid-link (keeps Plex intact): set `jellyfinUserId`=`6b29e78a7a6c4c9eaccbf177d0b8acd3` + `jellyfinUsername='j0nas'` on the Seerr `user` row, then restart jellyfin+seerr (clears 30-min user-id cache). DB = SQLite `~/.apps/seerr/db/db.sqlite3`; use `~/bin/sqlite3` (vendored 3.53.2 — `/usr/bin/sqlite3` is glibc-broken) or python3 `sqlite3`. Backup `db.sqlite3.bak.preJellyfinLink`.
+
 ### Manual import (Sonarr/Radarr)
 
 Cron handles the common "matched by ID" stall; by hand, against internal (`127.0.0.1:12626/sonarr`, `12627/radarr`):
