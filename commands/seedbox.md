@@ -42,6 +42,7 @@ Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_us
 | qBittorrent | `https://<ssh_host>/qbittorrent` | `qbittorrent_username`+`_password` |
 | Plex | `http://localhost:12625` (Docker `172.17.0.1:12625`) | `plex_token` |
 | Jellyfin | `https://<ssh_host>/jellyfin` (internal `127.0.0.1:12602`) | `jellyfin_password` |
+| Audiobookshelf | `https://audiobookshelf-<ssh_username>.comet.usbx.me/audiobookshelf` (internal `127.0.0.1:37600`) | `ui_password` (root user = `<ssh_username>`) |
 
 ## Docs (Context7)
 
@@ -82,7 +83,13 @@ Abandoned themes fail silently (CSS loads, selectors miss current markup) — ch
 
 **Installed.** Canonical = Jellyfin Dashboard/API, NOT Ultra.cc CP. Add repos (`POST /Repositories`) then install (`POST /Packages/Installed/<Name>`) + `app-jellyfin restart`: File Transformation (`iamparadox.dev/jellyfin/plugins/manifest.json`, the server-side injection dep) + Jellyfin Enhanced (`raw.githubusercontent.com/n00bcodr/jellyfin-plugins/main/10.11/manifest.json`). Config `GET/POST /Plugins/f69e946a4b3c4e9a8f0a8d7c1b2c4d9b/Configuration` (POST replaces whole obj). Seerr fields: `JellyseerrEnabled`, `JellyseerrUrls`=PUBLIC `https://<ssh_host>/seerr` (direct internal port 307s→/login), `JellyseerrApiKey`.
 
-**"unlinked" 404**: Seerr is Plex-mode (`mediaServerType=1`), unaware of Jellyfin users. Hybrid-link (keeps Plex intact): set `jellyfinUserId`=`6b29e78a7a6c4c9eaccbf177d0b8acd3` + `jellyfinUsername='j0nas'` on the Seerr `user` row, then restart jellyfin+seerr (clears 30-min user-id cache). DB = SQLite `~/.apps/seerr/db/db.sqlite3`; use `~/bin/sqlite3` (vendored 3.53.2 — `/usr/bin/sqlite3` is glibc-broken) or python3 `sqlite3`. Backup `db.sqlite3.bak.preJellyfinLink`.
+**"unlinked" 404**: Seerr is Plex-mode (`mediaServerType=1`), unaware of Jellyfin users. Hybrid-link (keeps Plex intact): set `jellyfinUserId`=`6b29e78a7a6c4c9eaccbf177d0b8acd3` + `jellyfinUsername='j0nas'` on the Seerr `user` row, then restart jellyfin+seerr (clears 30-min user-id cache). DB = SQLite `~/.apps/seerr/db/db.sqlite3`; use `~/bin/sqlite3` (vendored 3.53.2 — `/usr/bin/sqlite3` is glibc-broken) or python3 `sqlite3`. Backup `db.sqlite3.bak.preJellyfinLink`. **Requests** go via the admin API key (no per-user sign-in), but Plex-mode Seerr rejects re-requests of already-tracked titles (`"No seasons available to request"`) while the UI still flashes a false "Requested" — only brand-new titles persist.
+
+### Audiobookshelf (managed app — audiobooks/podcasts; separate from Jellyfin)
+
+Install via CP. **Orphaned-container fix** (CP install fails `container name /audiobookshelf-<ssh_username> already in use`): `app-audiobookshelf uninstall` clears the squatted Docker name (users have no direct `docker` access), then reinstall via CP. Root user = `<ssh_username>` / `ui_password`. Library "Audiobooks" → `~/media/Audiobooks`, structure `Author/Title/<files>` (watcher auto-adds; multi-file = one book). Provider set to `audible`. No global "auto-match" toggle — untagged rips need a one-off match; files with embedded ASIN/ISBN match on scan.
+**Add a book**: hardlink from `~/downloads/...` into `~/media/Audiobooks/<Author>/<Title>/` (keeps seeding), it auto-appears, then match for metadata/cover.
+**API** `127.0.0.1:37600`: `POST /login {username,password}` → `user.token` → header `Authorization: Bearer <token>`. `GET /api/libraries[/{id}/items]`, `POST /api/libraries/{id}/scan`, `POST /api/items/{id}/match {provider:audible,title,author}` (applies best match). DB `~/.apps/audiobookshelf/config/absdatabase.sqlite` (`libraries`/`libraryFolders`/`users`).
 
 ### Manual import (Sonarr/Radarr)
 
