@@ -66,6 +66,15 @@ Services are managed with `app-<name>` commands (e.g. `app-radarr`, `app-plex`, 
 - `app-radarr password <newpassword>` — reset UI password
 - `app-plex claim` etc.
 
+**Installing apps — route through the CP, never `app-<name> install` over SSH.** Ultra.cc-managed apps must be installed from the **Control Panel → Installers** tab (green **Install** button), not via SSH or any hand-rolled Docker/binary setup. An SSH/manual install *runs* but is **never registered with the panel**: it won't show under CP → Apps, gets no CP start/stop/upgrade buttons and no auto-update toggle, and the panel can't report its port (you'll have to dig it out of nginx/`ps`). This is exactly how Jellyfin ended up orphaned. Use the `app-<name>` CLI only to *manage* an app already CP-installed (start/stop/restart/upgrade/password/backup), never for the first install.
+
+**Automated check — is `<name>` Ultra.cc-managed?** (box-side, no panel access needed)
+
+- `command -v app-<name>` → if the CLI exists in `/usr/bin`, the app is Ultra.cc-managed (81-app catalog; list all with `ls /usr/bin/app-* | sed 's#.*/app-##' | sort`).
+- `app-ports show` → authoritative table of every official app + its reserved port (e.g. Jellyfin → 12602). Check one: `app-ports show | grep -i <name>`.
+
+Decision flow before any install: if `command -v app-<name>` succeeds → it's managed → have the user click **Install** in the CP (a fresh CP install regenerates the nginx proxy and assigns the port); do **not** install it yourself. Spotting an **orphaned** install: it's on disk (`~/.apps/<name>` exists, `app-<name> version` returns a version) but absent from CP → Apps. Fix by `app-<name> uninstall` (add `--keep-config` to preserve settings; `~/media` is never touched), then reinstall via the CP.
+
 ### Finding Things
 
 - **Ports**: Check nginx proxy configs at `~/.apps/nginx/proxy.d/<service>.conf` for `proxy_pass` lines
