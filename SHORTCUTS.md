@@ -147,3 +147,4 @@
 | `cr` | claude --resume |
 | `oc` | opencode |
 | `keys` | Open this shortcuts cheat sheet |
+| `kill-port <port>` | Kill whatever process is listening on a port |

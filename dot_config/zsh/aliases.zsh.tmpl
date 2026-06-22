@@ -40,3 +40,14 @@ alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
 alias oc='opencode'                                # sc: oc | opencode | Tools
 alias keys='${PAGER:-less} "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools
+
+# sc: kill-port <port> | Kill whatever process is listening on a port | Tools
+kill-port() {
+  local port="$1"
+  [[ -n "$port" ]] || { echo "usage: kill-port <port>" >&2; return 1; }
+  local pids
+  pids=$(lsof -ti ":$port")
+  [[ -n "$pids" ]] || { echo "kill-port: nothing listening on port $port" >&2; return 1; }
+  echo "kill-port: killing PID(s) ${pids//$'\n'/ } on port $port" >&2
+  echo "$pids" | xargs kill
+}
