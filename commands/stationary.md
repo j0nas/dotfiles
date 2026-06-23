@@ -50,8 +50,9 @@ $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ 
 
 The box pulls **directly** from the seedbox via rclone-over-sftp — nothing relays through the Mac. (Find/grab content on the seedbox first via `/seedbox`.)
 
-- rclone at `C:\Users\jonas\rclone\rclone.exe`; config `%APPDATA%\rclone\rclone.conf` → remote `SB` (sftp, **key-based**, `known_hosts_file` set so the seedbox host key is pinned). **No seedbox password is ever stored on the box.**
-- Seedbox key `C:\Users\jonas\.ssh\seedbox_pull` is **locked down on the seedbox side to read-only sftp** (its `authorized_keys` entry is `restrict,command="internal-sftp -R" …`) — a fully-compromised PomeloMadness can only *read* the seedbox, no shell, no writes. For rclone to work under that restriction the `SB` remote sets `shell_type = none` and pulls run with `--sftp-disable-hashcheck`.
+- rclone at `C:\Users\jonas\rclone\rclone.exe`; config `%APPDATA%\rclone\rclone.conf` → remote `SB` (sftp, **key-based**, `known_hosts_file = C:/Users/jonas/.ssh/seedbox_known_hosts` pins the seedbox host key). **No seedbox password is ever stored on the box.**
+  - Gotcha: pin the key that the connection actually presents — `ssh-keyscan j0nas.comet.usbx.me` — **not** the box's `/etc/ssh/ssh_host_*_key.pub`. USBx fronts SSH with a gateway whose host key differs from the inside-box file; pinning the file gives `knownhosts: key mismatch`.
+- Seedbox key `C:\Users\jonas\.ssh\seedbox_pull` is **locked down on the seedbox side to read-only sftp** (its `authorized_keys` entry is `restrict,command="internal-sftp -R" …`; backup at `~/.ssh/authorized_keys.bak.preharden`) — a fully-compromised PomeloMadness can only *read* the seedbox, no shell, no writes (verified: read ✓, shell refused, mkdir refused). For rclone to work under that no-shell restriction the `SB` remote sets `shell_type = none` and `disable_hashcheck = true` (and `run_pull.cmd` also passes `--sftp-disable-hashcheck`).
 - Launch the copy detached via WMI (above), into an absolute-path wrapper; `--exclude` what you don't need, `--transfers N` + `--multi-thread-streams N` for throughput. Bottleneck is the box's home-internet download speed, not either server.
 - Lands in `C:\Users\jonas\Downloads\<name>`. Games are download-only here — the user installs locally.
 
