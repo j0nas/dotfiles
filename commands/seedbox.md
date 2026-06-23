@@ -1,6 +1,6 @@
 ---
 name: seedbox
-description: Interact with your USBx seedbox — manage Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), Plex, and Jellyfin.
+description: Interact with your USBx seedbox — Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), Plex, Jellyfin, Audiobookshelf, plus ad-hoc Prowlarr→qBittorrent grabs for games/audiobooks/ebooks.
 argument-hint: "[what you want to do]"
 ---
 
@@ -58,7 +58,7 @@ Auth header `X-Api-Key: <…_api_key>` unless noted.
 - **Bazarr** `/bazarr/api/` — header `X-API-KEY` (key in `~/.apps/bazarr/config/config.yaml` `auth.apikey`; internal `http://127.0.0.1:12631/bazarr/api`): `GET /system/status|health`, `/providers`; `/episodes?seriesid[]=<sonarrId>`, `/movies`, `/episodes/wanted`, `/movies/wanted`; `/system/languages/profiles` (profiles live in DB `table_languages_profiles`, NOT config.yaml); assign via `POST /series`(`seriesid`+`profileid`) / `POST /movies`(`radarrid`+`profileid`); `POST /system/tasks taskid=<id>` (`wanted_search_missing_subtitles_series|_movies`, `series_full_scan_subtitles`).
 - **Prowlarr** `/prowlarr/api/v1/`: `GET /indexer`, `POST /indexer` (needs `appProfileId:1`), `DELETE /indexer/{id}`, `GET /indexer/schema`, `/health`.
 - **Plex** `http://localhost:12625/` (append `?X-Plex-Token=<plex_token>`): `GET /library/sections` (1=Movies, 2=TV, 3=Music), `/library/sections/<id>/refresh`, `/library/sections/<id>/all`.
-- **qBittorrent** `/qbittorrent/api/v2/`: `POST /auth/login` (`username=&password=`, save cookie) first; `GET /torrents/info[?filter=downloading]`, `POST /torrents/pause|resume|delete` (`deleteFiles=`), `GET /transfer/info`. States: completed, stalledDL, forcedDL, downloading, pausedUP.
+- **qBittorrent** `/qbittorrent/api/v2/`: `POST /auth/login` (`username=&password=`, save cookie + `Referer` header) first; `POST /torrents/add` (`urls=<magnet|.torrent URL>`, `category=`), `GET /torrents/info[?filter=downloading|category=<cat>]`, `POST /torrents/pause|resume|delete` (`deleteFiles=`), `GET /transfer/info`. States: completed, stalledDL, forcedDL, downloading, pausedUP.
 - **Jellyfin** internal `127.0.0.1:12602/jellyfin`: `POST /Users/AuthenticateByName` `{"Username":<ssh_username>,"Pw":<jellyfin_password>}` + header `Authorization: MediaBrowser Client="..",Device="..",DeviceId="..",Version=".."` → then `Authorization: MediaBrowser Token="<token>"`. Libraries `GET/POST /Library/VirtualFolders` (dedupe by path, not name). Custom CSS = branding: `GET/POST /System/Configuration/branding` (`CustomCss`), served `GET /Branding/Css`. `jellyfin_password` == `ui_password`.
 
 ## Current setup
@@ -88,8 +88,18 @@ Abandoned themes fail silently (CSS loads, selectors miss current markup) — ch
 ### Audiobookshelf (managed app — audiobooks/podcasts; separate from Jellyfin)
 
 Install via CP. **Orphaned-container fix** (CP install fails `container name /audiobookshelf-<ssh_username> already in use`): `app-audiobookshelf uninstall` clears the squatted Docker name (users have no direct `docker` access), then reinstall via CP. Root user = `<ssh_username>` / `ui_password`. Library "Audiobooks" → `~/media/Audiobooks`, structure `Author/Title/<files>` (watcher auto-adds; multi-file = one book). Provider set to `audible`. No global "auto-match" toggle — untagged rips need a one-off match; files with embedded ASIN/ISBN match on scan.
-**Add a book**: hardlink from `~/downloads/...` into `~/media/Audiobooks/<Author>/<Title>/` (keeps seeding), it auto-appears, then match for metadata/cover.
+**Add a book**: see *Ad-hoc grab* below — hardlink into `~/media/Audiobooks/<Author>/<Title>/`, auto-appears, then match for cover/metadata.
 **API** `127.0.0.1:37600`: `POST /login {username,password}` → `user.token` → header `Authorization: Bearer <token>`. `GET /api/libraries[/{id}/items]`, `POST /api/libraries/{id}/scan`, `POST /api/items/{id}/match {provider:audible,title,author}` (applies best match). DB `~/.apps/audiobookshelf/config/absdatabase.sqlite` (`libraries`/`libraryFolders`/`users`).
+
+### Ad-hoc grab (no *arr — games, audiobooks, ebooks, comics, music)
+
+For media with no request/automation layer. Decided NOT worth dedicated software (Questarr for games, LazyLibrarian for books both exist + plug into Prowlarr+qBittorrent, but Questarr isn't on the Ultra.cc CP / no Docker access, and a seedbox can't *play* games anyway — so drive it by hand):
+1. **Search** `GET /prowlarr/api/v1/search?query=<term>&type=search&limit=100` (`X-Api-Key`). Fields: `title`, `seeders`, `size`, `categories`, `downloadUrl`|`magnetUrl`|`infoHash`. Sort by seeders; pick a trusted source at the right version. Games: trusted repackers FitGirl/DODI, scene RUNE/FLT/CODEX — avoid unlabeled re-uploads for anything you'll execute.
+2. **Quota** big grabs first: `quota -s` (limit 3725G; box `/home30` 17T).
+3. **Add**: qBittorrent login → `POST /torrents/add` `urls=<downloadUrl|magnet>&category=<games|audiobooks|...>`. A non-*arr `category` keeps it out of Sonarr/Radarr import paths; it lands in `~/downloads/qbittorrent/`.
+4. **Land it**:
+   - **Games**: stay in downloads — box is download-only, pull to local PC via SFTP or `rsync -avP <ssh_username>@<ssh_host>:'~/downloads/qbittorrent/<name>' .`; install locally.
+   - **Audiobooks/ebooks**: hardlink completed files into the library (`~/media/Audiobooks/<Author>/<Title>/`) — keeps seeding, ABS auto-adds, then match (see Audiobookshelf).
 
 ### Manual import (Sonarr/Radarr)
 
