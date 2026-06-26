@@ -34,5 +34,6 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:violet",
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "tui": "fullscreen"
 }
