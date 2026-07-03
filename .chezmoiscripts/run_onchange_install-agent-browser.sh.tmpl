@@ -1,0 +1,26 @@
+#!/bin/bash
+set -e
+
+# agent-browser CLI convergence (AGENTS.md rule 17: mutable desired-state that
+# can change belongs in a run_onchange keyed on that state — NOT a run_once
+# bootstrap, where a version bump would never re-run).
+#
+# Installed as a pnpm global rather than a mise-managed tool because its
+# post-install step — `agent-browser install`, which downloads the matched
+# Chrome for Testing binary — isn't something a version manager can orchestrate.
+# pnpm puts global bins in PNPM_HOME (a fixed dir, not per-Node), so the install
+# survives Node switches. `mise exec` provides node + pnpm. Sorts after
+# run_once_bootstrap (b < i), so mise/node exist before this runs.
+#
+# The pinned version is embedded below, so bumping agent_browser_version in
+# .chezmoidata.yaml changes this script's rendered hash and re-runs it — pinning
+# the CLI and re-matching Chrome — on the next apply.
+#
+# agent-browser version: {{ .agent_browser_version }}
+echo "==> Installing agent-browser {{ .agent_browser_version }}..."
+mise exec -- bash -c '
+  export PNPM_HOME="$HOME/.local/share/pnpm"
+  export PATH="$PNPM_HOME/bin:$PATH"
+  pnpm add -g "agent-browser@{{ .agent_browser_version }}"
+  agent-browser install
+'
