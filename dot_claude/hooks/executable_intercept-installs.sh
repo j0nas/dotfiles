@@ -25,7 +25,9 @@ esac
 install_re='(^|[;&|[:space:]])('
 install_re+='brew[[:space:]]+(install|tap)'
 install_re+='|mise[[:space:]]+use'
-install_re+='|(npm|pnpm|bun)[[:space:]]+(install|i|add)[^;&|]*(-g|--global)'
+# `-g`/`--global` must be a space-delimited flag token, not a substring inside a
+# package name (e.g. `@use-gesture/react` contains a literal "-g").
+install_re+='|(npm|pnpm|bun)[[:space:]]+(install|i|add)[^;&|]*[[:space:]](-g|--global)([[:space:]]|$)'
 install_re+='|yarn[[:space:]]+global[[:space:]]+add'
 install_re+='|(pipx|cargo|go|gem)[[:space:]]+install'
 install_re+='|uv[[:space:]]+tool[[:space:]]+install'
