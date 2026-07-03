@@ -34,6 +34,7 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:violet",
+  "agentPushNotifEnabled": true,
   "voiceEnabled": true,
   "tui": "fullscreen"
 }
