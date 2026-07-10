@@ -41,6 +41,16 @@ alias cr='claude --resume'                         # sc: cr | claude --resume | 
 alias oc='opencode'                                # sc: oc | opencode | Tools
 alias keys='${PAGER:-less} "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools
 
+# vite+ (vp): freshen the mise-managed global `vp` right before scaffolding, so
+# new projects never start on a stale toolchain. The mise config pins `latest`,
+# but mise resolves that once at install and then freezes it, so `vp create` is
+# the one moment worth a quick `mise upgrade` (a ~1s no-op when already current).
+# Every other subcommand runs the shim untouched. `command vp` skips this wrapper.
+vp() {
+  [[ "$1" == create ]] && mise upgrade npm:vite-plus
+  command vp "$@"
+}
+
 # sc: kill-port <port> | Kill whatever process is listening on a port | Tools
 kill-port() {
   local port="$1"
