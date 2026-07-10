@@ -28,6 +28,9 @@
     "command": "$HOME/.claude/hooks/statusline.sh",
     "padding": 0
   },
+  "skillOverrides": {
+    "verify": "user-invocable-only"
+  },
   "effortLevel": "xhigh",
   "tui": "fullscreen",
   "voice": {
