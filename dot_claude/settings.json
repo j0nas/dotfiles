@@ -8,6 +8,7 @@
     ],
     "defaultMode": "bypassPermissions"
   },
+  "model": "claude-fable-5[1m]",
   "hooks": {
     "PreToolUse": [
       {
@@ -28,6 +29,7 @@
     "padding": 0
   },
   "effortLevel": "xhigh",
+  "tui": "fullscreen",
   "voice": {
     "enabled": true,
     "mode": "hold"
@@ -35,6 +37,5 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:violet",
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true,
-  "tui": "fullscreen"
+  "voiceEnabled": true
 }
