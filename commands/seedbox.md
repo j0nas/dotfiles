@@ -65,7 +65,7 @@ Auth header `X-Api-Key: <…_api_key>` unless noted.
 
 - **Download client**: Sonarr+Radarr → qBittorrent via reverse proxy (`<ssh_host>:443`, SSL, urlbase `/qbittorrent`). Completed downloads kept for seeding.
 - **Plex notifications** on Sonarr+Radarr (`172.17.0.1:12625`).
-- **Prowlarr indexers (7)**: The Pirate Bay, LimeTorrents, TorrentDownload, TorrentProject2, Knaben, showRSS, Torrent9. Cloudflare-blocked from seedbox IP (skip): EZTV, 1337x, KAT.
+- **Prowlarr indexers (8)**: The Pirate Bay, LimeTorrents, TorrentDownload, TorrentProject2, Knaben, showRSS, Torrent9, **RuTor** (id 10, public/no-login, reachable from seedbox IP — **best for game repacks**: carries FitGirl/DODI/RUNE + *complete integrated* builds with direct magnets; mirrors rutor.info/.is/6tor). Cloudflare-blocked from seedbox IP (skip): EZTV, 1337x, KAT. RuTracker/Kinozal are semiPrivate → need an account (no creds on file); RuTor/Byrutor/1337x are public in the schema (1337x still CF-walled from the box).
 - **Scoring**: TRaSH unwanted formats (BR-DISK, LQ, x265-HD, 3D) at `-10000`; `minFormatScore=0`. **Recyclarr** (`~/bin/recyclarr`, cfg `~/.config/recyclarr/configs/main.yml`, weekly cron) adds preferred-release-group scores (WEB + HD-Bluray Tier 01-03) to the **Any** profile. Re-sync needs explicit service: `recyclarr sync sonarr -c <cfg>` then `radarr` (no-service form no-ops); use `--log debug`, verify via API.
 - **Auto-import fix**: `~/scripts/autoimport_fix.py` (cron /15min) clears Sonarr/Radarr queue items stuck on "Automatic import is not possible" via manual-import by downloadId (`importMode=copy`); logs `~/scripts/autoimport_fix.log` (on action only). Self-heals.
 - **Subtitles (Bazarr)**: English profile (id 1) on all + default. Do NOT enable `importExtraFiles` in Sonarr/Radarr (Bazarr owns subs). Only provider opensubtitlescom (free ~20/day; big backfills throttle 6h over days — add Gestdown/Podnapisi to speed up). Junk packs bundle `.srt`: hardlink `<base>.srt` → `<libdir>/<base>.en.srt`, then `series_full_scan_subtitles` for instant subs at zero quota.
@@ -100,8 +100,14 @@ For media with no request/automation layer. Decided NOT worth dedicated software
 2. **Quota** big grabs first: `quota -s` (limit 3725G; box `/home30` 17T).
 3. **Add**: qBittorrent login → `POST /torrents/add` `urls=<downloadUrl|magnet>&category=<games|audiobooks|...>`. A non-*arr `category` keeps it out of Sonarr/Radarr import paths; it lands in `~/downloads/qbittorrent/`.
 4. **Land it**:
-   - **Games**: stay in downloads — box is download-only, pull to local PC via SFTP or `rsync -avP <ssh_username>@<ssh_host>:'~/downloads/qbittorrent/<name>' .`; install locally.
+   - **Games**: stay in downloads — box is download-only, pull to local PC via SFTP or `rsync -avP <ssh_username>@<ssh_host>:'~/downloads/qbittorrent/<name>' <dest>` (e.g. Mac `~/Desktop`), or push straight to the Windows box via `/stationary`; install locally.
    - **Audiobooks/ebooks**: hardlink completed files into the library (`~/media/Audiobooks/<Author>/<Title>/`) — keeps seeding, ABS auto-adds, then match (see Audiobookshelf).
+
+**Big AAA games — "latest version" gotcha** (learned on STALKER 2): mainstream repackers (**FitGirl/DODI**) do **not** ship one torrent per version — they publish a **base repack + a chain of update packs**. The general indexers carry the well-seeded *base* (often the same infohash across sites); the updates are **direct-link `.rar` (ElAmigos)** or **scene (RUNE, multi-part)** — not clean magnets. So don't chase a "[latest]" magnet on the general indexers; it won't exist.
+- **Check RuTor first** — it usually has a **complete integrated single-torrent build at the current version** (RePack-SEREGA/Decepticon/HardwareMining/селезень, titled `[v X.Y + DLC]` Ultimate/Deluxe). One torrent, done, well-seeded.
+- **Verify English before queuing** a RU repack: WebFetch the `rutor.info/torrent/...` page → `Язык интерфейса`/`Язык озвучки` must list **Английский** (some are RU-only). Confirm it's a full repack ("ничего не вырезано"), not a `Патч`/`Portable`.
+- **CF-walled sources** (1337x, fitgirl-repacks.site, dodi-repacks.site) block the **seedbox IP** but **not your local IP** → drive `/agent-browser` **locally** to grab the magnet, then add via qBittorrent API. Headless trips 1337x's Turnstile; FitGirl/DODI pass. FitGirl slug = **dotted title** (`/s-t-a-l-k-e-r-2-heart-of-chornobyl/`), not the plain one (404s). FitGirl base is `[Monkey Repack]` v1.5.1 + updates listed on the page (ElAmigos/RUNE).
+- **Verify version reality online** (SteamDB / official patch notes) — indexer titles like jc141 "16" mean the group's build iteration, **not** game v1.6; and jc141 is a **Linux** repack (Wine-wrapped), wrong target for Windows.
 
 ### Manual import (Sonarr/Radarr)
 
