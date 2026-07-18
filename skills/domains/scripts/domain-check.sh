@@ -65,6 +65,13 @@ whois_classify() {
   if printf '%s' "$out" | grep -qiE 'rate.?limit|exceeded|too many|try again|quota|temporarily unavailable'; then
     echo "UNKNOWN"; return
   fi
+  # An exact "Domain Name: <domain>" line is a registry record for this very
+  # domain — trust it over any "not found" noise. macOS whois concatenates every
+  # referral hop, and a non-authoritative hop can answer "Object not found" for
+  # a domain the registry hop shows as registered (seen with .me).
+  if printf '%s' "$out" | grep -qiE "^[[:space:]]*domain name:[[:space:]]*$1[[:space:]]*\$"; then
+    echo "TAKEN"; return
+  fi
   if printf '%s' "$out" | grep -qiE 'no match|not found|no data found|no entries found|status:[[:space:]]*(free|available)|not registered|no object found|available for registration|domain not found|no such domain|object does not exist'; then
     echo "AVAILABLE"; return
   fi
