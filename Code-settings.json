@@ -11,5 +11,6 @@
   "terminal.integrated.fontSize": 14,
   "files.autoSave": "afterDelay",
   "files.autoSaveDelay": 1000,
-  "workbench.secondarySideBar.defaultVisibility": "hidden"
+  "workbench.secondarySideBar.defaultVisibility": "hidden",
+  "explorer.confirmDelete": false
 }
