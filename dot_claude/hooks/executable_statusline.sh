@@ -1,7 +1,9 @@
 #!/bin/bash
 # Claude Code statusLine. Shows model + reasoning effort + context window usage (via ccusage) plus
 # the REAL 5h and weekly rate-limit pacing, read straight from the JSON Claude
-# Code pipes to stdin (rate_limits.five_hour / .seven_day). Deliberately drops
+# Code pipes to stdin (rate_limits.five_hour / .seven_day), and — on Fable
+# sessions only — the Fable 5 included-weekly bucket ("F5"), fetched from
+# /api/oauth/usage since Claude Code doesn't pipe it to stdin. Deliberately drops
 # ccusage's API-equivalent cost and burn-rate segments — those are meaningless
 # on a flat-rate subscription (not your actual bill). rate_limits is only
 # present for Pro/Max after the first API response, so the 5h/weekly segments
@@ -56,6 +58,41 @@ IFS=$'\t' read -r f5 r5 w7 r7 < <(printf '%s' "$input" \
             .rate_limits.seven_day.used_percentage, .rate_limits.seven_day.resets_at]
            | map(. // "") | @tsv' 2>/dev/null)
 
+# Fable 5 weekly bucket. Claude Code tracks the Fable included-weekly allowance
+# internally (the weekly_scoped/seven_day_overage_included limit) but the
+# statusline stdin JSON only ever carries five_hour/seven_day, so when the
+# session model IS Fable we ask /api/oauth/usage ourselves — the same endpoint
+# /usage reads — with the OAuth token (macOS keychain, else
+# ~/.claude/.credentials.json). Cached 5 min via `find -mmin` (portable across
+# BSD/GNU, unlike stat); a failed refresh keeps serving the stale cache and an
+# absent bucket just drops the segment, so this never breaks the line. curl -m 2
+# caps the once-per-5-min stall; $$ in the temp name keeps concurrent sessions'
+# renders from clobbering each other mid-download.
+model_id="$(printf '%s' "$input" | jq -r '.model.id // empty' 2>/dev/null)"
+fb=""; fbr=""
+case "$model_id" in *fable*)
+  cache="${XDG_CACHE_HOME:-$HOME/.cache}/claude-statusline-fable-usage.json"
+  if [ -z "$(find "$cache" -mmin -5 2>/dev/null)" ]; then
+    mkdir -p "${cache%/*}"
+    tok="$( { security find-generic-password -s "Claude Code-credentials" -w 2>/dev/null \
+              || cat "$HOME/.claude/.credentials.json" 2>/dev/null; } \
+            | jq -r '.claudeAiOauth.accessToken // empty' 2>/dev/null)"
+    if [ -n "$tok" ] && curl -sf -m 2 -H "Authorization: Bearer $tok" \
+         -H "anthropic-beta: oauth-2025-04-20" \
+         -o "$cache.tmp.$$" https://api.anthropic.com/api/oauth/usage 2>/dev/null; then
+      mv "$cache.tmp.$$" "$cache"
+    else rm -f "$cache.tmp.$$"; fi
+  fi
+  # resets_at is ISO 8601 ("...+00:00", fractional seconds); normalize to the
+  # "Z" form fromdateiso8601 accepts so left()/pace() get their epoch.
+  IFS=$'\t' read -r fb fbr < <(jq -r '
+      [.limits[]? | select(.kind == "weekly_scoped"
+         and ((.scope.model.display_name // "") | test("fable"; "i")))][0]
+      | [(.percent // ""),
+         ((.resets_at // "") | sub("\\.[0-9]+"; "") | sub("\\+00:00$"; "Z")
+          | (try fromdateiso8601 catch ""))] | @tsv' "$cache" 2>/dev/null)
+;; esac
+
 out="$model"
 if [ -n "$ctx" ]; then
   # ccusage gives "150,462 (75%)"; reshape to "{pct}%/{tokens}K" to match 5h/7d.
@@ -67,4 +104,5 @@ if [ -n "$ctx" ]; then
 fi
 [ -n "$f5" ] && { p=$(printf '%.0f' "$f5"); s="5h $(col "$p")${p}%\033[0m$(pace "$p" "$r5" 18000)"; [ -n "$r5" ] && s="$s/$(left "$r5")"; out="${out:+$out | }$s"; }
 [ -n "$w7" ] && { p=$(printf '%.0f' "$w7"); s="7d $(col "$p")${p}%\033[0m$(pace "$p" "$r7" 604800)"; [ -n "$r7" ] && s="$s/$(left "$r7")"; out="${out:+$out | }$s"; }
+[ -n "$fb" ] && { p=$(printf '%.0f' "$fb"); s="F5 $(col "$p")${p}%\033[0m$(pace "$p" "$fbr" 604800)"; [ -n "$fbr" ] && s="$s/$(left "$fbr")"; out="${out:+$out | }$s"; }
 printf '%b' "$out"
