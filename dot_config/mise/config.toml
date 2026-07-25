@@ -48,6 +48,11 @@ pnpm = "latest"
 # opencode: open-source terminal AI coding agent (anomalyco/opencode, formerly
 # sst/opencode). Registry short name resolves to the aqua-backed release binary.
 opencode = "latest"
+# flyctl: the Fly.io CLI. Registry short name resolves to aqua:superfly/flyctl,
+# i.e. the upstream release binary — preferred over Fly's `curl | sh` installer
+# (which self-updates outside any version manager) and over a darwin-only brew,
+# since this lands `fly`/`flyctl` on PATH on every OS.
+flyctl = "latest"
 
 [settings]
 # Honour .node-version / .nvmrc / package.json devEngines for per-project Node,
