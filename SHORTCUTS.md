@@ -145,6 +145,9 @@
 | --- | --- |
 | `c` | claude |
 | `cr` | claude --resume |
+| `co` | claude on Opus (1M context) |
+| `cs` | claude on Sonnet |
+| `cf` | claude on Fable 5 (1M context) |
 | `oc` | opencode |
 | `keys` | Open this shortcuts cheat sheet |
 | `kill-port <port>` | Kill whatever process is listening on a port |
