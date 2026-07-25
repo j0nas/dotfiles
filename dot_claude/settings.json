@@ -8,7 +8,10 @@
     ],
     "defaultMode": "bypassPermissions"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "opus[1m]",
+  "skillOverrides": {
+    "verify": "user-invocable-only"
+  },
   "hooks": {
     "PreToolUse": [
       {
@@ -27,9 +30,6 @@
     "type": "command",
     "command": "$HOME/.claude/hooks/statusline.sh",
     "padding": 0
-  },
-  "skillOverrides": {
-    "verify": "user-invocable-only"
   },
   "effortLevel": "xhigh",
   "tui": "fullscreen",

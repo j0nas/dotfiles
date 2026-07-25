@@ -38,6 +38,15 @@ mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p th
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
+# Pick the model at launch. --model applies only to the session it starts, while
+# /model (v2.1.153+) also writes `model` into ~/.claude/settings.json — which
+# chezmoi manages, so a mid-session switch reads back as drift. Quote the [1m]
+# suffix: unquoted, zsh expands the brackets as a glob character class and the
+# command dies with "no matches found". `sonnet` takes no suffix (Sonnet 5 is
+# natively 1M); `fable` has no [1m] alias, so 1M Fable names the full model ID.
+alias co='claude --model "opus[1m]"'               # sc: co | claude on Opus (1M context) | Tools
+alias cs='claude --model sonnet'                   # sc: cs | claude on Sonnet | Tools
+alias cf='claude --model "claude-fable-5[1m]"'     # sc: cf | claude on Fable 5 (1M context) | Tools
 alias oc='opencode'                                # sc: oc | opencode | Tools
 alias keys='${PAGER:-less} "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools
 
