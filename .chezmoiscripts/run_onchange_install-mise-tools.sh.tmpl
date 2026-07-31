@@ -17,3 +17,10 @@ mise install node uv
 
 echo "==> Converging mise-managed tools..."
 mise install
+
+# `mise install` never moves a tool that already satisfies its pin, so loose
+# pins ("latest", node's major-only "26") drift until this script's hash next
+# changes. Upgrade within the declared ranges (no --bump: config stays as-is)
+# so every converge actually lands the newest matching versions.
+echo "==> Upgrading tools within their pinned ranges..."
+mise upgrade -y
