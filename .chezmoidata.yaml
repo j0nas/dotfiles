@@ -47,7 +47,7 @@ packages:
 # .chezmoiscripts/run_onchange_install-agent-browser.sh.tmpl, which is keyed on
 # this string. Bump it here to roll the CLI forward; the next `chezmoi apply`
 # re-installs the pin and re-matches Chrome.
-agent_browser_version: "0.31.1"
+agent_browser_version: "0.33.2"
 
 vscode_extensions:
   - anthropic.claude-code
