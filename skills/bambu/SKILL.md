@@ -252,10 +252,13 @@ only reliable way to tell a collapsed per-variant key from a genuine per-extrude
 key — both are length 2.
 
 **Reference implementation:** formeriet's `packages/tool-temp-tower` — `src/threemf.ts`
-(complete validated project writer incl. custom G-code, multi-part objects with per-part
-extruders, and the 1→2 filament-slot expansion) and `scripts/flatten-settings.mjs`
-(collapses a project-settings template's filament slots, flattens Generic profile
-inheritance chains from the local Studio install, and emits the arity manifest).
+(complete validated project writer incl. custom G-code) and `scripts/flatten-settings.mjs`
+(collapses a project-settings template's filament slots and flattens Generic profile
+inheritance chains from the local Studio install). A working multi-part / two-filament-slot
+variant (per-part extruders, arity-manifest slot expansion) lived at formeriet commits
+75c41cf..60da6f8 before being removed — the clobber trap above kept breaking floor 1 of the
+temp tower whenever the user swapped filament presets; dig it out of history if ever needed
+for a NON-calibration multi-colour project, where preset-temp reheats are harmless.
 
 ## OpenSCAD notes
 
