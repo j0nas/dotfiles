@@ -22,6 +22,18 @@ Jonas has a **Bambu Lab H2C** (dual nozzle, tool changer, 0.4mm default nozzle).
 
 ## Tool paths
 
+**Bambu Studio is installed on the Mac too — prefer it over reaching for PomeloMadness.**
+
+macOS (verified 2026-08-06, Studio 02.08.01.55):
+
+| Tool             | Path                                                          |
+| ---------------- | ------------------------------------------------------------- |
+| Bambu Studio CLI | `/Applications/BambuStudio.app/Contents/MacOS/BambuStudio`    |
+| All BBL profiles | `/Applications/BambuStudio.app/Contents/Resources/profiles/BBL/` |
+| User settings    | `~/Library/Application Support/BambuStudio/`                  |
+
+Windows (PomeloMadness, via the stationary skill):
+
 | Tool                 | Path                                                                                         |
 | -------------------- | -------------------------------------------------------------------------------------------- |
 | Bambu Studio         | `C:/Program Files/Bambu Studio/bambu-studio.exe`                                             |
@@ -148,8 +160,102 @@ Info:
 
 - Cannot create geometry or add text (GUI only)
 - `--uptodate` flag segfaults on programmatically generated 3MFs
-- Re-exporting programmatically generated 3MFs via CLI also segfaults -- only the GUI can re-save
+- Re-exporting programmatically generated 3MFs via CLI segfaulted on Windows 02.05/02.06;
+  on macOS 02.08.01.55 `--arrange 1 --slice 0 --export-3mf out.3mf in.3mf` works on
+  programmatic 3MFs (validated headless, G-code inspected)
 - Works fine for slicing and exporting known-good 3MFs
+
+### CLI gotchas (macOS 02.08, hard-won)
+
+- **`--arrange 1` is mandatory for programmatic 3MFs** (no plate block in
+  model_settings.config): without it the CLI "succeeds" in ~2 s having sliced nothing.
+- **Pass `--export-3mf` an absolute path** — relative paths resolve against Studio's own
+  cwd and the file lands somewhere else.
+- The sliced project stores its G-code as `Metadata/plate_1.gcode` inside the exported
+  3MF — unzip and grep it to verify temps/settings actually applied.
+- `[error] Invalid T command (T1001/T65535/T65279)` lines are benign — Bambu's own start
+  G-code AMS commands upsetting their G-code analyzer.
+- Exit 139 + `type must be string, but is array` right after load = a malformed value
+  shape in project_settings.config (see the arity rules below).
+
+## Per-layer temperature changes (temp towers) — what actually works
+
+**Height-range modifiers CANNOT change nozzle temperature.** BambuStudio parses
+`nozzle_temperature` inside `Metadata/layer_config_ranges.xml` without error and then
+silently drops it before slicing: only `PrintRegionConfig` keys survive
+`apply_to_print_region_config` (plus the special-cased `extruder` and `layer_height`),
+and GCode.cpp never reads ranges. This is why naive tower generators need hand-edited
+G-code.
+
+What works — and what the GUI itself produces — is **per-layer custom G-code**:
+`Metadata/custom_gcode_per_layer.xml`, one `M104` per floor boundary:
+
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<custom_gcodes_per_layer>
+<plate>
+<plate_info id="1"/>
+ <layer top_z="10.05" type="4" extruder="1" color="" extra="M104 S225" gcode="M104 S225"/>
+<mode value="SingleExtruder"/>
+</plate>
+</custom_gcodes_per_layer>
+```
+
+- `type="4"` = CustomGCode::Custom (ColorChange 0, PausePrint 1, ToolChange 2, Template 3);
+  the `extra` payload is emitted verbatim at that layer. Duplicate `gcode=` attr for parity
+  with Studio's writer.
+- Put markers at boundary **+0.05 mm** so they attach to the next floor's first layer at
+  any layer height; an exact-boundary marker can fire one layer early.
+- **The file only loads when `dont_load_config` is false** — the 3MF must carry
+  `<metadata name="Application">BambuStudio-XX.XX.XX.XX</metadata>` in 3dmodel.model
+  (unlike `layer_config_ranges.xml`, which loads unconditionally).
+- Works fine with NO project_settings.config embedded: the user's own profiles apply and
+  only layer 1 prints at their filament's first-layer temp.
+
+## Multi-filament + per-layer temps: the clobber trap (H2C, verified 2026-08)
+
+**Filament changes re-impose the profile temperature.** The machine's
+`machine_change_filament_gcode` template resolves `new_filament_temp` placeholders at slice
+time, so every swap emits `M104 T0/T1 S<profile temp>` — silently overwriting any per-layer
+custom-G-code temps (`layer_z` IS available in that template context, so a conditional
+corrective chain is technically possible, but fragile — don't). Consequences:
+
+- A temp tower's floors CANNOT carry a second filament (each swap resets both heads to the
+  profile temp; the preview still shows the stepped colours — it lies).
+- Multi-colour is safe only where the intended temp equals the profile temp — e.g. features
+  confined to the first floor of a tower (base-plate label inlay). Verified in G-code:
+  swaps confined to the base layers, staircase intact, zero tool-addressed reheats after.
+- On the H2C the CLI maps 2 filaments to separate heads (T0/T1 swaps + standby cooldowns
+  `M104 T0 S25/S60`); grouping is Studio's "Auto For Flush" (`filament_map_mode`).
+
+## project_settings.config array-arity rules (H2-series projects)
+
+Value shapes are strict — get them wrong and load crashes (see CLI gotchas):
+
+- Scalar keys must stay scalars (`description`, `printer_settings_id`…). Wrapping a
+  scalar in an array = `type must be string, but is array` crash.
+- Per-filament keys: array length == project filament count (N).
+- On H2 series, ~43 keys (incl. `nozzle_temperature`, `nozzle_temperature_initial_layer`,
+  `flush_volumes_vector`, most `filament_*`) are per-filament × per-nozzle-variant:
+  length 2N, interleaved pairs (`filament_self_index` = 1,1,2,2,…). A single-filament
+  project wants 2-element arrays there.
+- `flush_volumes_matrix` is N²×2 (both extruders). Machine per-extruder keys are length 2,
+  process nozzle-variant keys length 4, `printable_area` is a coordinate list — leave all
+  of those alone when resizing filament slots.
+- Only include keys a real project save contains; profile-only extras (`description`,
+  `include`, `filament_extruder_compatibility`…) crash or pollute the strict loader.
+
+To go from 1 filament slot to N: duplicate per-filament entries, expand per-filament×variant
+pairs `[v0,v1]` → `[v0,v1,v0,v1,…]`, resize the flush matrix to N²×extruders, and set
+`filament_self_index` to `1,1,2,2,…`. An arity manifest generated at collapse time is the
+only reliable way to tell a collapsed per-variant key from a genuine per-extruder machine
+key — both are length 2.
+
+**Reference implementation:** formeriet's `packages/tool-temp-tower` — `src/threemf.ts`
+(complete validated project writer incl. custom G-code, multi-part objects with per-part
+extruders, and the 1→2 filament-slot expansion) and `scripts/flatten-settings.mjs`
+(collapses a project-settings template's filament slots, flattens Generic profile
+inheritance chains from the local Studio install, and emits the arity manifest).
 
 ## OpenSCAD notes
 
