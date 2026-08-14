@@ -1,0 +1,38 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# noTunes setup — Apple Music can't actually be uninstalled: Music.app lives on
+# the sealed, read-only APFS system volume (/System/Applications), so even root
+# can't remove it while SIP and the Signed System Volume seal are intact.
+# noTunes is the reproducible substitute: it sits in the menu bar and quits
+# Music.app whenever something tries to launch it (a stray media key, a web
+# "Open in Music" link, an iPhone sync), optionally opening a replacement first.
+#
+#   1. Point it at Spotify so the media keys land somewhere useful instead of
+#      just being swallowed. Upstream documents this as a plain defaults key.
+#   2. Start it at login via the tracked LaunchAgent, and load that agent now so
+#      no logout is needed.
+#
+# run_onchange: re-runs when this script changes. _after_: runs once every other
+# target (the LaunchAgent plist) is already written.
+
+agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/digital.twisted.noTunes.autostart.plist"
+label="digital.twisted.noTunes.autostart"
+
+# Quit first so a running instance can't flush cached prefs over the write on
+# exit (the same footgun SwiftBar has).
+killall noTunes 2>/dev/null || true
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx noTunes || break; sleep 0.2; done
+
+echo "==> Pointing noTunes at Spotify"
+defaults write digital.twisted.noTunes replacement -string "/Applications/Spotify.app"
+
+# Reload the login agent (idempotent: bootout is a no-op the first time).
+# bootstrap honours RunAtLoad, so this also (re)launches noTunes right now.
+echo "==> Loading noTunes login agent"
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$agent"
+
+echo "==> noTunes active — Apple Music will be killed on launch, media keys go to Spotify."
+{{ end -}}

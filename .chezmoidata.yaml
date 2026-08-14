@@ -13,6 +13,7 @@ packages:
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
       - lm-studio
+      - notunes  # Apple Music can't be uninstalled (sealed system volume); this kills it on launch and redirects media keys to Spotify
       - obsidian
       - signal
       - spotify
