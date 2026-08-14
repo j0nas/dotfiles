@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Launch noTunes at login, reproducibly. noTunes has no LoginItems helper
+     bundle and no defaults key for autostart — upstream only documents the
+     GUI route (System Settings → General → Login Items), so this LaunchAgent
+     is the chezmoi-trackable equivalent. Same shape as the SwiftBar agent.
+     RunAtLoad fires once at login (and on `launchctl bootstrap`); no KeepAlive
+     — noTunes manages its own lifetime and quitting it should stay quit for
+     the session. `open -a` resolves via LaunchServices, so no hardcoded path.
+     Loaded for the current session by run_onchange_after_setup-notunes. -->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>digital.twisted.noTunes.autostart</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/open</string>
+		<string>-a</string>
+		<string>noTunes</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/dev/null</string>
+	<key>StandardErrorPath</key>
+	<string>/dev/null</string>
+</dict>
+</plist>
