@@ -9,23 +9,17 @@ BREWFILE=$(cat <<EOF
 brew {{ . | quote }}
 {{ end -}}
 {{ range .packages.darwin.casks -}}
-cask {{ . | quote }}
+cask {{ . | quote }}{{ if eq (len (splitList "/" .)) 3 }}, trusted: true{{ end }}
 {{ end -}}
 EOF
 )
+# `trusted: true` above is required on every fully-qualified cask (user/repo/cask).
 # Homebrew 6.0 added tap-trust: it refuses to evaluate a third-party tap's Ruby
-# (which `brew bundle` does) until the tap is explicitly trusted. Trust the tap
-# behind every fully-qualified cask (user/repo/cask). Idempotent.
-CASKS=(
-{{- range .packages.darwin.casks }}
-  {{ . | quote }}
-{{- end }}
-)
-for c in "${CASKS[@]}"; do
-  case "$c" in
-    */*/*) brew trust --tap "${c%/*}" >/dev/null 2>&1 || true ;;
-  esac
-done
+# until that cask is trusted. Trust must be declared *here* rather than via a
+# `brew trust` call — `brew bundle cleanup --force` resets the global trust store
+# to exactly the Brewfile's values, so an imperatively-trusted cask gets wiped
+# mid-run and the `brew cleanup` nested inside cleanup then exits 1, failing this
+# script. Declaring it keeps trust as declarative as the package list itself.
 echo "$BREWFILE" | brew bundle --file=/dev/stdin
 echo "$BREWFILE" | brew bundle cleanup --force --file=/dev/stdin
 {{ else if stat "/mnt/c/Users" -}}
