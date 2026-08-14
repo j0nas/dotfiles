@@ -35,6 +35,10 @@ if [[ "$OS" == "Linux" ]]; then
 fi
 
 # --- chezmoi ---
+# Bootstrap copy only: a bare machine needs chezmoi before mise exists. Once the
+# first apply runs, mise takes over (chezmoi = "latest" in its config) and the
+# converge script deletes this ~/.local/bin copy — otherwise it would shadow the
+# managed binary on PATH and freeze the machine at whatever version installed it.
 if ! command -v chezmoi &> /dev/null; then
   echo "==> Installing chezmoi..."
   sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin

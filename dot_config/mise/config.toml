@@ -53,6 +53,14 @@ opencode = "latest"
 # (which self-updates outside any version manager) and over a darwin-only brew,
 # since this lands `fly`/`flyctl` on PATH on every OS.
 flyctl = "latest"
+# chezmoi: the tool that applies this very repo. Declared here for the same
+# reason as flyctl — otherwise nothing ever rolls it forward. setup.sh installs
+# it once via get.chezmoi.io into ~/.local/bin (that copy has to exist before
+# mise does, to bootstrap a bare machine) behind a `command -v` guard, so it was
+# install-once-never-upgrade and quietly fell behind releases. The converge
+# script retires that bootstrap copy once this one resolves, because
+# ~/.local/bin precedes mise's shims on PATH and would otherwise shadow it.
+chezmoi = "latest"
 
 [settings]
 # Honour .node-version / .nvmrc / package.json devEngines for per-project Node,
