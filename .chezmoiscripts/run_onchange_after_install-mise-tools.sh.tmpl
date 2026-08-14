@@ -1,0 +1,55 @@
+#!/bin/bash
+set -e
+
+# Converge mise-managed tools whenever the tool list changes, so `chezmoi apply`
+# picks up additions/removals without needing a fresh run_once bootstrap. Mirrors
+# how install-packages / install-vscode-extensions stay in sync with their data.
+#
+# _after_ is load-bearing, not decoration: this script reads the *target*
+# ~/.config/mise/config.toml, and without the prefix it runs before chezmoi has
+# written that file. The apply that first declared a new tool would then log
+# "all tools are installed" against the OLD config and skip it, while the state
+# key — computed from the NEW source config — recorded success, so the tool
+# stayed missing until some unrelated edit re-triggered the script.
+#
+# mise config: {{ include "dot_config/mise/config.toml" | sha256sum }}
+#
+# Second state key, deliberately time-based: the config hash alone only re-runs
+# this on an *edit*, which meant the `mise upgrade` below effectively never fired
+# and every "latest" pin sat frozen at whatever it resolved to on the day it was
+# added. Unix-week counter (epoch / 604800) rolls the hash once every 7 days, so
+# a stale toolchain self-heals on the first apply of each week without making
+# every apply pay for a network round-trip per tool.
+# upgrade cadence: week {{ div (now | unixEpoch) 604800 }}
+
+# Install the backend prerequisites first. The npm-backed tools (npm:ccusage,
+# npm:vite-plus) shell out to npm, and the pipx-backed tool (check-jsonschema)
+# shells out to uv; on a fresh machine neither node nor uv exists yet, so a plain
+# `mise install` could fail building those backends. mise's npm/pipx backends use
+# mise's own node/uv, so installing both up front is all that's needed — no
+# external version manager.
+echo "==> Installing backend prerequisites (Node, uv)..."
+mise install node uv
+
+echo "==> Converging mise-managed tools..."
+mise install
+
+# `mise install` never moves a tool that already satisfies its pin, so loose
+# pins ("latest", node's major-only "26") only advance here. Upgrade within the
+# declared ranges (no --bump: config stays as-is) so every converge actually
+# lands the newest matching versions.
+echo "==> Upgrading tools within their pinned ranges..."
+mise upgrade -y
+
+# chezmoi manages itself now (see config.toml). setup.sh bootstrapped a copy into
+# ~/.local/bin to get a bare machine off the ground, and that dir precedes mise's
+# shims on PATH — so leaving it there would shadow the managed binary and pin the
+# machine to whatever version bootstrapped it. Retire it once mise's copy
+# resolves. Unlinking the running executable is safe: the open inode outlives the
+# path, so this very apply finishes on the old binary and the next one picks up
+# the shim.
+bootstrap_chezmoi="${HOME}/.local/bin/chezmoi"
+if [[ -f "$bootstrap_chezmoi" ]] && mise which chezmoi > /dev/null 2>&1; then
+  echo "==> Retiring bootstrap chezmoi ($bootstrap_chezmoi) — mise manages it now"
+  rm -f "$bootstrap_chezmoi"
+fi
