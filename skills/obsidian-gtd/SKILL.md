@@ -13,7 +13,8 @@ This skill is tailored to **Jonas's specific setup** — not a generic GTD engin
 
 ## The vault
 
-**Location:** `C:\Users\jonas\iCloudDrive\iCloud~md~obsidian\Jonas' vault`
+**Location (Windows):** `C:\Users\jonas\iCloudDrive\iCloud~md~obsidian\Jonas' vault`
+**Location (Mac):** `/Users/jonas/Library/Mobile Documents/iCloud~md~obsidian/Documents/Jonas' vault`
 
 Synced via iCloud between devices. Do NOT open the parent `iCloud~md~obsidian/` as a vault — that's a known past mistake.
 
@@ -50,7 +51,7 @@ The distinction is load-bearing. Only use checkboxes when the thing should be in
 | `⏳ YYYY-MM-DD` | **Scheduled date** — soft "want to do on/after." No consequence for slipping. Dashboard "Should have started". |
 | `🛫 YYYY-MM-DD` | **Start date** — can't begin before this (gated on a dependency).                                              |
 | `#waiting-for`  | Blocked on someone else. Ball in their court. Dashboard "Waiting for".                                         |
-| `#agenda`       | Want to raise next time you talk with someone. Ball in your court, need them present. Dashboard "Agenda".      |
+| `#agenda`       | Anything triggered by next contact with a person — raise a topic, or hand over/bring something. Ball in your court, need them present. Dashboard "Agenda". |
 | `#doing`        | Currently in progress. Dashboard "In progress".                                                                |
 | `⏫`            | High priority (Tasks plugin symbol).                                                                           |
 
