@@ -16,6 +16,7 @@ packages:
       - notunes  # Apple Music can't be uninstalled (sealed system volume); this kills it on launch and redirects media keys to Spotify
       - obsidian
       - signal
+      - silhouette-studio  # design/cut software for the Silhouette Cameo 5 (card proxies etc.)
       - spotify
       - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
       - visual-studio-code
