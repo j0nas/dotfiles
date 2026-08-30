@@ -12,6 +12,7 @@ packages:
       - discord
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
+      - godot  # Godot 4.x game engine; cask puts a `godot` CLI shim on PATH (headless runs, script checks)
       - lm-studio
       - notunes  # Apple Music can't be uninstalled (sealed system volume); this kills it on launch and redirects media keys to Spotify
       - obsidian

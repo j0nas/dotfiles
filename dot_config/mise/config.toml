@@ -45,6 +45,10 @@ pnpm = "latest"
 # version is mise-managed rather than a network self-install. The `viteplus`
 # rule (~/.claude/rules) assumes this is present — keep them in sync.
 "npm:vite-plus" = "latest"
+# gdtoolkit: gdlint/gdformat/gdparse for GDScript (Godot projects) — static
+# analysis + formatting, the agent-friendly substitute for the editor's error
+# panel. pipx backend; uv (above) provides the venv.
+"pipx:gdtoolkit" = "latest"
 # glow: terminal markdown reader (charmbracelet). `glow -p` pages rendered
 # markdown, replacing `less` for .md files — see the `md` and `keys` aliases.
 glow = "latest"
