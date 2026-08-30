@@ -48,7 +48,8 @@ alias co='claude --model "opus[1m]"'               # sc: co | claude on Opus (1M
 alias cs='claude --model sonnet'                   # sc: cs | claude on Sonnet | Tools
 alias cf='claude --model "claude-fable-5[1m]"'     # sc: cf | claude on Fable 5 (1M context) | Tools
 alias oc='opencode'                                # sc: oc | opencode | Tools
-alias keys='${PAGER:-less} "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools
+alias md='glow -p'                                 # sc: md | Read a markdown file, paged (glow) | Tools
+alias keys='glow -p "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools
 
 # vite+ (vp): freshen the mise-managed global `vp` right before scaffolding, so
 # new projects never start on a stale toolchain. The mise config pins `latest`,

@@ -45,6 +45,9 @@ pnpm = "latest"
 # version is mise-managed rather than a network self-install. The `viteplus`
 # rule (~/.claude/rules) assumes this is present — keep them in sync.
 "npm:vite-plus" = "latest"
+# glow: terminal markdown reader (charmbracelet). `glow -p` pages rendered
+# markdown, replacing `less` for .md files — see the `md` and `keys` aliases.
+glow = "latest"
 # opencode: open-source terminal AI coding agent (anomalyco/opencode, formerly
 # sst/opencode). Registry short name resolves to the aqua-backed release binary.
 opencode = "latest"
