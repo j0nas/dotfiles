@@ -35,6 +35,11 @@ alias desktop='cd ~/Desktop'
 {{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 
+# mtg proxies (WSL only — the project and printer live on the Windows machine)
+{{ if stat "/mnt/c/Users" -}}
+alias make-proxies="$HOME/projects/mtg-proxy/make-proxies.sh"  # sc: make-proxies <deck> | Build MTG proxy PDF + cut file | Tools
+{{ end -}}
+
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools

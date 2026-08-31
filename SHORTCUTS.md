@@ -143,6 +143,7 @@
 
 | Shortcut | Action |
 | --- | --- |
+| `make-proxies <deck>` | Build MTG proxy PDF + cut file |
 | `c` | claude |
 | `cr` | claude --resume |
 | `co` | claude on Opus (1M context) |
