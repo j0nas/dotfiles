@@ -40,5 +40,6 @@
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:violet",
   "agentPushNotifEnabled": true,
-  "voiceEnabled": true
+  "voiceEnabled": true,
+  "feedbackDrafts": "off"
 }
