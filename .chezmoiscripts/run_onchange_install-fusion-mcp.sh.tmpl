@@ -22,9 +22,11 @@ if [ -d "$FUSION_ADDINS" ] && [ ! -d "$FUSION_ADDINS/Fusion360MCP" ]; then
   rm -rf "$TMP"
 fi
 
-# MCP registration. `claude mcp add` errors on duplicate; `|| true` keeps
+# MCP registration. `--with "mcp<2"`: fusion360-mcp-server 0.1.0 pins mcp>=1.0
+# unbounded, and mcp 2.x removed Server.list_tools -> crashes on startup.
+# `claude mcp add` errors on duplicate; `|| true` keeps
 # re-runs idempotent (same pattern as the context7 registration).
 if command -v claude &>/dev/null; then
-  claude mcp add --scope user fusion360 -- uvx fusion360-mcp-server --mode socket || true
+  claude mcp add --scope user fusion360 -- uvx --with "mcp<2" fusion360-mcp-server --mode socket || true
 fi
 {{ end -}}
