@@ -8,25 +8,47 @@ set -e
 # rather than run_once_bootstrap so it (a) runs after install-claude-code (we
 # need `claude` on PATH for `claude mcp add`) and (b) self-heals if you install
 # Fusion later -- run_once_ would never re-evaluate.
+#
+# Both halves are pinned to the same upstream commit so the add-in's command
+# set matches the server's tool list. PyPI 0.1.0 (Apr 2026) lacks the later
+# tools (bbox, import_mesh, parametric box, unified export). Bump FUSION_MCP_SHA
+# to upgrade; the script re-runs on change and refreshes both.
+#
+# `--with "mcp<2"`: the package pins mcp>=1.0 unbounded, and mcp 2.x removed
+# Server.list_tools -> crashes on startup (upstream issue #14).
 
+FUSION_MCP_SHA="0372f14"
+FUSION_MCP_REPO="https://github.com/faust-machines/fusion360-mcp-server"
 FUSION_ADDINS="$HOME/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns"
+ADDIN="$FUSION_ADDINS/Fusion360MCP"
 
-# Add-in side: skip if Fusion isn't installed (no AddIns folder).
+# Add-in side: skip if Fusion isn't installed (no AddIns folder). Reinstall
+# when missing or when the recorded sha differs from the pin.
 # After this runs you still need to load + start the add-in in Fusion once:
 # Shift+S -> Add-Ins -> Fusion360MCP -> Run, then tick Run on Startup.
-if [ -d "$FUSION_ADDINS" ] && [ ! -d "$FUSION_ADDINS/Fusion360MCP" ]; then
-  echo "==> Installing Fusion360 MCP add-in..."
-  TMP=$(mktemp -d)
-  git clone --depth=1 https://github.com/faust-machines/fusion360-mcp-server.git "$TMP/repo"
-  cp -r "$TMP/repo/addon" "$FUSION_ADDINS/Fusion360MCP"
-  rm -rf "$TMP"
+if [ -d "$FUSION_ADDINS" ]; then
+  INSTALLED=$(cat "$ADDIN/.upstream-sha" 2>/dev/null || true)
+  if [ "$INSTALLED" != "$FUSION_MCP_SHA" ]; then
+    echo "==> Installing Fusion360 MCP add-in @ $FUSION_MCP_SHA..."
+    TMP=$(mktemp -d)
+    git clone -q "$FUSION_MCP_REPO" "$TMP/repo"
+    git -C "$TMP/repo" checkout -q "$FUSION_MCP_SHA"
+    rm -rf "$ADDIN"
+    cp -r "$TMP/repo/addon" "$ADDIN"
+    echo "$FUSION_MCP_SHA" > "$ADDIN/.upstream-sha"
+    rm -rf "$TMP"
+    echo "    Restart the add-in in Fusion (Shift+S -> Add-Ins -> Fusion360MCP -> Stop, Run)."
+  fi
 fi
 
-# MCP registration. `--with "mcp<2"`: fusion360-mcp-server 0.1.0 pins mcp>=1.0
-# unbounded, and mcp 2.x removed Server.list_tools -> crashes on startup.
-# `claude mcp add` errors on duplicate; `|| true` keeps
-# re-runs idempotent (same pattern as the context7 registration).
+# MCP registration. Remove-then-add so a changed pin actually updates the
+# stored command (`claude mcp add` errors on duplicate and would keep the old
+# one). `|| true` on remove keeps first runs idempotent.
 if command -v claude &>/dev/null; then
-  claude mcp add --scope user fusion360 -- uvx --with "mcp<2" fusion360-mcp-server --mode socket || true
+  claude mcp remove --scope user fusion360 >/dev/null 2>&1 || true
+  claude mcp add --scope user fusion360 -- \
+    uvx --with "mcp<2" \
+    --from "git+${FUSION_MCP_REPO}@${FUSION_MCP_SHA}" \
+    fusion360-mcp-server --mode socket
 fi
 {{ end -}}
