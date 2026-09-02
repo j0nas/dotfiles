@@ -8,7 +8,7 @@
     ],
     "defaultMode": "bypassPermissions"
   },
-  "model": "claude-fable-5[1m]",
+  "model": "claude-fable-5-1[1m]",
   "skillOverrides": {
     "verify": "user-invocable-only"
   },
@@ -31,7 +31,7 @@
     "command": "$HOME/.claude/hooks/statusline.sh",
     "padding": 0
   },
-  "effortLevel": "xhigh",
+  "effortLevel": "medium",
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
