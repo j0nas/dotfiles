@@ -35,14 +35,15 @@ alias desktop='cd ~/Desktop'
 {{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 
-# mtg proxies. The project is a local-only clone (no remote) at ~/projects/mtg-proxy
-# on every machine; the script itself guards the Windows-mirror step behind a
-# /mnt/c check, so the same entry point works on macOS, Linux and WSL. A function
-# (not an alias) so a machine without the clone gets a clear error, not "no such file".
+# mtg proxies. The project (github.com/j0nas/mtg-proxy, private) is expected at
+# ~/projects/mtg-proxy on every machine; the script guards its Windows-mirror step
+# behind a /mnt/c check itself, so one entry point serves macOS, Linux and WSL.
+# A function, not an alias, so a machine without the clone gets the clone command
+# instead of "no such file or directory".
 # sc: make-proxies <deck> | Build MTG proxy PDF + cut file | Tools
 make-proxies() {
   local script="$HOME/projects/mtg-proxy/make-proxies.sh"
-  [[ -x "$script" ]] || { echo "make-proxies: $script not found — clone mtg-proxy into ~/projects first" >&2; return 1; }
+  [[ -x "$script" ]] || { echo "make-proxies: $script not found — run: gh repo clone j0nas/mtg-proxy ~/projects/mtg-proxy" >&2; return 1; }
   "$script" "$@"
 }
 
