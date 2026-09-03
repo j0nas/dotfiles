@@ -2,6 +2,7 @@ packages:
   darwin:
     brews:
       - age   # decrypts chezmoi-managed secrets via SSH key
+      - libusb  # USB backend for inkscape-silhouette (drives the Cameo 5 Alpha directly, bypassing Silhouette Studio)
       - llmfit  # picks the right local LLM + quant for this machine's hardware
       - uv    # darwin-only: puts `uvx` on the broad system PATH so the Claude-spawned Fusion360 MCP launches (mise's uv shim isn't on PATH in that spawn). The validator's uv is mise-managed — see dot_config/mise/config.toml.
     casks:
