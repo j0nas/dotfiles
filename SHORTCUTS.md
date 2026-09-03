@@ -144,6 +144,7 @@
 | Shortcut | Action |
 | --- | --- |
 | `make-proxies <deck>` | Build MTG proxy PDF + cut file |
+| `cut-proxies [opts]` | Cut a proxy sheet on the Cameo, no Studio |
 | `c` | claude |
 | `cr` | claude --resume |
 | `cs` | claude on Sonnet |
