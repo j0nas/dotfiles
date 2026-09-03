@@ -35,23 +35,25 @@ alias desktop='cd ~/Desktop'
 {{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 
-# mtg proxies (WSL only — the project and printer live on the Windows machine)
-{{ if stat "/mnt/c/Users" -}}
-alias make-proxies="$HOME/projects/mtg-proxy/make-proxies.sh"  # sc: make-proxies <deck> | Build MTG proxy PDF + cut file | Tools
-{{ end -}}
+# mtg proxies. The project is a local-only clone (no remote) at ~/projects/mtg-proxy
+# on every machine; the script itself guards the Windows-mirror step behind a
+# /mnt/c check, so the same entry point works on macOS, Linux and WSL. A function
+# (not an alias) so a machine without the clone gets a clear error, not "no such file".
+# sc: make-proxies <deck> | Build MTG proxy PDF + cut file | Tools
+make-proxies() {
+  local script="$HOME/projects/mtg-proxy/make-proxies.sh"
+  [[ -x "$script" ]] || { echo "make-proxies: $script not found — clone mtg-proxy into ~/projects first" >&2; return 1; }
+  "$script" "$@"
+}
 
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
-# Pick the model at launch. --model applies only to the session it starts, while
-# /model (v2.1.153+) also writes `model` into ~/.claude/settings.json — which
-# chezmoi manages, so a mid-session switch reads back as drift. Quote the [1m]
-# suffix: unquoted, zsh expands the brackets as a glob character class and the
-# command dies with "no matches found". `sonnet` takes no suffix (Sonnet 5 is
-# natively 1M); `fable` has no [1m] alias, so 1M Fable names the full model ID.
-alias co='claude --model "opus[1m]"'               # sc: co | claude on Opus (1M context) | Tools
+# The default model lives in ~/.claude/settings.json (chezmoi-managed), so plain
+# `c` is the Fable launcher; `cs` is the one cheaper override. --model applies only
+# to the session it starts, while /model (v2.1.153+) also writes `model` into
+# settings.json, so a mid-session switch reads back as chezmoi drift.
 alias cs='claude --model sonnet'                   # sc: cs | claude on Sonnet | Tools
-alias cf='claude --model "claude-fable-5[1m]"'     # sc: cf | claude on Fable 5 (1M context) | Tools
 alias oc='opencode'                                # sc: oc | opencode | Tools
 alias md='glow -p'                                 # sc: md | Read a markdown file, paged (glow) | Tools
 alias keys='glow -p "$HOME/.local/share/chezmoi/SHORTCUTS.md"'  # sc: keys | Open this shortcuts cheat sheet | Tools

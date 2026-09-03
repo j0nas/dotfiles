@@ -146,9 +146,7 @@
 | `make-proxies <deck>` | Build MTG proxy PDF + cut file |
 | `c` | claude |
 | `cr` | claude --resume |
-| `co` | claude on Opus (1M context) |
 | `cs` | claude on Sonnet |
-| `cf` | claude on Fable 5 (1M context) |
 | `oc` | opencode |
 | `md` | Read a markdown file, paged (glow) |
 | `keys` | Open this shortcuts cheat sheet |
