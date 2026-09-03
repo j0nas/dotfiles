@@ -47,6 +47,16 @@ make-proxies() {
   "$script" "$@"
 }
 
+# Same repo: send the sheet's cut outlines to the Cameo 5 Alpha directly over
+# USB/BLE (inkscape-silhouette driver), skipping Silhouette Studio and its
+# firmware-1.05 registration-mark mis-detection.
+# sc: cut-proxies [opts] | Cut a proxy sheet on the Cameo, no Studio | Tools
+cut-proxies() {
+  local script="$HOME/projects/mtg-proxy/cut-proxies.sh"
+  [[ -x "$script" ]] || { echo "cut-proxies: $script not found — run: gh repo clone j0nas/mtg-proxy ~/projects/mtg-proxy" >&2; return 1; }
+  "$script" "$@"
+}
+
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
