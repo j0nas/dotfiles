@@ -10,6 +10,8 @@ rules
 .taplo.toml
 {{ if ne .chezmoi.os "darwin" -}}
 dot_aerospace.toml
+{{/* CUPS printer instances for the ET-8550 (mtg-proxy "4x2 Glossy" preset); the queue only exists on the Mac */}}
+.cups
 {{ end -}}
 {{/* VS Code: symlinked settings.json points here; repo-only content file */}}
 Code-settings.json
