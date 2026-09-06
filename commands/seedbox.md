@@ -10,7 +10,7 @@ USBx/Ultra.cc seedbox on `comet.usbx.me` (billed via Ultra.cc). Full autonomous 
 
 ## Credentials
 
-Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_username`, `ssh_password`, `ui_password`, `{sonarr,radarr,seerr,bazarr,prowlarr}_api_key`, `plex_token`, `qbittorrent_username`, `qbittorrent_password`, `jellyfin_password`, `audiobookshelf_{hanschristian,tora}_password`. Web UI login = `ssh_username`+`ui_password`. Never echo or commit secrets. Missing file → `chezmoi apply` (decrypts `dot_claude/private_secrets/encrypted_private_seedbox.json.age`). Substitute `<ssh_host>`/`<ssh_username>` below.
+Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_username`, `ssh_password`, `ui_password`, `{sonarr,radarr,seerr,bazarr,prowlarr}_api_key`, `plex_token`, `qbittorrent_username`, `qbittorrent_password`, `jellyfin_password`, `audiobookshelf_{hanschristian,tora}_password`, `lazylibrarian_api_key`, `cp_email`+`cp_password` (Ultra.cc control panel login is by **email**, not username; CP password expires periodically → reset link by email). Web UI login = `ssh_username`+`ui_password`. Never echo or commit secrets. Missing file → `chezmoi apply` (decrypts `dot_claude/private_secrets/encrypted_private_seedbox.json.age`). Substitute `<ssh_host>`/`<ssh_username>` below.
 
 ## SSH
 
@@ -43,6 +43,7 @@ Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_us
 | Plex | `http://localhost:12625` (Docker `172.17.0.1:12625`) | `plex_token` |
 | Jellyfin | `https://<ssh_host>/jellyfin` (internal `127.0.0.1:12602`) | `jellyfin_password` |
 | Audiobookshelf | `https://audiobookshelf-<ssh_username>.comet.usbx.me/audiobookshelf` (internal `127.0.0.1:37600`) | `ui_password` (root user = `<ssh_username>`) |
+| LazyLibrarian | `https://<ssh_host>/lazylibrarian` (internal `127.0.0.1:12632`, Docker) | web users `<ssh_username>`/`ui_password` (admin), `tora`/`audiobookshelf_tora_password` (Friend); API `lazylibrarian_api_key` |
 
 ## Docs (Context7)
 
@@ -93,9 +94,19 @@ Install via CP. **Orphaned-container fix** (CP install fails `container name /au
 **Add a book**: see *Ad-hoc grab* below — hardlink into `~/media/Audiobooks/<Author>/<Title>/`, auto-appears, then match for cover/metadata.
 **API** `127.0.0.1:37600`: `POST /login {username,password}` → `user.token` → header `Authorization: Bearer <token>`. `GET /api/libraries[/{id}/items]`, `POST /api/libraries/{id}/scan`, `POST /api/items/{id}/match {provider:audible,title,author}` (applies best match). DB `~/.apps/audiobookshelf/config/absdatabase.sqlite` (`libraries`/`libraryFolders`/`users`).
 
+### LazyLibrarian (managed app, Docker — self-serve audiobook/ebook requests; installed 2026-09-06)
+
+Purpose: Tora (Friend) and Jonas (admin) add a book → LL searches Prowlarr on a schedule → grabs to qBittorrent (label `audiobooks`, keep-seeding) → copies into `~/media/Audiobooks/$Author/$Title` (ebooks → `~/media/Ebooks/$Author/$Title`) → Audiobookshelf watcher picks it up. No human gatekeeper.
+- **Container paths**: `/home/<ssh_username>` is mounted 1:1, `/config` = `~/.config/lazylibrarian` (config.ini, lazylibrarian.db, log/). `~/.apps/lazylibrarian` is empty; config lives in `~/.config`.
+- **Config**: edit `config.ini` only with the app stopped (`app-lazylibrarian stop`), keys lowercase under UPPERCASE sections (`[GENERAL]`, `[API]`, `[TORRENT]`, `[QBITTORRENT]`, `[TORZNAB_n]`, `[POSTPROCESS]`); key names from `lazylibrarian/configdefs.py` upstream. Set: `user_accounts=1`, `destination_copy=1`, `book_api=OpenLibrary` + `ol_api=1` + `audnexus=1` (Goodreads dead, `gr_api` blanked), `numberofseeders=2`, qBittorrent via docker bridge `172.17.0.1:12641` with **empty** base (no `/qbittorrent` internally).
+- **Indexers come from Prowlarr app-sync** (Prowlarr → Apps → LazyLibrarian, `prowlarrUrl http://172.17.0.1:12624/prowlarr`, `baseUrl http://172.17.0.1:12632/lazylibrarian`, LL api key). It syncs only indexers with book/audio categories (TPB, Knaben, TorrentDownload, LimeTorrents, Torrent9) and overwrites same-host Torznab entries — don't hand-edit those.
+- **Users** live in `lazylibrarian.db` table `users` (`Password` = md5 of utf8 pw; Perms: admin 65535, Friend 14064, Guest 12528). The installer seeds `admin`/`admin` — it was renamed to `<ssh_username>`. Web UI auth = form login (`/user_login`), API = `?apikey=`. No API for user CRUD; use sqlite with the app stopped, then start.
+- **API** (`/lazylibrarian/api?apikey=&cmd=`): `findBook&name=` (OpenLibrary search), `addBook&id=<OLid>&wait`, `queueBook&id=&type=AudioBook`, `searchBook&id=&type=AudioBook&wait` (immediate search+grab), `getDownloadProgress`, `forceProcess` (run postprocessor now; else every 10 min), `getWanted`, `listNabProviders`, `help`.
+- **Verified 2026-09-06**: Project Hail Mary (audio) → 100% match via Prowlarr/TPB → Snatched to qBittorrent in <2 s.
+
 ### Ad-hoc grab (no *arr — games, audiobooks, ebooks, comics, music)
 
-For media with no request/automation layer. Decided NOT worth dedicated software (Questarr for games, LazyLibrarian for books both exist + plug into Prowlarr+qBittorrent, but Questarr isn't on the Ultra.cc CP / no Docker access, and a seedbox can't *play* games anyway — so drive it by hand):
+For media with no request/automation layer (games, comics, music; **books now go through LazyLibrarian above**). Questarr for games isn't on the Ultra.cc CP / no Docker access, and a seedbox can't *play* games anyway — so drive it by hand:
 1. **Search** `GET /prowlarr/api/v1/search?query=<term>&type=search&limit=100` (`X-Api-Key`). Fields: `title`, `seeders`, `size`, `categories`, `downloadUrl`|`magnetUrl`|`infoHash`. Sort by seeders; pick a trusted source at the right version. Games: trusted repackers FitGirl/DODI, scene RUNE/FLT/CODEX — avoid unlabeled re-uploads for anything you'll execute.
 2. **Quota** big grabs first: `quota -s` (limit 3725G; box `/home30` 17T).
 3. **Add**: qBittorrent login → `POST /torrents/add` `urls=<downloadUrl|magnet>&category=<games|audiobooks|...>`. A non-*arr `category` keeps it out of Sonarr/Radarr import paths; it lands in `~/downloads/qbittorrent/`.
