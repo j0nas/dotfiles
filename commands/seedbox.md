@@ -10,7 +10,7 @@ USBx/Ultra.cc seedbox on `comet.usbx.me` (billed via Ultra.cc). Full autonomous 
 
 ## Credentials
 
-Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_username`, `ssh_password`, `ui_password`, `{sonarr,radarr,seerr,bazarr,prowlarr}_api_key`, `plex_token`, `qbittorrent_username`, `qbittorrent_password`, `jellyfin_password`. Web UI login = `ssh_username`+`ui_password`. Never echo or commit secrets. Missing file → `chezmoi apply` (decrypts `dot_claude/private_secrets/encrypted_private_seedbox.json.age`). Substitute `<ssh_host>`/`<ssh_username>` below.
+Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_username`, `ssh_password`, `ui_password`, `{sonarr,radarr,seerr,bazarr,prowlarr}_api_key`, `plex_token`, `qbittorrent_username`, `qbittorrent_password`, `jellyfin_password`, `audiobookshelf_hanschristian_password`. Web UI login = `ssh_username`+`ui_password`. Never echo or commit secrets. Missing file → `chezmoi apply` (decrypts `dot_claude/private_secrets/encrypted_private_seedbox.json.age`). Substitute `<ssh_host>`/`<ssh_username>` below.
 
 ## SSH
 
@@ -89,7 +89,7 @@ Abandoned themes fail silently (CSS loads, selectors miss current markup) — ch
 
 ### Audiobookshelf (managed app — audiobooks/podcasts; separate from Jellyfin)
 
-Install via CP. **Orphaned-container fix** (CP install fails `container name /audiobookshelf-<ssh_username> already in use`): `app-audiobookshelf uninstall` clears the squatted Docker name (users have no direct `docker` access), then reinstall via CP. Root user = `<ssh_username>` / `ui_password`. Library "Audiobooks" → `~/media/Audiobooks`, structure `Author/Title/<files>` (watcher auto-adds; multi-file = one book). Provider set to `audible`. No global "auto-match" toggle — untagged rips need a one-off match; files with embedded ASIN/ISBN match on scan.
+Install via CP. **Orphaned-container fix** (CP install fails `container name /audiobookshelf-<ssh_username> already in use`): `app-audiobookshelf uninstall` clears the squatted Docker name (users have no direct `docker` access), then reinstall via CP. Root user = `<ssh_username>` / `ui_password`. Second account `hanschristian` (father-in-law; type *user*, Audiobooks library only, no edit/upload/delete; pw `audiobookshelf_hanschristian_password`) — progress is per user, so shared books never collide. Public URL is the **subdomain** `audiobookshelf-<ssh_username>.comet.usbx.me` (paths like `<ssh_host>/audiobookshelf` hit Ultra.cc's basic-auth 401 page). Users API: `GET/POST /api/users`, `PATCH /api/users/{id}` (`type`, `isActive`, `librariesAccessible`, `permissions`). Library "Audiobooks" → `~/media/Audiobooks`, structure `Author/Title/<files>` (watcher auto-adds; multi-file = one book). Provider set to `audible`. No global "auto-match" toggle — untagged rips need a one-off match; files with embedded ASIN/ISBN match on scan.
 **Add a book**: see *Ad-hoc grab* below — hardlink into `~/media/Audiobooks/<Author>/<Title>/`, auto-appears, then match for cover/metadata.
 **API** `127.0.0.1:37600`: `POST /login {username,password}` → `user.token` → header `Authorization: Bearer <token>`. `GET /api/libraries[/{id}/items]`, `POST /api/libraries/{id}/scan`, `POST /api/items/{id}/match {provider:audible,title,author}` (applies best match). DB `~/.apps/audiobookshelf/config/absdatabase.sqlite` (`libraries`/`libraryFolders`/`users`).
 
