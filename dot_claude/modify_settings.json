@@ -1,0 +1,16 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+Claude Code rewrites ~/.claude/settings.json itself (/config, /theme, /effort,
+onboarding prompts…), so a plain managed file drifted on every UI change and
+`chezmoi apply` stopped to ask about it. This modify template instead reads the
+LIVE file from stdin and deep-merges the managed keys (repo-only
+Claude-settings.json, validated against the vendored schema) over it: managed
+keys always win, anything Claude writes that we don't manage survives, and
+apply never prompts. Retired keys listed below are removed so a stale local
+value can't keep overriding the managed one.
+*/ -}}
+{{- $cur := dict -}}
+{{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- range list "modelSettings" -}}{{- $_ := unset $cur . -}}{{- end -}}
+{{- $managed := include "Claude-settings.json" | fromJson -}}
+{{- mergeOverwrite $cur $managed | toPrettyJson }}

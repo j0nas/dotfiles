@@ -15,6 +15,8 @@ dot_aerospace.toml
 {{ end -}}
 {{/* VS Code: symlinked settings.json points here; repo-only content file */}}
 Code-settings.json
+{{/* Claude Code: managed keys merged into ~/.claude/settings.json by dot_claude/modify_settings.json; repo-only */}}
+Claude-settings.json
 {{ if eq .chezmoi.os "darwin" -}}
 .config/Code/User/settings.json
 {{ else -}}
