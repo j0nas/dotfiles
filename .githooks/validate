@@ -43,7 +43,7 @@ done < <(git ls-files '*.tmpl')
 json_ok=1
 while IFS= read -r f; do
   [ -n "$f" ] || continue
-  case "$f" in .githooks/*) continue ;; esac
+  case "$f" in .githooks/*|*/modify_*) continue ;; esac   # modify_ = template, not JSON
   jq empty "$f" 2>/dev/null || { fail "invalid JSON: $f"; json_ok=0; }
 done < <(git ls-files '*.json')
 [ "$json_ok" -eq 1 ] && ok "all JSON well-formed"
@@ -51,8 +51,14 @@ done < <(git ls-files '*.json')
 # 3. Schema validation ------------------------------------------------------
 # opencode.json is syntax-only: its schema pins a closed model enum that rejects
 # local models. VS Code settings are syntax-only: no static schema exists.
-if check-jsonschema --schemafile "$schemas/claude-code-settings.json" dot_claude/settings.json >/dev/null 2>err; then
-  ok "schema: dot_claude/settings.json"; else fail "schema: dot_claude/settings.json"; sed 's/^/      /' err; fi
+# Claude Code settings: the managed keys (Claude-settings.json) are merged into the
+# live file by the modify template, so validate BOTH the managed source and the
+# merged result — rendered with the managed file standing in for the live one.
+if check-jsonschema --schemafile "$schemas/claude-code-settings.json" Claude-settings.json >/dev/null 2>err; then
+  ok "schema: Claude-settings.json"; else fail "schema: Claude-settings.json"; sed 's/^/      /' err; fi
+if merged="$(chezmoi execute-template --source "$repo" --with-stdin --file dot_claude/modify_settings.json < Claude-settings.json 2>err)" \
+   && printf '%s' "$merged" | check-jsonschema --schemafile "$schemas/claude-code-settings.json" - >/dev/null 2>>err; then
+  ok "schema: dot_claude/modify_settings.json (merged output)"; else fail "schema: dot_claude/modify_settings.json (merged output)"; sed 's/^/      /' err; fi
 taplo_schema() { # <file> <schema-basename>
   if taplo check --schema "file://$schemas/$2" "$1" >/dev/null 2>err; then ok "schema: $1"; else fail "schema: $1"; sed 's/^/      /' err; fi
 }
