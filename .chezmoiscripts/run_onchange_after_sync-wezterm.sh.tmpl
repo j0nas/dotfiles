@@ -1,6 +1,8 @@
 {{ if ne .chezmoi.os "darwin" -}}
 #!/bin/bash
-# Sync WezTerm config to Windows home on every change.
+# Sync WezTerm config to Windows home on every change. after_: this reads the
+# *target* ~/.wezterm.lua, and without it the copy ran before chezmoi wrote the
+# new file, so the Windows side lagged one apply behind.
 # Hash: {{ includeTemplate "dot_wezterm.lua.tmpl" . | sha256sum }}
 WIN_HOME="/mnt/c/Users/${USER}"
 if [[ -d "$WIN_HOME" ]]; then
