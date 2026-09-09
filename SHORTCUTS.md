@@ -72,6 +72,7 @@
 | Shortcut | Action |
 | --- | --- |
 | `Shift+Enter` | Insert newline (multiline prompts) |
+| `Ctrl+V` | Paste clipboard (Windows) |
 
 ## Zsh / shell
 

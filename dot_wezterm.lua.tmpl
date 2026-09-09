@@ -46,6 +46,11 @@ config.keys = {
 -- Windows/WSL: ConPTY strips Shift+Enter, so send the CSI u sequence explicitly
 if wezterm.target_triple:find("windows") then
   table.insert(config.keys, { key = "Enter", mods = "SHIFT", action = act.SendString("\x1b[13;2u") })  -- sc: Shift+Enter | Insert newline (multiline prompts) | Input
+  -- Ctrl+V has no default binding on Windows (Ctrl+Shift+V is taken by the
+  -- split above, SUPER+V is macOS-only), so it reaches zsh as ^V =
+  -- quoted-insert. The paste that follows then has its leading ESC swallowed
+  -- literally, showing up as "^[[200~<text>~" at the prompt.
+  table.insert(config.keys, { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") })  -- sc: Ctrl+V | Paste clipboard (Windows) | Input
 end
 
 return config
