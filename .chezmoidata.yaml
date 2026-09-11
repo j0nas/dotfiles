@@ -7,6 +7,7 @@ packages:
       - uv    # darwin-only: puts `uvx` on the broad system PATH so the Claude-spawned Fusion360 MCP launches (mise's uv shim isn't on PATH in that spawn). The validator's uv is mise-managed — see dot_config/mise/config.toml.
     casks:
       - nikitabobko/tap/aerospace
+      - android-platform-tools  # adb/fastboot: talk to the Meta Quest 3 over USB (push GLBs, adb reverse for localhost WebXR, screenshots)
       - bambu-studio
       - brave-browser
       - calibre  # TEMP: remove once Tora's Kindle (PW1) rescue is done
