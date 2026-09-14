@@ -43,7 +43,7 @@ Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_us
 | Plex | `http://localhost:12625` (Docker `172.17.0.1:12625`) | `plex_token` |
 | Jellyfin | `https://<ssh_host>/jellyfin` (internal `127.0.0.1:12602`) | `jellyfin_password` |
 | Audiobookshelf | `https://audiobookshelf-<ssh_username>.comet.usbx.me/audiobookshelf` (internal `127.0.0.1:37600`) | `ui_password` (root user = `<ssh_username>`) |
-| LazyLibrarian | `https://<ssh_host>/lazylibrarian` (internal `127.0.0.1:12632`, Docker) | web users `<ssh_username>`/`ui_password` (admin), `tora`/`audiobookshelf_tora_password` (Friend); API `lazylibrarian_api_key` |
+| LazyLibrarian | `https://<ssh_host>/lazylibrarian` (internal `127.0.0.1:12632`, Docker) | web users `<ssh_username>`/`ui_password` (admin), `tora`/`ui_password` (Friend; changed 2026-09-14 at Jonas's request — NOT her ABS/Calibre-Web password). Failed-login lockout ("retry after 1 hour") lives in memory: `app-lazylibrarian restart` clears it. Login form POSTs to `/lazylibrarian/user_login` (`/login` 400s); API `lazylibrarian_api_key` |
 | Calibre-Web | `https://<ssh_host>/calibre-web/` (internal `127.0.0.1:37604`, Docker); OPDS `https://<ssh_host>/calibre-web/opds/` (trailing slash — without it nginx 301s) | web/OPDS users `<ssh_username>`/`ui_password` (admin), `tora`/`audiobookshelf_tora_password` (download+viewer+shelves) |
 
 ## Docs (Context7)
