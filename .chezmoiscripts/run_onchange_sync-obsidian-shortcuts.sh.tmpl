@@ -1,0 +1,51 @@
+#!/bin/bash
+# Publish a read-only copy of SHORTCUTS.md into the Obsidian vault so the
+# cheat sheet is readable on the phone. A symlink won't do: iCloud syncs the
+# link itself, not its target, so iOS would see a dead file. Re-runs whenever
+# the generated sheet changes (hash below); the vault path comes from
+# .obsidian_vault, same as setup-obsidian-tasks.
+#
+# SHORTCUTS.md sha256: {{ include "SHORTCUTS.md" | sha256sum }}
+set -e
+
+VAULT_NAME={{ .obsidian_vault | quote }}
+TARGET_REL="Tech/Shortcuts.md"
+
+{{ if eq .chezmoi.os "darwin" -}}
+VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
+{{ else if stat "/mnt/c/Users" -}}
+VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
+{{ else -}}
+echo "==> Skipping Obsidian shortcuts sync: no iCloud sync on Linux."
+exit 0
+{{ end -}}
+
+if [[ ! -d "$VAULT" ]]; then
+  echo "==> Skipping Obsidian shortcuts sync: vault not synced yet at $VAULT"
+  exit 0
+fi
+
+TARGET="$VAULT/$TARGET_REL"
+mkdir -p "$(dirname "$TARGET")"
+
+# Write to a temp file and move into place so iCloud never syncs a half-written note.
+TMP="$(mktemp)"
+trap 'rm -f "$TMP"' EXIT
+{
+  echo '> [!info] Read-only copy'
+  echo '> Generated from `SHORTCUTS.md` in the dotfiles repo by `chezmoi apply`. Edits here are overwritten.'
+  echo '> To change a binding, edit the `# sc:` tag next to it in the dotfiles config.'
+  echo
+  cat <<'SHORTCUTS'
+{{ include "SHORTCUTS.md" }}
+SHORTCUTS
+} > "$TMP"
+
+if [[ -f "$TARGET" ]] && cmp -s "$TMP" "$TARGET"; then
+  echo "==> Obsidian $TARGET_REL already current."
+else
+  chmod 644 "$TMP"
+  mv "$TMP" "$TARGET"
+  trap - EXIT
+  echo "==> Wrote Obsidian $TARGET_REL from SHORTCUTS.md."
+fi
