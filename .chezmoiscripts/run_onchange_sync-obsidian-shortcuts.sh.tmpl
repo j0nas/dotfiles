@@ -8,16 +8,20 @@
 # SHORTCUTS.md sha256: {{ include "SHORTCUTS.md" | sha256sum }}
 set -e
 
+{{ if not (or (eq .chezmoi.os "darwin") (stat "/mnt/c/Users")) -}}
+# Linux without WSL has no iCloud; bail before defining anything shellcheck
+# would otherwise flag as unused in this render.
+echo "==> Skipping Obsidian shortcuts sync: no iCloud sync on Linux."
+exit 0
+{{ end -}}
+
 VAULT_NAME={{ .obsidian_vault | quote }}
 TARGET_REL="Tech/Shortcuts.md"
 
 {{ if eq .chezmoi.os "darwin" -}}
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
-{{ else if stat "/mnt/c/Users" -}}
-VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
 {{ else -}}
-echo "==> Skipping Obsidian shortcuts sync: no iCloud sync on Linux."
-exit 0
+VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
 {{ end -}}
 
 if [[ ! -d "$VAULT" ]]; then
