@@ -11,6 +11,6 @@ value can't keep overriding the managed one.
 */ -}}
 {{- $cur := dict -}}
 {{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
-{{- range list "modelSettings" -}}{{- $_ := unset $cur . -}}{{- end -}}
+{{- range list "modelSettings" "hooks" -}}{{- $_ := unset $cur . -}}{{- end -}}
 {{- $managed := include "Claude-settings.json" | fromJson -}}
 {{- mergeOverwrite $cur $managed | toPrettyJson }}
