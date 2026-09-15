@@ -9,7 +9,7 @@ Run Jonas's lightweight GTD habits against his actual Obsidian vault. You do the
 
 This skill is tailored to **Jonas's specific setup** — not a generic GTD engine. No `@contexts`, no numbered folders, no config file. Paths and conventions below are hardcoded because that's the point.
 
-**Living source of truth:** `GTD conventions.md` at the vault root. When conventions change (new tag, new folder, new habit), update that file first — it's authoritative and Jonas reads it — then mirror the change into this skill file. If this skill and the conventions file disagree, the conventions file wins. Read the conventions file if you're uncertain which tag or date marker applies.
+**This file is the only source of truth.** There is no conventions or how-to note in the vault (Jonas deleted them as noise, 2026-09-15). When a convention changes, update this file.
 
 ## The vault
 
@@ -24,17 +24,17 @@ Synced via iCloud between devices. Do NOT open the parent `iCloud~md~obsidian/` 
 | ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `Inbox.md`                | Single capture file at vault root. Everything new lands here first. Processed during Weekly Review.                                                                    |
 | `Projects/`               | Active projects. One note per project. Tasks live inside the project note.                                                                                             |
-| `Someday-Maybe/`          | Ideas, wishlists, dormant stuff. `Someday-Maybe/Ideas.md` is the catch-all for one-liners.                                                                             |
+| `Someday-Maybe/`          | Exactly five topic notes: `Software ideas.md`, `Making ideas.md`, `Reading & learning.md`, `Life ideas.md`, `Questions.md`. Ideas are bullets or `##` sections inside these. An idea earns its own file only once it outgrows one section or ~10 lines — then it becomes a project. |
 | `Archive/`                | Completed projects. Move notes here when done — don't delete.                                                                                                          |
-| `Life/`                   | Personal reference notes (not tasks).                                                                                                                                  |
-| `Ruter/`, `Sokkel/`       | Work notes by client.                                                                                                                                                  |
-| `Italy/`                  | Italy property project workspace.                                                                                                                                      |
+| `Life/`                   | Personal reference notes (not tasks): ADHD, Log, House measurements.                                                                                                   |
+| `Tech/`                   | Technical reference, no tasks. `Shortcuts.md` is a read-only copy written by chezmoi — never edit it.                                                                  |
+| `MtG/`                    | Magic: the Gathering — decks, proxy backlog, deck box, supplies. Tasks live here too.                                                                                  |
+| `Ruter/`                  | Work notes (Ruter client).                                                                                                                                             |
+| `attachments/`            | Images and voice memos embedded from notes.                                                                                                                            |
 | `Dashboard.md`            | Tasks-plugin queries: Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress.                                 |
 | `Weekly Review.md`        | Jonas's own 15-20 min weekly checklist. **Use this file verbatim for Weekly Review mode** — don't invent a new one.                                                    |
-| `GTD conventions.md`      | **Living source of truth** for tag meanings, date symbols, folder uses, open questions. Read it if a convention is unclear. Propose diffs here when something evolves. |
-| `How this vault works.md` | User-facing reference doc. Don't edit without asking.                                                                                                                  |
 
-Daily notes (`YYYY-MM-DD.md`) may appear at the root — leave them alone unless asked.
+Daily notes live in `Daily notes/`. They are journals, not task homes: any `- [ ]` left there leaks onto the Dashboard with no owner, so file such tasks into a project during Weekly Review.
 
 ### Task conventions
 
@@ -123,8 +123,8 @@ What is it?
 │
 ├─ Not actionable?
 │   ├─ No future value            → TRASH (delete line)
-│   ├─ Idea / "maybe one day"     → SOMEDAY-MAYBE (append to Someday-Maybe/Ideas.md,
-│   │                                or create Someday-Maybe/<topic>.md if substantial)
+│   ├─ Idea / "maybe one day"     → SOMEDAY-MAYBE (bullet in the matching topic note;
+│   │                                a `##` section if it has a name and a few lines)
 │   └─ Worth keeping for lookup   → REFERENCE (file under Life/ or relevant folder)
 │
 └─ Actionable?
@@ -140,12 +140,11 @@ What is it?
 ### Filing rules (where does it go?)
 
 - **House / home repair / rooms** → `Projects/House.md` under the right room section
-- **Italy property** → `Projects/Italy.md` or inside `Italy/` if substantial
-- **3D printing / filament / maker stuff** → existing maker project note or new `Projects/<name>.md`
-- **Work / client** → `Sokkel/` or `Ruter/` depending on client
+- **3D printing / filament / maker stuff** → `Projects/3D printing.md` or `Projects/Formeriet.md` (Formeriet is paused until the pantry workshop exists)
+- **MtG** → `MtG/MtG.md` (proxies, deck box, supplies)
+- **Work / client** → `Ruter/`
 - **Personal admin (haircut, dentist, bills)** → either a general life-admin project note, or create one
-- **Ideas / "wouldn't it be cool if"** → `Someday-Maybe/Ideas.md` (plain bullets)
-- **Substantial ideas** → new `Someday-Maybe/<name>.md`
+- **Ideas / "wouldn't it be cool if"** → plain bullet in the matching Someday-Maybe topic note (Software / Making / Reading & learning / Life / Questions). Never create a new Someday-Maybe file for a single idea.
 - **Items with a real deadline** → add `📅 YYYY-MM-DD` (Dashboard "Overdue (real deadlines)")
 - **Items with a soft target date** → add `⏳ YYYY-MM-DD` instead (Dashboard "Should have started")
 - **Things to raise with a specific person** → add `#agenda` — do NOT use `#waiting-for` (different state)
@@ -275,7 +274,7 @@ Every decision in this skill should trace to one of these:
 - **Every active project has a next action.** A project without one is a wish. Catch these during WR.
 - **One vault, no parallel systems.** If Jonas mentions Trello, Keep, Sheets etc. → one-time import into the right folder, then close the source.
 - **Do the organizing; let him decide.** You are the system. He is the operator.
-- **Conventions evolve.** The system is young. If a rule doesn't work after a few cycles, propose a change and update `GTD conventions.md` — don't rigidly defend the current shape.
+- **Conventions evolve.** The system is young. If a rule doesn't work after a few cycles, propose a change and update this file — don't rigidly defend the current shape.
 
 ## Response style
 
@@ -296,5 +295,6 @@ Every decision in this skill should trace to one of these:
 - Don't use `#waiting-for` for items Jonas hasn't raised yet — those are `#agenda`.
 - Don't put soft target dates on `📅` — use `⏳` so the real Overdue list stays trustworthy.
 - Don't congratulate Jonas between items.
-- Don't edit `How this vault works.md` without asking. `GTD conventions.md` is editable only during an explicit "let's update our conventions" discussion, and you must propose the diff before applying.
+- Don't recreate a conventions or how-to note in the vault. Jonas deleted them as noise; this skill file is where conventions live.
+- Don't edit `Tech/Shortcuts.md` — chezmoi overwrites it.
 - Don't use the Obsidian CLI for capture or Inbox processing — it auto-launches the desktop app, which kills the zero-friction property. The CLI is reserved for `move` (link preservation) and similar API-level operations during Weekly Review.
