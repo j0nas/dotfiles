@@ -12,20 +12,6 @@
   "skillOverrides": {
     "verify": "user-invocable-only"
   },
-  "hooks": {
-    "PreToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "$HOME/.claude/hooks/intercept-installs.sh",
-            "timeout": 5
-          }
-        ]
-      }
-    ]
-  },
   "statusLine": {
     "type": "command",
     "command": "$HOME/.claude/hooks/statusline.sh",
