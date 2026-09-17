@@ -1,2 +1,2 @@
-Default EPSON_ET_8550_Series
-Dest EPSON_ET_8550_Series/4x2-glossy ColorModel=RGB cupsPrintQuality=High fit-to-page=false InputSlot=rear media=A4 MediaType=photographic-glossy print-scaling=none
+Default EPSON_ET_8550_Series_2
+Dest EPSON_ET_8550_Series_2/4x2-glossy EPIJ_FdSo=0 EPIJ_Medi=145 EPIJ_OPT_Bi_D=0 EPIJ_Qual=306 EPIJ_Silt=1 EPIJ_Size=1 fit-to-page=false print-scaling=none
