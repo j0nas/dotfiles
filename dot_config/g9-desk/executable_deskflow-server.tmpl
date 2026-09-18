@@ -1,43 +1,25 @@
 #!/bin/bash
-# deskflow-server — run the headless Deskflow server and flip the Odyssey G9
-# whenever Deskflow moves input between screens.
-#
-# Launched by the org.deskflow.server LaunchAgent. deskflow-core logs every
-# screen change at INFO as
-#     switch from "<screen>" to "<screen>" at x,y
-# and flushes per line, so this reads its output, mirrors it to the log, and
-# runs `g9` on those lines. That is the only reliable relay: a
-# keystroke(key,<server>) action in server.conf is silently dropped by the
-# server's PrimaryClient (a Synergy-era "don't forward to primary" stub), so
-# no synthetic key can reach a Mac-side hotkey daemon. Any switch — hotkey or
-# a future edge link — takes the monitor along.
-#
-# Process hygiene matters more than usual here: deskflow-core ignores SIGTERM,
-# and an orphaned instance keeps port 24800 *and* wedges on its dead stdout
-# pipe, so every replacement exits with "already running" and the PC client
-# can never reconnect. Hence: kill any stale core on start (this wrapper is
-# the only thing that runs that binary), keep the core's pid, and SIGKILL it
-# on the way out. If the core dies on its own, `wait` returns and launchd
-# (KeepAlive) restarts the pair.
+# LaunchAgent entry point. Runs deskflow-core, mirrors its output to the log,
+# runs `g9` on its INFO `switch from "…" to "…"` lines (the only working relay —
+# see README.md), and owns the core's lifetime: the core ignores SIGTERM and an
+# orphan wedges on port 24800, so clear stale cores on start and SIGKILL the
+# child on exit. If the core dies, `wait` returns and KeepAlive restarts us.
 set -u
-core="/Applications/Deskflow.app/Contents/MacOS/deskflow-core"
-settings="{{ .chezmoi.homeDir }}/.config/deskflow/settings.conf"
-g9="{{ .chezmoi.homeDir }}/.local/bin/g9"
+dir="{{ .chezmoi.homeDir }}/.config/g9-desk"
 mac="{{ .chezmoi.hostname }}"
 
 relay() {
   while IFS= read -r line; do
     printf '%s\n' "$line"
     case "$line" in
-      *'switch from "'*'" to "PomeloMadness" at '*) "$g9" pc  || true ;;
-      *'switch from "'*"\" to \"$mac\" at "*)       "$g9" mac || true ;;
+      *'switch from "'*'" to "PomeloMadness" at '*) "$dir/g9" pc  || true ;;
+      *'switch from "'*"\" to \"$mac\" at "*)       "$dir/g9" mac || true ;;
     esac
   done
 }
 
 pkill -9 -x deskflow-core 2>/dev/null || true
-
-"$core" server --new-instance -s "$settings" > >(relay) 2>&1 &
+/Applications/Deskflow.app/Contents/MacOS/deskflow-core server --new-instance -s "$dir/settings.conf" > >(relay) 2>&1 &
 core_pid=$!
 trap 'kill -9 "$core_pid" 2>/dev/null' EXIT
 trap 'exit 143' TERM INT HUP

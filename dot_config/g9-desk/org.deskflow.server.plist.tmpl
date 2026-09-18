@@ -1,18 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Headless Deskflow server (MacBook keyboard/trackpad → PomeloMadness).
-     Runs ~/.local/bin/deskflow-server, which wraps deskflow-core (from the
-     app bundle, with the chezmoi-managed settings file) and flips the G9's
-     input on every screen switch it logs. The GUI app is never opened.
-     KeepAlive restarts the pair if it dies. (Re)loaded by
-     run_onchange_after_setup-deskflow. -->
+<!-- Headless Deskflow server via ~/.config/g9-desk/deskflow-server. Symlinked
+     into ~/Library/LaunchAgents; (re)loaded by setup.sh. See README.md. -->
 <plist version="1.0">
 <dict>
 	<key>Label</key>
 	<string>org.deskflow.server</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>{{ .chezmoi.homeDir }}/.local/bin/deskflow-server</string>
+		<string>{{ .chezmoi.homeDir }}/.config/g9-desk/deskflow-server</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
