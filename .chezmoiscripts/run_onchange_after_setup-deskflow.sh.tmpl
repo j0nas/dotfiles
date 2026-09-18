@@ -12,6 +12,15 @@ set -e
 #   2. (Re)load the headless server LaunchAgent so config edits take effect
 #      without a logout. bootout is a no-op the first time.
 #
+# settings.conf deliberately carries no comments and is laid out exactly the
+# way QSettings rewrites it (sections and keys sorted, blank line between
+# sections): deskflow-core rewrites the file on every start, and matching its
+# canonical form byte for byte is what keeps `chezmoi apply` from seeing
+# drift. What the keys mean: the screen name is this Mac's hostname (must
+# match the screens: entry in server.conf); TLS is off because the link is
+# LAN-only and the PC client is headless, with no dialog to trust a
+# fingerprint in.
+#
 # One-time manual step, no CLI for it: System Settings → Privacy & Security →
 # Accessibility must list and enable `deskflow-core` (it appears after the
 # first launch). Without it the server runs but cannot capture input.
