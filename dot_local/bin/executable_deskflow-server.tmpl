@@ -12,18 +12,33 @@
 # no synthetic key can reach a Mac-side hotkey daemon. Any switch — hotkey or
 # a future edge link — takes the monitor along.
 #
-# If deskflow-core dies the pipe closes, this exits, and launchd (KeepAlive)
-# restarts the pair.
+# Process hygiene matters more than usual here: deskflow-core ignores SIGTERM,
+# and an orphaned instance keeps port 24800 *and* wedges on its dead stdout
+# pipe, so every replacement exits with "already running" and the PC client
+# can never reconnect. Hence: kill any stale core on start (this wrapper is
+# the only thing that runs that binary), keep the core's pid, and SIGKILL it
+# on the way out. If the core dies on its own, `wait` returns and launchd
+# (KeepAlive) restarts the pair.
 set -u
 core="/Applications/Deskflow.app/Contents/MacOS/deskflow-core"
 settings="{{ .chezmoi.homeDir }}/.config/deskflow/settings.conf"
 g9="{{ .chezmoi.homeDir }}/.local/bin/g9"
 mac="{{ .chezmoi.hostname }}"
 
-"$core" server -s "$settings" 2>&1 | while IFS= read -r line; do
-  printf '%s\n' "$line"
-  case "$line" in
-    *'switch from "'*'" to "PomeloMadness" at '*) "$g9" pc  || true ;;
-    *'switch from "'*"\" to \"$mac\" at "*)       "$g9" mac || true ;;
-  esac
-done
+relay() {
+  while IFS= read -r line; do
+    printf '%s\n' "$line"
+    case "$line" in
+      *'switch from "'*'" to "PomeloMadness" at '*) "$g9" pc  || true ;;
+      *'switch from "'*"\" to \"$mac\" at "*)       "$g9" mac || true ;;
+    esac
+  done
+}
+
+pkill -9 -x deskflow-core 2>/dev/null || true
+
+"$core" server --new-instance -s "$settings" > >(relay) 2>&1 &
+core_pid=$!
+trap 'kill -9 "$core_pid" 2>/dev/null' EXIT
+trap 'exit 143' TERM INT HUP
+wait "$core_pid"
