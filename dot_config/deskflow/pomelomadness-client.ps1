@@ -26,7 +26,9 @@ tlsEnabled=false
 level=INFO
 "@ | Set-Content -Encoding ASCII "$dir\deskflow.conf"
 $exe = "C:\Program Files\Deskflow\deskflow-core.exe"
-$a = New-ScheduledTaskAction -Execute $exe -Argument "client -s `"$dir\deskflow.conf`" $server"
+$log = "$env:USERPROFILE\deskflow-client.log"
+# cmd.exe redirection because Deskflow's own log/toFile setting produced no file.
+$a = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"`"$exe`" client -s `"$dir\deskflow.conf`" $server >> `"$log`" 2>&1`""
 $t = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $p = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest
 $s = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -ExecutionTimeLimit ([TimeSpan]::Zero) -RestartCount 999 -RestartInterval (New-TimeSpan -Minutes 1)
