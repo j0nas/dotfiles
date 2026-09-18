@@ -154,6 +154,8 @@
 | `md` | Read a markdown file, paged (glow) |
 | `keys` | Open this shortcuts cheat sheet |
 | `kill-port <port>` | Kill whatever process is listening on a port |
+| `shutdown-in <minutes>` | Schedule a shutdown that many minutes from now |
+| `shutdown-cancel` | Cancel a pending shutdown-in |
 
 ## dot_config/g9-desk/server.conf.tmpl
 

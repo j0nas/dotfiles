@@ -100,3 +100,30 @@ kill-port() {
   echo "kill-port: killing PID(s) ${pids//$'\n'/ } on port $port" >&2
   echo "$pids" | xargs kill
 }
+
+# Scheduled shutdown. One name on every OS: WSL hands it to the Windows host
+# (shutdown.exe takes seconds; no /f, so an app with unsaved work can still veto
+# it — Windows shows the pending shutdown in a toast either way), macOS/Linux use
+# the BSD/systemd `shutdown -h +m` form, which needs root. Windows refuses a
+# second schedule (error 1190) until the first is cancelled: shutdown-cancel.
+# sc: shutdown-in <minutes> | Schedule a shutdown that many minutes from now | Tools
+shutdown-in() {
+  local m="$1"
+  [[ "$m" =~ ^[0-9]+$ ]] || { echo "usage: shutdown-in <minutes>" >&2; return 1; }
+{{ if stat "/mnt/c/Users" -}}
+  /mnt/c/Windows/System32/shutdown.exe /s /t $((m * 60)) || return
+{{ else -}}
+  sudo shutdown -h "+$m" || return
+{{ end -}}
+  echo "shutdown-in: shutdown scheduled for $(date -d "+$m min" +%H:%M 2>/dev/null || date -v "+${m}M" +%H:%M)" >&2
+}
+# sc: shutdown-cancel | Cancel a pending shutdown-in | Tools
+shutdown-cancel() {
+{{ if stat "/mnt/c/Users" -}}
+  /mnt/c/Windows/System32/shutdown.exe /a
+{{ else if eq .chezmoi.os "darwin" -}}
+  sudo killall shutdown
+{{ else -}}
+  sudo shutdown -c
+{{ end -}}
+}
