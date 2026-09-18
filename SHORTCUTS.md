@@ -155,7 +155,7 @@
 | `keys` | Open this shortcuts cheat sheet |
 | `kill-port <port>` | Kill whatever process is listening on a port |
 
-## dot_config/deskflow/server.conf.tmpl
+## dot_config/g9-desk/server.conf.tmpl
 
 ### G9 switching
 
