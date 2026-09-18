@@ -18,6 +18,14 @@
     "padding": 0
   },
   "effortLevel": "medium",
+  "modelSettings": {
+    "claude-opus-5": {
+      "effortLevel": "xhigh"
+    },
+    "claude-fable-5-1": {
+      "effortLevel": "medium"
+    }
+  },
   "tui": "fullscreen",
   "voice": {
     "enabled": true,
