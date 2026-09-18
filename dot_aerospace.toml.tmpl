@@ -130,6 +130,15 @@ cmd-alt-enter = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/new-we
 # u = unname (clear). The path is the SwiftBar plugin acting as its own CLI;
 # keep it in sync with the plugin filename.
 cmd-alt-shift-n = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh set'    # sc: Cmd+Alt+Shift+N | Set / name workspace label | Labels
+
+# Relays for the Deskflow hotkeys (Cmd+Alt+P / Cmd+Alt+M, defined in
+# ~/.config/deskflow/server.conf). Deskflow owns those combos because it must
+# catch them even while it is forwarding every keystroke to PomeloMadness — no
+# Mac-side hotkey daemon sees keys in that state. Its action synthesises F18/F19
+# on the Mac screen and AeroSpace turns that into the DDC input switch. The
+# built-in keyboard has no F18/F19, so nothing else can fire these.
+f18 = 'exec-and-forget {{ .chezmoi.homeDir }}/.local/bin/g9 pc'
+f19 = 'exec-and-forget {{ .chezmoi.homeDir }}/.local/bin/g9 mac'
 cmd-alt-shift-u = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/swiftbar/plugins/aerospace.sh clear'  # sc: Cmd+Alt+Shift+U | Clear workspace label | Labels
 
 [mode.resize.binding]

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Headless Deskflow server (MacBook keyboard/trackpad → PomeloMadness).
+     Runs deskflow-core straight from the app bundle with the chezmoi-managed
+     settings file, so the GUI app never needs to be opened or configured.
+     KeepAlive restarts it if it dies; the client on the PC reconnects on its
+     own. (Re)loaded by run_onchange_after_setup-deskflow. -->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>org.deskflow.server</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Applications/Deskflow.app/Contents/MacOS/deskflow-core</string>
+		<string>server</string>
+		<string>-s</string>
+		<string>{{ .chezmoi.homeDir }}/.config/deskflow/settings.conf</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>StandardOutPath</key>
+	<string>{{ .chezmoi.homeDir }}/Library/Logs/deskflow-server.log</string>
+	<key>StandardErrorPath</key>
+	<string>{{ .chezmoi.homeDir }}/Library/Logs/deskflow-server.log</string>
+</dict>
+</plist>

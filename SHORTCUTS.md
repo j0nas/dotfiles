@@ -154,3 +154,12 @@
 | `md` | Read a markdown file, paged (glow) |
 | `keys` | Open this shortcuts cheat sheet |
 | `kill-port <port>` | Kill whatever process is listening on a port |
+
+## dot_config/deskflow/server.conf.tmpl
+
+### G9 switching
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+Alt+P` | Hand keyboard, trackpad and the G9 to PomeloMadness |
+| `Cmd+Alt+M` | Take keyboard, trackpad and the G9 back to the Mac |

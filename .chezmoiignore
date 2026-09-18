@@ -21,4 +21,7 @@ Claude-settings.json
 .config/Code/User/settings.json
 {{ else -}}
 Library
+{{/* Deskflow server + G9 DDC switching only make sense on the MacBook at the G9 */}}
+.config/deskflow
+.local/bin/g9
 {{ end -}}
