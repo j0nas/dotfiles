@@ -4,6 +4,9 @@
 section: screens
     {{ .chezmoi.hostname }}:
     PomeloMadness:
+        # Mac muscle memory: Cmd arrives as Ctrl (Cmd+C/V/Z/T…). Ctrl stays
+        # Ctrl, so the Windows key is unreachable from this keyboard.
+        super = ctrl
 end
 
 section: options
