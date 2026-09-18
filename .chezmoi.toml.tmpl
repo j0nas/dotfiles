@@ -8,6 +8,10 @@ encryption = "age"
     name = "Jonas Jensen"
     font = "JetBrains Mono"
     obsidian_vault = "Jonas' Vault"
+    # Desk roles: true only on the machine physically at that desk. Gate
+    # anything that pairs specific hardware (a monitor, a second box) on these,
+    # never on the OS — a fresh laptop must not inherit another desk's wiring.
+    g9_desk = {{ eq .chezmoi.hostname "Jonass-MacBook-Pro" }}
 
 [git]
     autoCommit = true

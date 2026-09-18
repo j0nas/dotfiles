@@ -2,6 +2,12 @@
 # over SSH (see the `stationary` skill: pass it as -EncodedCommand). Applied
 # 2026-09-18; re-run to re-provision after a Windows reinstall.
 #
+# Kept out of chezmoi on purpose. The PC applies these dotfiles from WSL, and
+# the winget list would only get the binary installed; the real work is the
+# client settings and an elevated *interactive* scheduled task, which a WSL
+# apply would have to reach through a powershell.exe bridge. One machine, a
+# one-line SSH re-run, and no half-managed state is the better trade.
+#
 #   - Deskflow via winget (pinned to the same release as the Mac).
 #   - Headless client settings in %APPDATA%\Deskflow\deskflow.conf.
 #   - A logon scheduled task runs deskflow-core as the interactive user; a

@@ -1,9 +1,12 @@
-{{ if and (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") -}}
+{{ if and (hasKey . "g9_desk") .g9_desk (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") -}}
 #!/bin/bash
 set -e
 
 # Deskflow: the MacBook's keyboard/trackpad drive PomeloMadness (software KVM),
 # paired with `g9` (DDC input switch) so one hotkey moves screen and input.
+# Gated on the g9_desk role (.chezmoi.toml.tmpl): this wires one specific
+# monitor to one specific PC, so no other Mac should ever run it. The PC half
+# is deliberately *not* chezmoi-managed — see pomelomadness-client.ps1.
 #
 #   1. Install the pinned release. Deskflow is not in Homebrew, so this fetches
 #      the exact dmg from GitHub and checks it against the sha256 pinned in
