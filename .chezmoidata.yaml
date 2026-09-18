@@ -54,19 +54,15 @@ packages:
 # re-installs the pin and re-matches Chrome.
 agent_browser_version: "0.33.2"
 
-# Per-desk extras, merged into the Brewfile only where the matching role flag
-# in .chezmoi.toml.tmpl is true (so a new Mac gets none of this).
+# G9 desk (dot_config/g9-desk/README.md). Brews join the Brewfile only where
+# the g9_desk flag (.chezmoi.toml.tmpl) is true. Deskflow is not in Homebrew:
+# setup.sh installs this exact release and checks the sha256 from its sums.txt.
+# Bump version+sha together.
 desk_g9:
   brews:
-    - m1ddc   # DDC/CI from Apple Silicon: `g9 pc|mac` flips the Odyssey G9's input (see dot_local/bin/executable_g9)
-
-# Deskflow (software KVM: MacBook keyboard/trackpad drive PomeloMadness). Not in
-# Homebrew, so .chezmoiscripts/run_onchange_after_setup-deskflow.sh.tmpl installs
-# this exact release from GitHub and verifies the checksum from its sums.txt.
-# Bump both together; the script re-runs on the next apply.
-deskflow:
-  version: "1.26.0"
-  sha256_macos_arm64: "bae6befc2c3119de3d751c1200aab30af3efa5496e91d5ca1029cc388eea69c5"
+    - m1ddc   # DDC/CI from Apple Silicon (`g9 pc|mac`)
+  deskflow_version: "1.26.0"
+  deskflow_sha256_macos_arm64: "bae6befc2c3119de3d751c1200aab30af3efa5496e91d5ca1029cc388eea69c5"
 
 vscode_extensions:
   - anthropic.claude-code

@@ -1,0 +1,42 @@
+#!/bin/bash
+# Mac side of the G9 desk (see README.md): install the pinned Deskflow release
+# (not in Homebrew; sha256 from the release's sums.txt) and (re)load the
+# server LaunchAgent. Idempotent. Invoked by
+# .chezmoiscripts/run_onchange_after_setup-g9-desk.sh.tmpl.
+# Manual once per Mac: Accessibility grant for deskflow-core (no CLI for it).
+set -e
+version="{{ .desk_g9.deskflow_version }}"
+sha="{{ .desk_g9.deskflow_sha256_macos_arm64 }}"
+app="/Applications/Deskflow.app"
+label="org.deskflow.server"
+agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/$label.plist"
+
+# Stop first: the bundle must not be swapped under a running core, and a
+# stale core (ignores SIGTERM) would keep port 24800.
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+pkill -x deskflow-core 2>/dev/null || true
+for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx deskflow-core || break; sleep 0.2; done
+pkill -9 -x deskflow-core 2>/dev/null || true
+
+# Bundle reports "1.26.0.0" for "1.26.0"; accept either.
+installed="$(defaults read "$app/Contents/Info" CFBundleShortVersionString 2>/dev/null || true)"
+case "$installed" in
+  "$version"|"$version.0") echo "==> Deskflow $version already installed" ;;
+  *)
+  echo "==> Installing Deskflow $version (found: ${installed:-none})"
+  tmp="$(mktemp -d)"
+  trap 'hdiutil detach -quiet "$tmp/mnt" 2>/dev/null; rm -rf "$tmp"' EXIT
+  curl -fsSL -o "$tmp/deskflow.dmg" \
+    "https://github.com/deskflow/deskflow/releases/download/v${version}/deskflow-${version}-macos-arm64.dmg"
+  echo "$sha  $tmp/deskflow.dmg" | shasum -a 256 -c -
+  # Licence prompt on the dmg: `yes` answers it; -quiet would refuse the prompt.
+  yes | hdiutil attach -nobrowse -mountpoint "$tmp/mnt" "$tmp/deskflow.dmg" >/dev/null
+  rm -rf "$app"
+  cp -R "$tmp/mnt/Deskflow.app" "$app"
+  ;;
+esac
+
+echo "==> Loading Deskflow server login agent"
+mkdir -p "{{ .chezmoi.homeDir }}/Library/Logs"
+launchctl bootstrap "gui/$(id -u)" "$agent"
+echo "==> G9 desk ready: Cmd+Alt+P / Cmd+Alt+M."

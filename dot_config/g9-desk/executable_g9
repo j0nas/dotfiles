@@ -1,26 +1,11 @@
 #!/bin/bash
-# g9 — point the Samsung Odyssey G9 (LC49G95T) at the Mac or at PomeloMadness.
-#
-#   g9 pc    → DisplayPort 1 (PomeloMadness)
-#   g9 mac   → HDMI (this MacBook, USB-C → HDMI cable)
-#
-# Sent over DDC/CI with m1ddc (brew). Findings from 2026-09-18, all verified by
-# eye on this exact monitor:
-#   - It answers no DDC *reads* on this link (every `get` returns 0) but honours
-#     *writes*, so never use `m1ddc chg` — it reads 0 and writes 0±n.
-#   - Standard MCCS input codes work (DP1 = 15, HDMI = 17). Samsung's odd
-#     Odyssey G7 codes (3/9) do nothing here, and DP2 (16) is an empty port.
-#   - The Mac's command still reaches the monitor while it is showing the PC,
-#     so both directions run from this side; nothing has to go via the PC.
-# Paired with Deskflow (Cmd+Alt+P / Cmd+Alt+M) so keyboard and trackpad follow.
-#
-# Runs from AeroSpace's exec-and-forget, which has a minimal PATH, hence the
-# explicit binary.
+# g9 pc|mac — point the Odyssey G9 at PomeloMadness (DP1=15) or this Mac
+# (USB-C→HDMI=17) over DDC/CI. Writes only: the monitor answers no reads, so
+# never `m1ddc chg`. See README.md. Explicit path: runs from launchd/AeroSpace.
 set -eu
-m1ddc="/opt/homebrew/bin/m1ddc"
 case "${1:-}" in
   pc)  code=15 ;;
   mac) code=17 ;;
   *)   echo "usage: g9 pc|mac" >&2; exit 2 ;;
 esac
-"$m1ddc" display 1 set input "$code" >/dev/null
+/opt/homebrew/bin/m1ddc display 1 set input "$code" >/dev/null

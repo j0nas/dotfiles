@@ -1,23 +1,14 @@
-# PomeloMadness side of the Deskflow setup — reference copy, run from the Mac
-# over SSH (see the `stationary` skill: pass it as -EncodedCommand). Applied
-# 2026-09-18; re-run to re-provision after a Windows reinstall.
-#
-# Kept out of chezmoi on purpose. The PC applies these dotfiles from WSL, and
-# the winget list would only get the binary installed; the real work is the
-# client settings and an elevated *interactive* scheduled task, which a WSL
-# apply would have to reach through a powershell.exe bridge. One machine, a
-# one-line SSH re-run, and no half-managed state is the better trade.
-#
-#   - Deskflow via winget (pinned to the same release as the Mac).
+# PC side of the G9 desk — run from the Mac over SSH (see README.md). Not
+# chezmoi-managed: from WSL this would need an elevated *interactive*
+# scheduled task through a powershell.exe bridge, for one machine; the winget
+# list alone would only install the binary. Re-run after a Windows reinstall.
+#   - Deskflow via winget, same release as the Mac.
 #   - Headless client settings in %APPDATA%\Deskflow\deskflow.conf.
-#   - A logon scheduled task runs deskflow-core as the interactive user; a
-#     service/session-0 process could not inject input into the desktop.
-#     The client retries the server on its own, so no KeepAlive logic needed.
-#
-# The client first tries the Mac's IPv6 link-local address and only falls back
-# to IPv4 after two 3 s timeouts, so a fresh connect takes ~6 s. Harmless.
+#   - Logon scheduled task runs deskflow-core in the interactive session
+#     (session-0/service processes cannot inject input). cmd.exe redirect for
+#     the log: Deskflow's own log/toFile produced no file.
 $ErrorActionPreference = "Stop"
-$server = "Jonass-MacBook-Pro.local"
+$server = "Jonass-MacBook-Pro.local"   # the Mac's hostname; change with the Mac
 & winget install --id Deskflow.Deskflow --version 1.26.0 --source winget --accept-package-agreements --accept-source-agreements --silent *> "$env:USERPROFILE\deskflow_install.log"
 $dir = "$env:APPDATA\Deskflow"
 New-Item -ItemType Directory -Force $dir | Out-Null
@@ -29,11 +20,10 @@ remoteHost=$server
 [security]
 tlsEnabled=false
 [log]
-level=INFO
+level=4
 "@ | Set-Content -Encoding ASCII "$dir\deskflow.conf"
 $exe = "C:\Program Files\Deskflow\deskflow-core.exe"
 $log = "$env:USERPROFILE\deskflow-client.log"
-# cmd.exe redirection because Deskflow's own log/toFile setting produced no file.
 $a = New-ScheduledTaskAction -Execute "cmd.exe" -Argument "/c `"`"$exe`" client -s `"$dir\deskflow.conf`" $server >> `"$log`" 2>&1`""
 $t = New-ScheduledTaskTrigger -AtLogOn -User $env:USERNAME
 $p = New-ScheduledTaskPrincipal -UserId $env:USERNAME -LogonType Interactive -RunLevel Highest

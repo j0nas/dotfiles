@@ -23,9 +23,8 @@ Claude-settings.json
 Library
 {{ end -}}
 {{ if not (and (hasKey . "g9_desk") .g9_desk) -}}
-{{/* Deskflow server + G9 DDC switching: only the MacBook that sits at the G9 */}}
-.config/deskflow
+{{/* G9 desk pairing (dot_config/g9-desk/README.md): only the Mac at that desk */}}
+.config/g9-desk
 .local/bin/g9
-.local/bin/deskflow-server
 Library/LaunchAgents/org.deskflow.server.plist
 {{ end -}}

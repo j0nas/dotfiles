@@ -1,12 +1,6 @@
-# Deskflow server layout: this MacBook (server) + PomeloMadness (client).
-#
-# Deliberately no `links` section: the two machines share one monitor (the
-# Odyssey G9), so sliding the cursor off an edge would move input to a screen
-# you cannot see. The only way across is the hotkeys below. The monitor
-# follows automatically: ~/.local/bin/deskflow-server watches deskflow-core's
-# "switch from ... to ..." log lines and runs `g9`. Deskflow must own the
-# combos because it is the only thing that still sees the keyboard while it is
-# forwarding every keystroke to the PC. `super` = Command, `alt` = Option.
+# Deskflow server layout — see README.md. `super` = Command, `alt` = Option.
+# No `links`: one shared monitor. Hotkeys only; the monitor follows via
+# deskflow-server, which watches the core's "switch from … to …" log lines.
 section: screens
     {{ .chezmoi.hostname }}:
     PomeloMadness:
