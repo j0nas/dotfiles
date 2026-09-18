@@ -6,8 +6,12 @@ onboarding prompts…), so a plain managed file drifted on every UI change and
 LIVE file from stdin and deep-merges the managed keys (repo-only
 Claude-settings.json, validated against the vendored schema) over it: managed
 keys always win, anything Claude writes that we don't manage survives, and
-apply never prompts. Retired keys listed below are removed so a stale local
-value can't keep overriding the managed one.
+apply never prompts. The keys listed below are reset before that merge, so a
+stale local value can't keep overriding the managed one: "hooks" is retired,
+and "modelSettings" we own wholesale — /effort saves a block per model you
+confirm a level on, which a deep merge would let accumulate past the two
+defaults declared here (Opus 5 xhigh, Fable 5.1 medium); every other model
+falls back to the top-level effortLevel.
 */ -}}
 {{- $cur := dict -}}
 {{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
