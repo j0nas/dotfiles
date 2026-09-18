@@ -8,6 +8,7 @@ gates it (`g9_desk` flag) and symlinks two files into place.
 - **PomeloMadness** (Windows 11, Deskflow *client*, logon task) — on the G9 via DP1 = input **15**.
 - **Monitor**: Samsung Odyssey G9 LC49G95T. No KVM; input switched over DDC/CI from the Mac (`m1ddc`).
 - Hotkeys (server.conf): **Cmd+Alt+P** → PC, **Cmd+Alt+M** → Mac. Deskflow must own them: it is the only thing that still sees the keyboard while forwarding it.
+- On the PC screen Cmd is sent as Ctrl (`super = ctrl` in server.conf); Ctrl stays Ctrl, the Windows key is unreachable.
 - Flow: hotkey → deskflow-core switches screen, logs `switch from "A" to "B"` → `deskflow-server` (wrapper) runs `g9 pc|mac` → m1ddc writes VCP 0x60.
 
 ## Files (this dir → `~/.config/g9-desk/`)
