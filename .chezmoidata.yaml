@@ -4,7 +4,6 @@ packages:
       - age   # decrypts chezmoi-managed secrets via SSH key
       - libusb  # USB backend for inkscape-silhouette (drives the Cameo 5 Alpha directly, bypassing Silhouette Studio)
       - llmfit  # picks the right local LLM + quant for this machine's hardware
-      - m1ddc   # DDC/CI from Apple Silicon: `g9 pc|mac` flips the Odyssey G9's input (see dot_local/bin/executable_g9)
       - uv    # darwin-only: puts `uvx` on the broad system PATH so the Claude-spawned Fusion360 MCP launches (mise's uv shim isn't on PATH in that spawn). The validator's uv is mise-managed — see dot_config/mise/config.toml.
     casks:
       - nikitabobko/tap/aerospace
@@ -54,6 +53,12 @@ packages:
 # this string. Bump it here to roll the CLI forward; the next `chezmoi apply`
 # re-installs the pin and re-matches Chrome.
 agent_browser_version: "0.33.2"
+
+# Per-desk extras, merged into the Brewfile only where the matching role flag
+# in .chezmoi.toml.tmpl is true (so a new Mac gets none of this).
+desk_g9:
+  brews:
+    - m1ddc   # DDC/CI from Apple Silicon: `g9 pc|mac` flips the Odyssey G9's input (see dot_local/bin/executable_g9)
 
 # Deskflow (software KVM: MacBook keyboard/trackpad drive PomeloMadness). Not in
 # Homebrew, so .chezmoiscripts/run_onchange_after_setup-deskflow.sh.tmpl installs

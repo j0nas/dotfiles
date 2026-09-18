@@ -8,6 +8,11 @@ BREWFILE=$(cat <<EOF
 {{ range .packages.darwin.brews -}}
 brew {{ . | quote }}
 {{ end -}}
+{{ if and (hasKey . "g9_desk") .g9_desk -}}
+{{ range .desk_g9.brews -}}
+brew {{ . | quote }}
+{{ end -}}
+{{ end -}}
 {{ range .packages.darwin.casks -}}
 cask {{ . | quote }}{{ if eq (len (splitList "/" .)) 3 }}, trusted: true{{ end }}
 {{ end -}}
