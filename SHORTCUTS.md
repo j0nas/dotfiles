@@ -148,6 +148,7 @@
 | `cut-proxies [opts]` | Cut a proxy sheet on the Cameo, no Studio |
 | `c` | claude |
 | `cr` | claude --resume |
+| `co` | claude on Opus |
 | `cs` | claude on Sonnet |
 | `oc` | opencode |
 | `md` | Read a markdown file, paged (glow) |
