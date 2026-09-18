@@ -2,11 +2,11 @@
 #
 # Deliberately no `links` section: the two machines share one monitor (the
 # Odyssey G9), so sliding the cursor off an edge would move input to a screen
-# you cannot see. The only way across is the hotkeys below, and each one also
-# flips the G9's input: the action synthesises F18/F19 on the Mac screen, which
-# AeroSpace (dot_aerospace.toml) binds to `g9 pc` / `g9 mac`. Deskflow must own
-# the combos because it is the only thing that still sees the keyboard while it
-# is forwarding every keystroke to the PC. `super` = Command, `alt` = Option.
+# you cannot see. The only way across is the hotkeys below. The monitor
+# follows automatically: ~/.local/bin/deskflow-server watches deskflow-core's
+# "switch from ... to ..." log lines and runs `g9`. Deskflow must own the
+# combos because it is the only thing that still sees the keyboard while it is
+# forwarding every keystroke to the PC. `super` = Command, `alt` = Option.
 section: screens
     {{ .chezmoi.hostname }}:
     PomeloMadness:
@@ -15,7 +15,7 @@ end
 section: options
     clipboardSharing = true
     # sc: Cmd+Alt+P | Hand keyboard, trackpad and the G9 to PomeloMadness | G9 switching
-    keystroke(super+alt+p) = keystroke(f18,{{ .chezmoi.hostname }}), switchToScreen(PomeloMadness)
+    keystroke(super+alt+p) = switchToScreen(PomeloMadness)
     # sc: Cmd+Alt+M | Take keyboard, trackpad and the G9 back to the Mac | G9 switching
-    keystroke(super+alt+m) = keystroke(f19,{{ .chezmoi.hostname }}), switchToScreen({{ .chezmoi.hostname }})
+    keystroke(super+alt+m) = switchToScreen({{ .chezmoi.hostname }})
 end

@@ -17,9 +17,11 @@ set -e
 # sections): deskflow-core rewrites the file on every start, and matching its
 # canonical form byte for byte is what keeps `chezmoi apply` from seeing
 # drift. What the keys mean: the screen name is this Mac's hostname (must
-# match the screens: entry in server.conf); TLS is off because the link is
-# LAN-only and the PC client is headless, with no dialog to trust a
-# fingerprint in.
+# match the screens: entry in server.conf); log level is an *index* into
+# FATAL,ERROR,WARNING,NOTE,INFO,DEBUG,DEBUG1,DEBUG2 (4 = INFO; a name there
+# parses as 0 = FATAL and silences the "switch from" lines the wrapper needs);
+# TLS is off because the link is LAN-only and the PC client is headless, with
+# no dialog to trust a fingerprint in.
 #
 # One-time manual step, no CLI for it: System Settings → Privacy & Security →
 # Accessibility must list and enable `deskflow-core` (it appears after the
@@ -30,6 +32,7 @@ set -e
 #   settings: {{ include "dot_config/deskflow/settings.conf.tmpl" | sha256sum }}
 #   server.conf: {{ include "dot_config/deskflow/server.conf.tmpl" | sha256sum }}
 #   agent: {{ include "private_Library/LaunchAgents/org.deskflow.server.plist.tmpl" | sha256sum }}
+#   wrapper: {{ include "dot_local/bin/executable_deskflow-server.tmpl" | sha256sum }}
 # _after_: the settings, server.conf and plist targets must exist before this runs.
 
 version="{{ .deskflow.version }}"

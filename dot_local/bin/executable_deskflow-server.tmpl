@@ -1,0 +1,29 @@
+#!/bin/bash
+# deskflow-server — run the headless Deskflow server and flip the Odyssey G9
+# whenever Deskflow moves input between screens.
+#
+# Launched by the org.deskflow.server LaunchAgent. deskflow-core logs every
+# screen change at INFO as
+#     switch from "<screen>" to "<screen>" at x,y
+# and flushes per line, so this reads its output, mirrors it to the log, and
+# runs `g9` on those lines. That is the only reliable relay: a
+# keystroke(key,<server>) action in server.conf is silently dropped by the
+# server's PrimaryClient (a Synergy-era "don't forward to primary" stub), so
+# no synthetic key can reach a Mac-side hotkey daemon. Any switch — hotkey or
+# a future edge link — takes the monitor along.
+#
+# If deskflow-core dies the pipe closes, this exits, and launchd (KeepAlive)
+# restarts the pair.
+set -u
+core="/Applications/Deskflow.app/Contents/MacOS/deskflow-core"
+settings="{{ .chezmoi.homeDir }}/.config/deskflow/settings.conf"
+g9="{{ .chezmoi.homeDir }}/.local/bin/g9"
+mac="{{ .chezmoi.hostname }}"
+
+"$core" server -s "$settings" 2>&1 | while IFS= read -r line; do
+  printf '%s\n' "$line"
+  case "$line" in
+    *'switch from "'*'" to "PomeloMadness" at '*) "$g9" pc  || true ;;
+    *'switch from "'*"\" to \"$mac\" at "*)       "$g9" mac || true ;;
+  esac
+done
