@@ -1,0 +1,14 @@
+# Deskflow core settings for the headless server (deskflow-core server -s <this>).
+# Loaded by the org.deskflow.server LaunchAgent; the GUI app is never used.
+# Screen name = this Mac's hostname, which must match the screens: entry in
+# server.conf. TLS is off: the link is LAN-only and the PC client is headless,
+# so there is no dialog in which to trust a fingerprint.
+[core]
+computerName={{ .chezmoi.hostname }}
+[server]
+externalConfig=true
+externalConfigFile={{ .chezmoi.homeDir }}/.config/deskflow/server.conf
+[security]
+tlsEnabled=false
+[log]
+level=INFO
