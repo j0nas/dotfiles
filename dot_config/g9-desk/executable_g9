@@ -1,11 +1,24 @@
 #!/bin/bash
 # g9 pc|mac — point the Odyssey G9 at PomeloMadness (DP1=15) or this Mac
 # (USB-C→HDMI=17) over DDC/CI. Writes only: the monitor answers no reads, so
-# never `m1ddc chg`. See README.md. Explicit path: runs from launchd/AeroSpace.
-set -eu
+# never `m1ddc chg`. See README.md. Explicit paths: runs from launchd.
+# The display is looked up by model on every call (its index can move after a
+# replug) and the write is retried, since DDC fails while the link re-trains.
+set -u
+m1ddc=/opt/homebrew/bin/m1ddc
+model="LC49G95T"
 case "${1:-}" in
   pc)  code=15 ;;
   mac) code=17 ;;
   *)   echo "usage: g9 pc|mac" >&2; exit 2 ;;
 esac
-/opt/homebrew/bin/m1ddc display 1 set input "$code" >/dev/null
+for attempt in 1 2 3 4 5; do
+  id="$("$m1ddc" display list 2>/dev/null | awk -v m="$model" '$2 == m { gsub(/[\[\]]/, "", $1); print $1; exit }')"
+  if [ -n "$id" ] && "$m1ddc" display "$id" set input "$code" >/dev/null 2>&1; then
+    echo "g9: $1 (input $code) via display $id, attempt $attempt"
+    exit 0
+  fi
+  sleep 1
+done
+echo "g9: FAILED to set input $code for $1 — display '$model' $( [ -n "${id:-}" ] && echo "at $id not answering" || echo "not listed" )" >&2
+exit 1
