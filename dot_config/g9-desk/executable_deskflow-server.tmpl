@@ -7,9 +7,11 @@
 # Sleep kills the core's macOS event tap ("quartz event tap was disabled")
 # and it never re-arms it, leaving the hotkeys dead. Acting on that line is
 # useless — it arrives mid-suspend and the kill never landed — so the relay
-# restarts the core on the "resume" line instead, once the machine is awake:
-# kill by pid, and TERM the wrapper itself as fallback (its EXIT trap kills
-# the core; launchd then restarts the pair).
+# restarts the core on the "resume" line instead, once the machine is awake,
+# by TERMing the wrapper itself: its EXIT trap kills the core by the pid it
+# recorded and launchd restarts the pair. (pgrep/pkill inside the relay
+# subshell find no deskflow-core — observed, unexplained — so nothing here
+# relies on them.)
 set -u
 dir="{{ .chezmoi.homeDir }}/.config/g9-desk"
 mac="{{ .chezmoi.hostname }}"
@@ -21,9 +23,7 @@ relay() {
       *'switch from "'*'" to "PomeloMadness" at '*) "$dir/g9" pc  || true ;;
       *'switch from "'*"\" to \"$mac\" at "*)       "$dir/g9" mac || true ;;
       *'INFO: resume'*)
-        pid="$(pgrep -x deskflow-core | head -1)"
-        printf 'deskflow-server: resume — restarting core (pid %s) to re-arm the event tap\n' "${pid:-?}"
-        [ -n "$pid" ] && kill -9 "$pid" 2>/dev/null
+        printf 'deskflow-server: resume — restarting core to re-arm the event tap\n'
         kill -TERM "$$" 2>/dev/null || true ;;
     esac
   done
