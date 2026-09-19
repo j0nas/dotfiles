@@ -4,9 +4,12 @@
 # see README.md), and owns the core's lifetime: the core ignores SIGTERM and an
 # orphan wedges on port 24800, so clear stale cores on start and SIGKILL the
 # child on exit. If the core dies, `wait` returns and KeepAlive restarts us.
-# Sleep/wake kills the core's macOS event tap ("quartz event tap was disabled")
-# and it never re-arms it, leaving the hotkeys dead; the relay kills the core
-# on that line so launchd restarts the pair.
+# Sleep kills the core's macOS event tap ("quartz event tap was disabled")
+# and it never re-arms it, leaving the hotkeys dead. Acting on that line is
+# useless — it arrives mid-suspend and the kill never landed — so the relay
+# restarts the core on the "resume" line instead, once the machine is awake:
+# kill by pid, and TERM the wrapper itself as fallback (its EXIT trap kills
+# the core; launchd then restarts the pair).
 set -u
 dir="{{ .chezmoi.homeDir }}/.config/g9-desk"
 mac="{{ .chezmoi.hostname }}"
@@ -17,9 +20,11 @@ relay() {
     case "$line" in
       *'switch from "'*'" to "PomeloMadness" at '*) "$dir/g9" pc  || true ;;
       *'switch from "'*"\" to \"$mac\" at "*)       "$dir/g9" mac || true ;;
-      *'quartz event tap was disabled'*)
-        printf 'deskflow-server: event tap lost, restarting core\n'
-        pkill -9 -x deskflow-core 2>/dev/null || true ;;
+      *'INFO: resume'*)
+        pid="$(pgrep -x deskflow-core | head -1)"
+        printf 'deskflow-server: resume — restarting core (pid %s) to re-arm the event tap\n' "${pid:-?}"
+        [ -n "$pid" ] && kill -9 "$pid" 2>/dev/null
+        kill -TERM "$$" 2>/dev/null || true ;;
     esac
   done
 }
