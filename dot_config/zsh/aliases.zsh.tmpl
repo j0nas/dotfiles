@@ -64,6 +64,15 @@ cut-proxies() {
   "$dir/cut-proxies.sh" "$@"
 }
 
+# The rest of the CLI (after a deck is cut): `mtg-proxy redo <card|p3.5|last>`
+# queues miscuts and skipped pages into BACKLOG.txt, `mtg-proxy backlog build`
+# prints the queue as one sheet. Also notes/doctor/cache/offset.
+# sc: mtg-proxy <cmd> | mtg-proxy CLI: redo, backlog, notes, doctor… | Tools
+mtg-proxy() {
+  local dir; dir=$(_mtg_proxy_dir mtg-proxy) || return 1
+  "$dir/mtg-proxy.sh" "$@"
+}
+
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools

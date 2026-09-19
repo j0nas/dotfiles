@@ -146,6 +146,7 @@
 | --- | --- |
 | `make-proxies <deck>` | Build MTG proxy PDF + cut file |
 | `cut-proxies [opts]` | Cut a proxy sheet on the Cameo, no Studio |
+| `mtg-proxy <cmd>` | mtg-proxy CLI: redo, backlog, notes, doctor… |
 | `c` | claude |
 | `cr` | claude --resume |
 | `co` | claude on Opus |
