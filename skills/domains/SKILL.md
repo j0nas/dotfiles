@@ -40,13 +40,18 @@ Exit codes: `0` all resolved, `1` at least one `UNKNOWN`, `2` usage error.
 
 ## How it works
 
-1. RDAP query via `rdap.org` (IANA bootstrap aggregator):
+1. RDAP query straight to the TLD's registry, found in IANA's RDAP bootstrap
+   (`data.iana.org/rdap/dns.json`, cached ~1 day in `$TMPDIR`):
    - HTTP `200` → a registration record exists → **TAKEN**.
-   - HTTP `404` / `429` / unreachable → fall through to whois.
-2. whois disambiguates a 404 (which also happens for TLDs with no RDAP server,
-   e.g. `.de`): registry "no match / not found / status: free" → **AVAILABLE**;
-   registration fields (creation date, registrar, name servers…) → **TAKEN**;
-   rate-limit markers → **UNKNOWN**.
+   - HTTP `404` → the authoritative registry has no record → **AVAILABLE**.
+   - `429` / unreachable → fall through to whois.
+2. whois answers for TLDs with no RDAP server (e.g. `.gg`, `.de`): registry
+   "no match / not found / status: free" → **AVAILABLE**; registration fields
+   (creation date, registrar, name servers…) → **TAKEN**; rate-limit markers →
+   **UNKNOWN**. RDAP-only TLDs (`.app`, `.dev`, `.cards`…) have no whois server,
+   and macOS whois then prints IANA's record for the TLD itself; that's
+   **UNKNOWN**, never TAKEN (reading its `nserver:` lines as a registration once
+   marked every unregistered `.app`/`.cards` name as taken).
 
 ## Pricing — how it works & prior art
 
