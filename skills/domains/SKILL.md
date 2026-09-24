@@ -73,7 +73,9 @@ re-run or check manually). Exit codes: `0` all resolved, `1` at least one
    `article.available|unavailable` row for the name and closes the tab. Regular
    rows read `$5.98/yr Retail $6.98/yr` (first year, and the undiscounted price,
    which isn't necessarily the renewal); premium rows `$227.50 Renews at
-   $19.50/yr`. Skipped when nothing listens on the port, or with
+   $19.50/yr`. Namecheap also classes registered names resold on the aftermarket
+   as "available" ("Buy it now", "Make offer", lease-to-own): those are reported
+   **TAKEN**, with the asking price in the note (edh.one: $5,999). Skipped when nothing listens on the port, or with
    `--no-browser`.
 3. **RDAP/whois** for whatever is still unanswered (and for everything when
    there are no Cloudflare credentials, e.g. on another machine):
