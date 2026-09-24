@@ -93,8 +93,10 @@ nc_ready() {
     curl -s --max-time 2 "http://127.0.0.1:$NC_PORT/json/version" >/dev/null 2>&1
 }
 
-# nc_check DOMAIN -> "available|taken" | first-year price | retail price | renewal | "premium"?
+# nc_check DOMAIN -> "available|taken|forsale" | price | retail price | renewal | "premium"?
 # Regular rows read "$5.98/yr Retail $6.98/yr"; premium ones "$227.50 Renews at $19.50/yr".
+# A registered name resold on the aftermarket is also classed "available", with "Buy it
+# now" / "Make offer" / lease-to-own terms ("Full price $5,999.00"): that's "forsale".
 # (nothing when the page didn't answer). Opens its own tab and closes it.
 nc_check() {
   local d="$1" out js
@@ -112,11 +114,16 @@ nc_check() {
   [ -n "$out" ] || return 0
   printf '%s' "$out" | jq -r '
     (.c | split(" ")) as $cls
+    | (.t | test("Buy it now|Make offer|Lease to own"; "i")) as $resale
     | (if ($cls | index("unavailable")) then "taken"
+       elif ($cls | index("available")) and $resale then "forsale"
        elif ($cls | index("available")) then "available" else "" end) as $s
     | select($s != "")
     | [$s,
-       ((.t | capture("\\$(?<p>[0-9][0-9.,]*)") | .p) // ""),
+       (if $s == "forsale"
+        then ((.t | capture("Full price \\$(?<p>[0-9][0-9.,]*)") | .p)
+              // ([.t | scan("\\$([0-9][0-9.,]*)") | .[0] | select(. != "0.00")] | first) // "")
+        else ((.t | capture("\\$(?<p>[0-9][0-9.,]*)") | .p) // "") end),
        ((.t | capture("Retail \\$(?<p>[0-9.,]+)/yr") | .p) // ""),
        ((.t | capture("Renews at \\$(?<p>[0-9.,]+)/yr") | .p) // ""),
        (if (.t + " " + .c | test("premium"; "i")) then "premium" else "" end)]
@@ -312,6 +319,8 @@ for ((i = 0; i < N; i++)); do
     # not the renewal price.
     STATUS[i]=AVAILABLE; REG[i]="$reg"; RET[i]="$retail"; REN[i]="$renews"
     if [ -n "$prem" ]; then NOTE[i]="premium"; fi
+  elif [ "$s" = forsale ]; then
+    STATUS[i]=TAKEN; NOTE[i]="for sale${reg:+ at \$$reg} on the aftermarket"
   else
     STATUS[i]=TAKEN; NOTE[i]=""
   fi
