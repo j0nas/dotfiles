@@ -54,7 +54,10 @@ re-run or check manually). Exit codes: `0` all resolved, `1` at least one
    `dot_claude/private_secrets/encrypted_private_cloudflare.json.age`) or the env
    vars `CLOUDFLARE_REGISTRAR_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`.
    - `registrable: true` → **AVAILABLE** with price; `domain_unavailable` →
-     **TAKEN**; `domain_premium` → available, premium-priced.
+     **TAKEN**.
+   - `domain_premium` is **not** proof a name is free: Cloudflare answers it for
+     registered premium names too (edh.dev, registered since 2024) and quotes no
+     price. Those go to step 2 (Namecheap knows both), then step 3.
    - `extension_not_supported` (Cloudflare doesn't sell the TLD, e.g. `.gg`,
      `.de`) or `extension_not_supported_via_api` (dashboard only) → step 2.
    - Cloudflare's own CLI can do the same, but `cf` 0.13 (`npx cf`) is a preview
@@ -67,9 +70,10 @@ re-run or check manually). Exit codes: `0` all resolved, `1` at least one
    IP. So the script drives a **real browser over CDP**: Brave with
    `--remote-debugging-port=9222` on this Mac (override the port with
    `NAMECHEAP_CDP_PORT`). It opens a tab on the search results page, reads the
-   `article.available|unavailable` row for the name (first-year price and the
-   undiscounted "Retail" price, which isn't necessarily the renewal price) and
-   closes the tab. Skipped when nothing listens on the port, or with
+   `article.available|unavailable` row for the name and closes the tab. Regular
+   rows read `$5.98/yr Retail $6.98/yr` (first year, and the undiscounted price,
+   which isn't necessarily the renewal); premium rows `$227.50 Renews at
+   $19.50/yr`. Skipped when nothing listens on the port, or with
    `--no-browser`.
 3. **RDAP/whois** for whatever is still unanswered (and for everything when
    there are no Cloudflare credentials, e.g. on another machine):
