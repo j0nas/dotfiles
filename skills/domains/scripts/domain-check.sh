@@ -93,7 +93,8 @@ nc_ready() {
     curl -s --max-time 2 "http://127.0.0.1:$NC_PORT/json/version" >/dev/null 2>&1
 }
 
-# nc_check DOMAIN -> "available|taken" | first-year price | retail price | "premium"?
+# nc_check DOMAIN -> "available|taken" | first-year price | retail price | renewal | "premium"?
+# Regular rows read "$5.98/yr Retail $6.98/yr"; premium ones "$227.50 Renews at $19.50/yr".
 # (nothing when the page didn't answer). Opens its own tab and closes it.
 nc_check() {
   local d="$1" out js
@@ -115,8 +116,9 @@ nc_check() {
        elif ($cls | index("available")) then "available" else "" end) as $s
     | select($s != "")
     | [$s,
-       ((.t | capture("\\$(?<p>[0-9.,]+)/yr") | .p) // ""),
+       ((.t | capture("\\$(?<p>[0-9][0-9.,]*)") | .p) // ""),
        ((.t | capture("Retail \\$(?<p>[0-9.,]+)/yr") | .p) // ""),
+       ((.t | capture("Renews at \\$(?<p>[0-9.,]+)/yr") | .p) // ""),
        (if (.t + " " + .c | test("premium"; "i")) then "premium" else "" end)]
     | join("|")' 2>/dev/null || true
 }
@@ -281,7 +283,10 @@ if [ -n "$CF_TOKEN" ]; then
         extension_disallows_registration)
           STATUS[i]=TAKEN; SRC[i]=cloudflare; NOTE[i]="registry closed to new registrations" ;;
         domain_premium)
-          STATUS[i]=AVAILABLE; SRC[i]=cloudflare; NOTE[i]="premium: price at the registrar" ;;
+          # Not proof it's free: Cloudflare answers this for registered premium names
+          # too (edh.dev, registered since 2024), and quotes no price. Namecheap
+          # knows both; RDAP settles it without a browser.
+          NEXT[i]=namecheap; NOTE[i]="premium" ;;
         extension_not_supported) NEXT[i]=namecheap ;;
         extension_not_supported_via_api)
           NEXT[i]=namecheap; NOTE[i]="Cloudflare sells it in the dashboard only" ;;
@@ -290,7 +295,7 @@ if [ -n "$CF_TOKEN" ]; then
   done
 fi
 
-# ---- 2. Namecheap, for what Cloudflare doesn't sell ----
+# ---- 2. Namecheap, for what Cloudflare doesn't sell (and premium names) ----
 nc_used=0
 for ((i = 0; i < N; i++)); do
   [ -z "${STATUS[i]}" ] && [ "${NEXT[i]}" = namecheap ] || continue
@@ -300,15 +305,15 @@ for ((i = 0; i < N; i++)); do
   fi
   r=$(nc_check "${DOMAINS[i]}")
   [ -n "$r" ] || continue
-  IFS='|' read -r s reg retail prem <<< "$r"
+  IFS='|' read -r s reg retail renews prem <<< "$r"
   SRC[i]=namecheap
   if [ "$s" = available ]; then
     # Namecheap shows a first-year price and its undiscounted "Retail" price,
     # not the renewal price.
-    STATUS[i]=AVAILABLE; REG[i]="$reg"; RET[i]="$retail"
+    STATUS[i]=AVAILABLE; REG[i]="$reg"; RET[i]="$retail"; REN[i]="$renews"
     if [ -n "$prem" ]; then NOTE[i]="premium"; fi
   else
-    STATUS[i]=TAKEN
+    STATUS[i]=TAKEN; NOTE[i]=""
   fi
 done
 if [ "$nc_used" -eq 1 ]; then nc_done; fi
@@ -324,7 +329,10 @@ for ((i = 0; i < N; i++)); do
   fi
   IFS='|' read -r s src <<< "$(rdap_classify "${DOMAINS[i]}")"
   STATUS[i]="$s"; SRC[i]="$src"
-  if [ "$s" = AVAILABLE ]; then
+  if [ "$s" != AVAILABLE ]; then NOTE[i]=""; fi
+  if [ "$s" = AVAILABLE ] && [ "${NOTE[i]}" = premium ]; then
+    NOTE[i]="premium: price at the registrar"
+  elif [ "$s" = AVAILABLE ]; then
     p=$(porkbun_price "${DOMAINS[i]}")
     if [ -n "$p" ]; then
       REG[i]="${p%% *}"; REN[i]="${p##* }"
