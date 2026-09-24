@@ -7,9 +7,9 @@ allowed-tools: Bash, Read
 
 # Domain availability
 
-Check whether one or more domains are currently registered, with no API key or
-registrar account. Backed by **RDAP** (the modern WHOIS replacement, run by the
-registries themselves) with a **whois fallback** for TLDs that lack RDAP.
+Check whether domains are free and what they cost **at the registrar you'd buy
+them from**: Cloudflare Registrar first (at cost), Namecheap for the TLDs
+Cloudflare doesn't sell, and the registries' own RDAP/whois as a last resort.
 
 ## How to use
 
@@ -25,67 +25,80 @@ Run the bundled script:
   domain-check.sh -t com,net,io,ai,dev myname     # myname.com, myname.io, …
   domain-check.sh myname                            # default set: com,net,org,io,ai,dev,app,co
   ```
-- `-p` / `--price` adds **TLD registration & renewal pricing** next to each result:
-  ```bash
-  domain-check.sh -p myname.com bbc.co.uk          # reg $11.08 / renew $11.08 …
-  domain-check.sh -p -t com,io,ai,xyz myname        # price the whole TLD spread
-  ```
-- `--json` emits `[{"domain","status","available"}]` (with `registration`/`renewal`
-  fields added when `-p` is set) for scripting.
+- Prices are always shown (`-p`/`--price` is still accepted and does nothing).
+- `--no-browser` skips the Namecheap step (no browser tabs opened).
+- `--json` emits `[{"domain","status","available","registration","renewal",
+  "retail","currency","source","note"}]` for scripting.
 
-Output status is one of: `AVAILABLE` (not registered), `TAKEN` (registered),
-`UNKNOWN` (rate-limited or unparseable — re-run or check manually).
+Output: one row per domain with status, price and **source**:
 
-Exit codes: `0` all resolved, `1` at least one `UNKNOWN`, `2` usage error.
+```
+commando.cards   ✓ available $30.20/yr                  cloudflare
+commado.gg       ✓ available $68.98/yr                  namecheap
+foo.de           ✓ available $5.98, retail $6.98/yr     namecheap
+bar.gg           ✓ available $51.80/yr                  whois  (Porkbun list price)
+```
+
+Status is `AVAILABLE`, `TAKEN` or `UNKNOWN` (rate-limited or unparseable:
+re-run or check manually). Exit codes: `0` all resolved, `1` at least one
+`UNKNOWN`, `2` usage error.
 
 ## How it works
 
-1. RDAP query straight to the TLD's registry, found in IANA's RDAP bootstrap
-   (`data.iana.org/rdap/dns.json`, cached ~1 day in `$TMPDIR`):
-   - HTTP `200` → a registration record exists → **TAKEN**.
-   - HTTP `404` → the authoritative registry has no record → **AVAILABLE**.
-   - `429` / unreachable → fall through to whois.
-2. whois answers for TLDs with no RDAP server (e.g. `.gg`, `.de`): registry
-   "no match / not found / status: free" → **AVAILABLE**; registration fields
-   (creation date, registrar, name servers…) → **TAKEN**; rate-limit markers →
-   **UNKNOWN**. RDAP-only TLDs (`.app`, `.dev`, `.cards`…) have no whois server,
-   and macOS whois then prints IANA's record for the TLD itself; that's
-   **UNKNOWN**, never TAKEN (reading its `nserver:` lines as a registration once
-   marked every unregistered `.app`/`.cards` name as taken).
-
-## Pricing — how it works & prior art
-
-`-p` pulls **standard TLD pricing from Porkbun's public, no-auth API**
-(`api.porkbun.com/api/json/v3/pricing/get`): registration / renewal / transfer for
-~900 TLDs, cached ~1 day in `$TMPDIR`. Longest-suffix matching means `co.uk` is
-priced as `co.uk`, not `uk`. Watch the **renewal trap** — e.g. `.xyz` shows
-`reg $1.00 / renew $12.98`.
-
-There is **no single "price of a domain."** It varies by registrar, promo/coupon,
-first-year vs renewal, and premium status. What's available where:
-
-| Source | Auth | Covers | Notes |
-| --- | --- | --- | --- |
-| **Porkbun `/pricing/get`** (used here) | none | base price per TLD, ~900 TLDs | best free option; one registrar; no premium |
-| Cloudflare Registrar API (Check) | account | per-domain incl. registry premium | at-cost; needs CF account |
-| DNSimple `…/registrar/domains/:d/prices` | token | per-domain, `premium`+`premium_price` | cleanest premium-aware API |
-| Namecheap `users.getPricing` + `domains.check` | API key + IP allowlist | base + `IsPremiumName`/`PremiumRegistrationPrice` | account requirements |
-| GoDaddy availability (`checkType=FULL`) | account w/ **50+ domains** | per-domain incl. premium | API gated to 50+ domains since May 2024 — effectively unusable for casual use |
-| TLDSpy / TLD-List / domaindetails | varies | cross-registrar comparison | aggregators, some paid APIs |
-
-**Premium names** (registry-priced, e.g. short/dictionary words) are *not* reflected
-by `-p` — Porkbun's bulk endpoint has no premium flag. Accurate per-name premium
-pricing needs an authenticated registrar API (DNSimple or Cloudflare are the
-cleanest). If you want that wired in, drop an API token and ask — the script is
-structured to add a `price_source`.
+1. **Cloudflare Registrar** `POST /accounts/{id}/registrar/domain-check` (API
+   beta since April 2026): authoritative, real-time, at-cost registration and
+   renewal prices, premium-aware, 20 names per request. Needs a token with
+   **Account › Registrar: Domains › Read** (read is enough for checks; it can't
+   buy anything). Credentials come from `~/.claude/secrets/cloudflare.json`
+   (`account_id`, `registrar_token`; age-encrypted in chezmoi as
+   `dot_claude/private_secrets/encrypted_private_cloudflare.json.age`) or the env
+   vars `CLOUDFLARE_REGISTRAR_TOKEN` + `CLOUDFLARE_ACCOUNT_ID`.
+   - `registrable: true` → **AVAILABLE** with price; `domain_unavailable` →
+     **TAKEN**; `domain_premium` → available, premium-priced.
+   - `extension_not_supported` (Cloudflare doesn't sell the TLD, e.g. `.gg`,
+     `.de`) or `extension_not_supported_via_api` (dashboard only) → step 2.
+   - Cloudflare's own CLI can do the same, but `cf` 0.13 (`npx cf`) is a preview
+     with a quirk: `cf registrar registrations check x --body
+     '{"domains":["a.com"]}'` needs a throwaway positional *and* `--body`, and the
+     domain list in the positional is ignored. The script uses the REST call.
+2. **Namecheap**, only for what Cloudflare doesn't sell. Its site is behind a
+   Cloudflare bot check that curl and headless Chrome both fail ("Just a
+   moment…"), and its API needs an account with API access and an allowlisted
+   IP. So the script drives a **real browser over CDP**: Brave with
+   `--remote-debugging-port=9222` on this Mac (override the port with
+   `NAMECHEAP_CDP_PORT`). It opens a tab on the search results page, reads the
+   `article.available|unavailable` row for the name (first-year price and the
+   undiscounted "Retail" price, which isn't necessarily the renewal price) and
+   closes the tab. Skipped when nothing listens on the port, or with
+   `--no-browser`.
+3. **RDAP/whois** for whatever is still unanswered (and for everything when
+   there are no Cloudflare credentials, e.g. on another machine):
+   - RDAP straight to the TLD's registry, found in IANA's bootstrap
+     (`data.iana.org/rdap/dns.json`, cached ~1 day in `$TMPDIR`): `200` →
+     **TAKEN**, `404` → **AVAILABLE**, anything else → whois.
+   - whois for TLDs without RDAP (e.g. `.gg`, `.de`): "no match / not found /
+     status: free" → **AVAILABLE**; registration fields → **TAKEN**; rate-limit
+     markers → **UNKNOWN**. RDAP-only TLDs (`.app`, `.dev`, `.cards`…) have no
+     whois server, and macOS whois then prints IANA's record for the TLD itself;
+     that's **UNKNOWN**, never TAKEN (reading its `nserver:` lines as a
+     registration once marked every unregistered `.app`/`.cards` name as taken).
+   - The price shown is **Porkbun's public list price for the TLD**
+     (`api.porkbun.com/api/json/v3/pricing/get`, cached ~1 day): an estimate at a
+     third registrar, never premium-aware. Watch the renewal trap (`.xyz`: $1.00,
+     renews $12.98).
 
 ## Caveats — read before quoting "available"
 
-- **Available ≠ purchasable at base price.** Premium, reserved, and
-  registry-locked names can be unregistered yet cost a lot or be ineligible.
-  Always confirm final price/eligibility at a registrar before promising.
+- An **RDAP/whois "available"** means "not currently registered": premium,
+  reserved and registry-locked names can be unregistered yet cost a lot or be
+  ineligible. Cloudflare and Namecheap answers already account for that.
+- Prices differ by registrar: Cloudflare charges the registry's price (e.g.
+  `.cards` $30.20 where Namecheap asks $40.98); Namecheap's first-year promos
+  often renew higher.
+- A domain on the aftermarket (parked, "make offer") shows as **TAKEN**.
 - whois can rate-limit on bursts; a flurry of `UNKNOWN` usually means back off
   and retry, not that the domains are free.
 - A domain can be registered but have no website/DNS — registration status (this
   skill) is the right signal, not a `dig`/ping check.
-- Requires `curl` and `whois` on PATH (both present on this machine).
+- Requires `curl`, `jq` and `whois`; the Namecheap step also `agent-browser`
+  (all installed by the dotfiles bootstrap).
