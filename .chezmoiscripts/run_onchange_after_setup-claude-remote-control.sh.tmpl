@@ -1,0 +1,28 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# Always-on Claude Code Remote Control — load the tracked LaunchAgent now so no
+# logout is needed. Reloading restarts the server, which reattaches the
+# sessions it was serving.
+#
+# run_onchange: keyed on the agent and its wrapper, so editing either reloads.
+# _after_: runs once both targets are written.
+# agent: {{ include "private_Library/LaunchAgents/com.jonas.claude-remote-control.plist.tmpl" | sha256sum }}
+# wrapper: {{ include "dot_local/bin/executable_claude-rc-server" | sha256sum }}
+
+agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/com.jonas.claude-remote-control.plist"
+label="com.jonas.claude-remote-control"
+
+echo "==> Loading Claude Remote Control agent"
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+# bootout can return before the old server has finished shutting down, and
+# bootstrap then fails with "5: Input/output error" — retry briefly.
+for _ in 1 2 3 4 5 6 7 8 9 10; do
+  launchctl bootstrap "gui/$(id -u)" "$agent" 2>/dev/null && break
+  sleep 1
+done
+launchctl print "gui/$(id -u)/$label" >/dev/null
+
+echo "==> claude remote-control serving ~/Desktop — reachable from the Claude app."
+{{ end -}}
