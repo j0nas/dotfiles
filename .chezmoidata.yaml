@@ -11,7 +11,6 @@ packages:
       - bambu-studio
       - brave-browser
       - calibre  # TEMP: remove once Tora's Kindle (PW1) rescue is done
-      - claude  # Claude Desktop: hosts Dispatch, so the phone app can hand tasks to this Mac (app open + Mac awake)
       - discord
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
