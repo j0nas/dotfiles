@@ -149,6 +149,7 @@
 | `mtg-proxy <cmd>` | mtg-proxy CLI: redo, backlog, notes, doctor… |
 | `c` | claude |
 | `cr` | claude --resume |
+| `cf` | claude on Fable |
 | `co` | claude on Opus |
 | `cs` | claude on Sonnet |
 | `oc` | opencode |
