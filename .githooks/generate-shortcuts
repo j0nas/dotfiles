@@ -35,6 +35,7 @@ git grep -n -E '(#|--|//|<!--|;)[[:space:]]*sc:[[:space:]]' -- \
       if (f ~ /wezterm/)      return "WezTerm"
       if (f ~ /aliases\.zsh/) return "Shell aliases"
       if (f ~ /zshrc/)        return "Zsh / shell"
+      if (f ~ /obsidian/)     return "Obsidian"
       return f
     }
     function toolorder(t){
@@ -42,6 +43,7 @@ git grep -n -E '(#|--|//|<!--|;)[[:space:]]*sc:[[:space:]]' -- \
       if (t=="WezTerm")       return 2
       if (t=="Zsh / shell")   return 3
       if (t=="Shell aliases") return 4
+      if (t=="Obsidian")      return 5
       return 9
     }
     {

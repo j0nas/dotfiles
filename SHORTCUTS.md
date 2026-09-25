@@ -158,6 +158,13 @@
 | `shutdown-in <minutes>` | Schedule a shutdown that many minutes from now |
 | `shutdown-cancel` | Cancel a pending shutdown-in |
 
+## Obsidian
+
+| Shortcut | Action |
+| --- | --- |
+| `Cmd+P` | Command palette — fuzzy-find any command, e.g. "daily" → Open today's daily note |
+| `Cmd+O` | Quick switcher — fuzzy-open a note by name |
+
 ## dot_config/g9-desk/server.conf.tmpl
 
 ### G9 switching
