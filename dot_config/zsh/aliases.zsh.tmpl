@@ -76,13 +76,13 @@ mtg-proxy() {
 # tools
 alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
-# The default model lives in ~/.claude/settings.json (chezmoi-managed), so plain
-# `c` is the Fable launcher; `co` and `cs` are the two session overrides. --model
+# ~/.claude/settings.json (chezmoi-managed) leaves `model` unset, so plain `c`
+# runs the account default; `co` and `cs` are the two session overrides. --model
 # applies only to the session it starts, while /model (v2.1.153+) also writes
 # `model` into settings.json, so a mid-session switch reads back as chezmoi drift.
 # No [1m] suffix on opus: Opus 4.7 and later are natively 1M on the Anthropic API,
 # so the quoting dance the old alias needed (zsh globs the brackets) is gone with
-# it. Effort comes from modelSettings — xhigh on Opus 5.
+# it. Effort comes from modelSettings — xhigh on Opus.
 alias co='claude --model opus'                     # sc: co | claude on Opus | Tools
 alias cs='claude --model sonnet'                   # sc: cs | claude on Sonnet | Tools
 alias oc='opencode'                                # sc: oc | opencode | Tools
