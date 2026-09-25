@@ -8,7 +8,6 @@
     ],
     "defaultMode": "bypassPermissions"
   },
-  "model": "claude-fable-5-1[1m]",
   "skillOverrides": {
     "verify": "user-invocable-only"
   },
@@ -20,6 +19,9 @@
   "effortLevel": "medium",
   "modelSettings": {
     "claude-opus-5": {
+      "effortLevel": "xhigh"
+    },
+    "claude-opus-5-5": {
       "effortLevel": "xhigh"
     },
     "claude-fable-5-1": {

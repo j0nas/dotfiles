@@ -7,14 +7,16 @@ LIVE file from stdin and deep-merges the managed keys (repo-only
 Claude-settings.json, validated against the vendored schema) over it: managed
 keys always win, anything Claude writes that we don't manage survives, and
 apply never prompts. The keys listed below are reset before that merge, so a
-stale local value can't keep overriding the managed one: "hooks" is retired,
+stale local value can't keep overriding the managed one: "hooks" is retired;
+"model" stays unset so the account default applies (Claude Code drops the key
+when /model picks default, and a leftover pin would otherwise win forever);
 and "modelSettings" we own wholesale — /effort saves a block per model you
-confirm a level on, which a deep merge would let accumulate past the two
-defaults declared here (Opus 5 xhigh, Fable 5.1 medium); every other model
-falls back to the top-level effortLevel.
+confirm a level on, which a deep merge would let accumulate past the defaults
+declared here (Opus xhigh, Fable medium); every other model falls back to the
+top-level effortLevel.
 */ -}}
 {{- $cur := dict -}}
 {{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
-{{- range list "modelSettings" "hooks" -}}{{- $_ := unset $cur . -}}{{- end -}}
+{{- range list "model" "modelSettings" "hooks" -}}{{- $_ := unset $cur . -}}{{- end -}}
 {{- $managed := include "Claude-settings.json" | fromJson -}}
 {{- mergeOverwrite $cur $managed | toPrettyJson }}
