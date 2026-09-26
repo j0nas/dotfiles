@@ -111,6 +111,20 @@ kill-port() {
   echo "$pids" | xargs kill
 }
 
+{{ if eq .chezmoi.os "darwin" -}}
+# Brave with the Chrome DevTools Protocol on :9222, so agent-browser can drive the
+# real, logged-in browser. `open --args` is silently dropped when Brave is already
+# running, so bail with a hint instead of focusing a debug-less instance.
+# sc: brave-debug | Launch Brave with remote debugging on :9222 | Tools
+brave-debug() {
+  if pgrep -xq "Brave Browser"; then
+    echo "brave-debug: Brave is already running; quit it (Cmd-Q) first, flags only apply at launch" >&2
+    return 1
+  fi
+  open -a "Brave Browser" --args --remote-debugging-port=9222
+}
+{{ end -}}
+
 # Scheduled shutdown. One name on every OS: WSL hands it to the Windows host
 # (shutdown.exe takes seconds; no /f, so an app with unsaved work can still veto
 # it — Windows shows the pending shutdown in a toast either way), macOS/Linux use

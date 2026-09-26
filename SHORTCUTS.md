@@ -156,6 +156,7 @@
 | `md` | Read a markdown file, paged (glow) |
 | `keys` | Open this shortcuts cheat sheet |
 | `kill-port <port>` | Kill whatever process is listening on a port |
+| `brave-debug` | Launch Brave with remote debugging on :9222 |
 | `shutdown-in <minutes>` | Schedule a shutdown that many minutes from now |
 | `shutdown-cancel` | Cancel a pending shutdown-in |
 
