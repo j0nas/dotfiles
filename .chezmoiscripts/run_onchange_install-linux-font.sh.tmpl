@@ -1,0 +1,29 @@
+{{ if and (eq .chezmoi.os "linux") (not (stat "/mnt/c/Users")) -}}
+#!/bin/bash
+set -e
+
+# JetBrains Mono Nerd Font for plain Linux: pinned release + checksum from
+# .chezmoidata.yaml, so bumping either re-runs this. Replaces the old bootstrap
+# step that pulled `releases/latest` unverified, once, and never again. Skipped
+# on WSL, where the terminal is Windows-side and winget installs the font.
+# The font has to live on the host filesystem; flatpak apps see it via the portal.
+#
+# nerd font: {{ .nerd_font.version }} {{ .nerd_font.sha256 }}
+fonts="$HOME/.local/share/fonts"
+dest="$fonts/JetBrainsMonoNerd"
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+echo "==> Installing JetBrains Mono Nerd Font {{ .nerd_font.version }}..."
+curl -fsSL -o "$tmp/font.tar.xz" \
+  "https://github.com/ryanoasis/nerd-fonts/releases/download/{{ .nerd_font.version }}/JetBrainsMono.tar.xz"
+echo "{{ .nerd_font.sha256 }}  $tmp/font.tar.xz" | sha256sum -c --quiet -
+
+# Own subdir so an upgrade replaces the set wholesale; the old bootstrap
+# extracted loose into $fonts, so clear those strays too.
+rm -rf "$dest"
+rm -f "$fonts"/JetBrainsMonoNerdFont*.ttf
+mkdir -p "$dest"
+tar -xJf "$tmp/font.tar.xz" -C "$dest"
+fc-cache -f "$fonts"
+{{ end -}}

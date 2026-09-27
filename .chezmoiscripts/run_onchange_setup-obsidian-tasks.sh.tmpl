@@ -14,6 +14,22 @@ set -e
 
 PLUGIN_ID="obsidian-tasks-plugin"
 PLUGIN_VERSION="7.23.1"
+# sha256 of each release asset — GitHub's own asset digests, not a local
+# download (`gh api repos/obsidian-tasks-group/obsidian-tasks/releases/tags/<v>
+# --jq '.assets[] | "\(.name) \(.digest)"'`). A mismatching download is refused,
+# so a swapped release asset never lands in the vault. Bump with PLUGIN_VERSION.
+# (A copy Obsidian installed itself won't hash the same — it appends a
+# `/* nosourcemap */` line to main.js — which is fine: only downloads are checked.)
+expected_sha256() {
+  case "$1" in
+    main.js)       echo 7c8df16eafe2317fa61d6dda247b4e8bc450f05de9a7cf215e955a03188f884f ;;
+    manifest.json) echo 7cbcc44d7cd6db65a49b0d94230f89bc3842fcf8a8385a8ee626b98d8fd4cd84 ;;
+    styles.css)    echo b4a955fce5f7cf953348e56a94e9aecaee37171bd983379aabbf40c8f58b2eae ;;
+  esac
+}
+sha256_of() { # sha256sum on Linux/WSL, shasum on macOS
+  if command -v sha256sum > /dev/null; then sha256sum "$1"; else shasum -a 256 "$1"; fi | cut -d' ' -f1
+}
 VAULT_NAME={{ .obsidian_vault | quote }}
 
 # Canonical iCloud vault path per platform.
@@ -51,6 +67,11 @@ else
   BASE="https://github.com/obsidian-tasks-group/obsidian-tasks/releases/download/$PLUGIN_VERSION"
   for f in main.js manifest.json styles.css; do
     curl -fsSL -o "$TMP/$f" "$BASE/$f"
+    got="$(sha256_of "$TMP/$f")"
+    if [[ "$got" != "$(expected_sha256 "$f")" ]]; then
+      echo "==> $f: sha256 $got doesn't match the pin — refusing to install." >&2
+      exit 1
+    fi
   done
   mkdir -p "$PLUGIN_DIR"
   mv "$TMP"/main.js "$TMP"/manifest.json "$TMP"/styles.css "$PLUGIN_DIR/"
