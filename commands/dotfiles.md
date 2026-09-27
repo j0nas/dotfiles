@@ -20,7 +20,7 @@ The argument describes a change the user wants persisted across machines.
    - Homebrew brew or cask, flatpak, winget package, or VS Code extension → `.chezmoidata.yaml`
    - new personal skill → `skills/<name>/SKILL.md` + `dot_claude/skills/symlink_<name>.tmpl` (contents `{{ .chezmoi.sourceDir }}/skills/<name>`)
    - new slash command → `commands/<name>.md` + `dot_claude/commands/symlink_<name>.md.tmpl` (contents `{{ .chezmoi.sourceDir }}/commands/<name>.md`)
-   - secret → `chezmoi edit-encrypted dot_claude/secrets/<file>.json`
+   - secret → `chezmoi edit ~/.claude/secrets/<file>.json` (existing) or `chezmoi add --encrypt ~/.claude/secrets/<file>.json` (new); the source lands at `dot_claude/private_secrets/encrypted_private_<file>.json.age`
    - macOS default → `.chezmoiscripts/run_onchange_macos-defaults.sh.tmpl`
    - one-time setup task → `.chezmoiscripts/run_once_<name>.sh.tmpl` (alphabetical sort matters)
    - re-runs on content change → `.chezmoiscripts/run_onchange_<name>.sh.tmpl`
@@ -41,8 +41,8 @@ Find and persist any uncommitted edits in the source dir.
 ## Commit
 - Stage explicitly named files. Never `git add -A` or `git add .`.
 - Generate a focused commit message in the existing repo style: short imperative subject, body explaining the WHY (not the WHAT) in 1-2 sentences. Skim `git log --oneline -10` if you're unsure of tone.
-- Do **not** add a `Co-Authored-By: Claude` or `🤖 Generated with Claude Code` trailer — attribution is intentionally disabled globally (`attribution.commit: ""` in `dot_claude/settings.json`). Keep the message clean.
-- Push explicitly with `git -C ~/.local/share/chezmoi push` and confirm it succeeded. Don't rely on chezmoi's autoCommit/autoPush — those only fire on `chezmoi edit`-driven commits, not the direct `git commit` above.
+- Do **not** add a `Co-Authored-By: Claude` or `🤖 Generated with Claude Code` trailer — attribution is intentionally disabled globally (`attribution.commit: ""` in `Claude-settings.json`). Keep the message clean.
+- The repo's post-commit hook (`.githooks/post-commit`) pushes right after the commit. Still run `git -C ~/.local/share/chezmoi push` and confirm it reports up to date, so a push the hook couldn't make (offline, rejected) doesn't go unnoticed.
 
 ## Post-commit apply (always)
 After every successful push, run `chezmoi apply` to converge the local machine to the committed state. Since apply is idempotent this is always safe, and it catches any `run_onchange_` scripts whose hash changed (e.g. a new tool added to mise config, a new package added to `.chezmoidata.yaml`). Read the output and report anything non-trivial that ran.

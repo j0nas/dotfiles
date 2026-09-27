@@ -16,7 +16,7 @@ curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/main/setup.sh | bash
 
 **[chezmoi](https://www.chezmoi.io/)** owns dotfiles. This repo is the source of truth, cloned to `~/.local/share/chezmoi`. Files prefixed `dot_` map to `~/.*` after templates render with per-machine data; `chezmoi apply` propagates changes.
 
-**[mise](https://mise.jdx.dev/)** owns CLI tool versions (node, gh, starship, zoxide, fzf, claude). Tool list: `dot_config/mise/config.toml`.
+**[mise](https://mise.jdx.dev/)** owns CLI tool versions (node, gh, starship, zoxide, fzf, chezmoi itself…), upgrading them weekly within their pins, and only to releases at least 7 days old. Tool list: `dot_config/mise/config.toml`. Claude Code is the exception: it uses Anthropic's native installer so its own auto-updater works.
 
 **[antidote](https://github.com/mattmc3/antidote)** is the zsh plugin manager; plugins listed in `dot_zsh_plugins.txt`.
 
