@@ -1,3 +1,17 @@
+{{- /* Machine facts resolved once, at `chezmoi init` (re-run init after editing
+this file). hwid: SHA-256 of the Mac's hardware UUID — stable across renames,
+unlike the hostname (macOS appends "-2" on a network name clash, which would
+silently switch a desk role off); only the hash is committed. winHome: the
+Windows profile dir as WSL sees it, from %USERPROFILE%, because the Windows
+account name needn't match the Linux one. Empty when not on that platform. */ -}}
+{{- $hwid := "" -}}
+{{- if eq .chezmoi.os "darwin" -}}
+{{-   $hwid = output "ioreg" "-rd1" "-c" "IOPlatformExpertDevice" | regexFind `"IOPlatformUUID" = "[^"]+"` | regexFind "[0-9A-Fa-f-]{36}" | sha256sum -}}
+{{- end -}}
+{{- $winHome := "" -}}
+{{- if stat "/mnt/c/Users" -}}
+{{-   $winHome = output "sh" "-c" `cd /mnt/c && wslpath -u "$(cmd.exe /c 'echo %USERPROFILE%' 2>/dev/null | tr -d '\r')" 2>/dev/null || true` | trim -}}
+{{- end -}}
 # Encrypt with age, using your existing SSH key as the identity. Recipients
 # (other machines authorized to decrypt) live in .age-recipients at the
 # repo root — see header of that file for how to add/revoke a machine.
@@ -9,8 +23,13 @@ encryption = "age"
     font = "JetBrains Mono"
     obsidian_vault = "Jonas' Vault"
     # Desk roles: true only on the machine physically at that desk (gate on
-    # these, never on the OS). g9_desk: dot_config/g9-desk/README.md.
-    g9_desk = {{ eq .chezmoi.hostname "Jonass-MacBook-Pro" }}
+    # these, never on the OS), keyed on the hardware-UUID hash above. Moving a
+    # role to another Mac: dot_config/g9-desk/README.md has the one-liner that
+    # prints its hash.
+    g9_desk = {{ eq $hwid "8de4d783570e59d995cfe3b7243f4d7c4c304ef6c6bab6db67d4a4dbd0a34fa8" }}
+    # WSL only; read through .chezmoitemplates/win-home, which falls back for a
+    # machine that hasn't re-run init.
+    win_home = {{ $winHome | quote }}
 
 [git]
     autoCommit = true

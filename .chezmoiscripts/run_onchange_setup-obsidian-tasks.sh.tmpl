@@ -4,7 +4,7 @@
 #
 # Vault lives in iCloud so we write to the platform-specific iCloud path:
 #   macOS: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>
-#   WSL:   /mnt/c/Users/<user>/iCloudDrive/iCloud~md~obsidian/<vault>
+#   WSL:   <Windows home>/iCloudDrive/iCloud~md~obsidian/<vault>
 #   Linux: no iCloud — skipped.
 #
 # Obsidian built-in defaults (not bindings we set; documented for SHORTCUTS.md):
@@ -20,7 +20,7 @@ VAULT_NAME={{ .obsidian_vault | quote }}
 {{ if eq .chezmoi.os "darwin" -}}
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
 {{ else if stat "/mnt/c/Users" -}}
-VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
+VAULT="{{ template "win-home" . }}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
 {{ else -}}
 echo "==> Skipping Obsidian Tasks plugin setup: no iCloud sync on Linux."
 exit 0

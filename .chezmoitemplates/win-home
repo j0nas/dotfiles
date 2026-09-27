@@ -1,0 +1,8 @@
+{{- /* The Windows home as WSL sees it (/mnt/c/Users/<name>). .win_home comes
+from %USERPROFILE% at `chezmoi init` (.chezmoi.toml.tmpl); the fallback keeps a
+machine that hasn't re-run init applying, on the old same-name assumption. */ -}}
+{{- if and (hasKey . "win_home") .win_home -}}
+{{-   .win_home -}}
+{{- else -}}
+/mnt/c/Users/{{ .chezmoi.username }}
+{{- end -}}
