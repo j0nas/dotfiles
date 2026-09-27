@@ -64,6 +64,14 @@ desk_g9:
   deskflow_version: "1.26.0"
   deskflow_sha256_macos_arm64: "bae6befc2c3119de3d751c1200aab30af3efa5496e91d5ca1029cc388eea69c5"
 
+# JetBrains Mono Nerd Font on plain Linux (macOS gets the brew cask; WSL gets
+# winget's, since its terminal runs Windows-side), consumed by
+# .chezmoiscripts/run_onchange_install-linux-font.sh.tmpl. Bump both together:
+# sha256 is the release's own SHA-256.txt entry for JetBrainsMono.tar.xz.
+nerd_font:
+  version: "v3.5.1"
+  sha256: "04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf"
+
 vscode_extensions:
   - anthropic.claude-code
   - bradlc.vscode-tailwindcss

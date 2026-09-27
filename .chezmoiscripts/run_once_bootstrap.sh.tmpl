@@ -57,14 +57,6 @@ if [ ! -x "$HOME/.local/bin/lightpanda" ]; then
     "https://github.com/lightpanda-io/browser/releases/download/nightly/lightpanda-${arch}-macos"
   chmod +x "$HOME/.local/bin/lightpanda"
 fi
-{{ else if eq .chezmoi.os "linux" -}}
-# Font has to be on the host filesystem (flatpak apps see it via the portal).
-if ! fc-list 2>/dev/null | grep -qi "JetBrainsMono Nerd"; then
-  echo "==> Installing JetBrains Mono Nerd Font..."
-  mkdir -p ~/.local/share/fonts
-  curl -fsSL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz | tar -xJ -C ~/.local/share/fonts
-  fc-cache -f ~/.local/share/fonts
-fi
 {{ end -}}
 
 echo "==> Done!"
