@@ -1,0 +1,21 @@
+# Files chezmoi downloads at apply time. Every entry is an exact release archive
+# plus its sha256 — `validate` rejects anything else (no checksum, a moving URL,
+# a git-repo external) — so an apply never pulls a moving target. To upgrade,
+# bump url + checksum together.
+
+# zsh plugins, sourced at the end of ~/.zshrc (replaced antidote, which cloned
+# them once and never updated them). Release-tag archives: the same ones the
+# Homebrew formulae pin, and these sha256s match the formulae's.
+[".local/share/zsh/plugins/zsh-autosuggestions"]
+    type = "archive"
+    url = "https://github.com/zsh-users/zsh-autosuggestions/archive/refs/tags/v0.7.1.tar.gz"
+    checksum.sha256 = "0df7affff21cd87ed298e6a3970ed08a1dd66a6efa676454ee5b091ad503badf"
+    stripComponents = 1
+    exact = true
+
+[".local/share/zsh/plugins/zsh-syntax-highlighting"]
+    type = "archive"
+    url = "https://github.com/zsh-users/zsh-syntax-highlighting/archive/refs/tags/0.8.0.tar.gz"
+    checksum.sha256 = "5981c19ebaab027e356fe1ee5284f7a021b89d4405cc53dc84b476c3aee9cc32"
+    stripComponents = 1
+    exact = true

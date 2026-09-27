@@ -99,11 +99,14 @@ fi
 # Add it here instead. typeset -U path (above) keeps it dedup'd on re-source.
 [[ -d "$HOME/.lmstudio/bin" ]] && path+=("$HOME/.lmstudio/bin")
 
-# --- Plugins (antidote) ---
-# Last on purpose: zsh-syntax-highlighting wraps the ZLE widgets that exist when
-# it loads, so anything defined after it (fzf's Ctrl+R/Ctrl+T, starship's
-# keymap hook) would redraw without highlighting. Its README asks for the end.
-if [[ -d "$HOME/.antidote" ]]; then
-  source "$HOME/.antidote/antidote.zsh"
-  antidote load
-fi
+# --- Plugins ---
+# Fetched by chezmoi from pinned, checksummed release archives
+# (.chezmoiexternal.toml) — no plugin manager. zsh-syntax-highlighting's docs
+# ask for the very end of .zshrc. (On zsh >= 5.8.1.1 — both machines run 5.9 —
+# 0.8.0 highlights from a zle-line-pre-redraw hook rather than by wrapping the
+# widgets that exist when it loads, so fzf's widgets are covered either way.)
+for plugin in zsh-autosuggestions zsh-syntax-highlighting; do
+  [[ -r "$HOME/.local/share/zsh/plugins/$plugin/$plugin.zsh" ]] &&
+    source "$HOME/.local/share/zsh/plugins/$plugin/$plugin.zsh"
+done
+unset plugin

@@ -88,6 +88,23 @@ else
   ok ".chezmoiignore patterns are target paths"
 fi
 
+# Externals: chezmoi downloads these at apply time, and the dry-run above skips
+# them — so hold every entry to the pinning rule here: an archive/file with an
+# exact URL and a sha256. A git-repo external can't carry a checksum, and a
+# "latest" or branch URL moves under the same checksum until it breaks.
+if [ -f .chezmoiexternal.toml ]; then
+  if bad="$(taplo get -o json -f .chezmoiexternal.toml 2>"$err" | jq -r '
+        to_entries[] | .key as $k | .value
+        | if (.type | IN("archive", "file", "archive-file") | not) then "\($k): type \(.type // "?") — use a pinned archive/file"
+          elif ((.checksum.sha256 // "") | test("^[0-9a-f]{64}$") | not) then "\($k): no checksum.sha256"
+          elif (.url | test("/latest/|/refs/heads/|/archive/(main|master)[./]")) then "\($k): moving URL \(.url)"
+          else empty end')" && [ -z "$bad" ] && [ ! -s "$err" ]; then
+    ok "externals pinned + checksummed"
+  else
+    fail "externals: .chezmoiexternal.toml"; { printf '%s\n' "$bad"; cat "$err"; } | sed '/^$/d; s/^/      /'
+  fi
+fi
+
 # 3. JSON well-formed (skips the vendored schemas) --------------------------
 json_ok=1
 while IFS= read -r f; do
