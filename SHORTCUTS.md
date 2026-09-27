@@ -152,7 +152,6 @@
 | `cf` | claude on Fable |
 | `co` | claude on Opus |
 | `cs` | claude on Sonnet |
-| `oc` | opencode |
 | `md` | Read a markdown file, paged (glow) |
 | `keys` | Open this shortcuts cheat sheet |
 | `kill-port <port>` | Kill whatever process is listening on a port |

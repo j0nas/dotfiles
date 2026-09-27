@@ -6,7 +6,7 @@ gh = "latest"
 jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Claude hook)
 # taplo + check-jsonschema power the repo's pre-commit config validation hook
 # (.githooks/pre-commit). taplo schema-checks TOML (starship, mise) and
-# check-jsonschema schema-checks JSON (Claude settings, opencode) against the
+# check-jsonschema schema-checks JSON (Claude settings) against the
 # vendored schemas in .githooks/schemas/. jq above does JSON syntax checks.
 taplo = "latest"
 # uv: the deterministic venv/installer for mise's pipx backend below. Declared
@@ -52,9 +52,6 @@ pnpm = "latest"
 # glow: terminal markdown reader (charmbracelet). `glow -p` pages rendered
 # markdown, replacing `less` for .md files — see the `md` and `keys` aliases.
 glow = "latest"
-# opencode: open-source terminal AI coding agent (anomalyco/opencode, formerly
-# sst/opencode). Registry short name resolves to the aqua-backed release binary.
-opencode = "latest"
 # flyctl: the Fly.io CLI. Registry short name resolves to aqua:superfly/flyctl,
 # i.e. the upstream release binary — preferred over Fly's `curl | sh` installer
 # (which self-updates outside any version manager) and over a darwin-only brew,
