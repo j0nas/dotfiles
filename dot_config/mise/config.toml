@@ -3,7 +3,7 @@ starship = "latest"
 zoxide = "latest"
 fzf = "latest"
 gh = "latest"
-jq = "latest"  # JSON parsing for shell scripts (e.g. the install-intercept Claude hook)
+jq = "latest"  # JSON parsing for shell scripts (e.g. the Claude Code statusline)
 # taplo + check-jsonschema power the repo's pre-commit config validation hook
 # (.githooks/pre-commit). taplo schema-checks TOML (starship, mise) and
 # check-jsonschema schema-checks JSON (Claude settings) against the
