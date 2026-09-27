@@ -50,6 +50,17 @@ mise install
 echo "==> Upgrading tools within their pinned ranges..."
 mise upgrade -y
 
+# Third-party Claude Code skills (~/.agents/skills, via the skills CLI, symlinked
+# into ~/.claude/skills): the agent-browser stub and find-skills, refreshed on
+# the same weekly beat as the tools. `add` (re)registers the agent-browser stub
+# (skills 1.7+ overwrites idempotently, and it repairs a stub the lock file lost
+# track of, as WSL's had); `update -g` refreshes the rest. A "PromptScript does
+# not support global" line is expected noise. Not worth failing the converge
+# over a network blip, hence the `|| echo`.
+echo "==> Refreshing third-party Claude Code skills..."
+{ mise exec -- pnpm dlx skills add vercel-labs/agent-browser -g -y &&
+  mise exec -- pnpm dlx skills update -g; } || echo "==> skills refresh failed; continuing"
+
 # chezmoi manages itself now (see config.toml). setup.sh bootstrapped a copy into
 # ~/.local/bin to get a bare machine off the ground, and that dir precedes mise's
 # shims on PATH — so leaving it there would shadow the managed binary and pin the
