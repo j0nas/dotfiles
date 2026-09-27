@@ -1,5 +1,6 @@
 #!/bin/bash
-# Claude Code statusLine. Shows model + reasoning effort + context window usage (via ccusage) plus
+# Claude Code statusLine. Shows the working directory's name, model + reasoning
+# effort + context window usage (via ccusage) plus
 # the REAL 5h and weekly rate-limit pacing, read straight from the JSON Claude
 # Code pipes to stdin (rate_limits.five_hour / .seven_day), and — on Fable
 # sessions only — the Fable 5 included-weekly bucket ("F5"), fetched from
@@ -15,6 +16,11 @@ input="$(cat)"
 # thing only ccusage knows (it reads the transcript), so pull just that segment
 # out of ccusage's " | " line and relabel it "ctx" (RS=" | " splits the line).
 model="$(printf '%s' "$input" | jq -r '.model.display_name // empty' 2>/dev/null)"
+# Leading segment: basename of the session's current dir, so side-by-side
+# sessions are tellable apart at a glance. workspace.current_dir follows a `cd`
+# mid-session; .cwd is the older top-level field, kept as a fallback.
+dir="$(printf '%s' "$input" | jq -r '.workspace.current_dir // .cwd // empty' 2>/dev/null)"
+[ "$dir" != "/" ] && dir="${dir%/}"; [ "$dir" != "/" ] && dir="${dir##*/}"
 # Reasoning effort, appended as "{model}/{level}" to match the "/"-joined
 # sub-values in the other segments. Whatever string .effort.level holds is shown
 # verbatim — no value list is hardcoded, so provider effort-level renames pass
@@ -93,7 +99,8 @@ case "$model_id" in *fable*)
           | (try fromdateiso8601 catch ""))] | @tsv' "$cache" 2>/dev/null)
 ;; esac
 
-out="$model"
+out="$dir"
+[ -n "$model" ] && out="${out:+$out | }$model"
 if [ -n "$ctx" ]; then
   # ccusage gives "150,462 (75%)"; reshape to "{pct}%/{tokens}K" to match 5h/7d.
   if [[ "$ctx" =~ ^(.+)[[:space:]]\(([0-9]+)%\)$ ]]; then
