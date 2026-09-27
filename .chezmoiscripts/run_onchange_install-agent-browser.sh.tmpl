@@ -25,7 +25,16 @@ echo "==> Installing agent-browser {{ .agent_browser_version }}..."
 mise exec -- bash -c '
   export PNPM_HOME="$HOME/.local/share/pnpm"
   export PATH="$PNPM_HOME/bin:$PATH"
-  pnpm add -g "agent-browser@{{ .agent_browser_version }}"
+  want="{{ .agent_browser_version }}"
+  have() { agent-browser --version 2>/dev/null | awk "{print \$2}"; }
+  pnpm add -g "agent-browser@$want"
+  # pnpm 12 has installed a new version into a fresh global dir yet left the
+  # bin link on the old one (WSL, first add after its global-layout change); a
+  # second add relinks. Verify instead of trusting it, and fail if it still
+  # does not match, so chezmoi retries on the next apply rather than recording
+  # a bump that never happened.
+  [ "$(have)" = "$want" ] || pnpm add -g "agent-browser@$want"
+  [ "$(have)" = "$want" ] || { echo "agent-browser is $(have), wanted $want" >&2; exit 1; }
   agent-browser install
 
   # Each bump fetches a fresh ~350 MB Chrome for Testing and never removes the
@@ -40,16 +49,13 @@ mise exec -- bash -c '
   fi
 '
 
-# Claude Code skill stub (~/.agents/skills/agent-browser, surfaced into
+# Claude Code skill stub (~/.agents/skills/agent-browser, symlinked into
 # ~/.claude/skills by the skills CLI). A thin SKILL.md that defers to
 # `agent-browser skills get core`, so the workflow content always matches the
 # installed CLI — but the stub's own list of specialized skills grows between
-# releases, so refresh it on every version bump rather than only creating it
-# once. `skills add` errors on re-add, hence the file test. `-y` is skills' own
-# "ok to install?" (plus its find-skills nudge); `update -g` names the scope, so
-# it doesn't prompt either. (pnpm dlx, unlike npx, needs no download-confirm flag.)
-if [ -f "$HOME/.agents/skills/agent-browser/SKILL.md" ]; then
-  mise exec -- pnpm dlx skills update -g agent-browser
-else
-  mise exec -- pnpm dlx skills add vercel-labs/agent-browser -y
-fi
+# releases, so it's refreshed on every version bump, not only created once.
+# Always `add`: skills (1.7+) overwrites and re-registers an existing stub, which
+# also repairs one its lock file lost track of (WSL's had, so `update` couldn't
+# see it). `-g`: user-level; `-y`: skip its install + find-skills prompts. A
+# "PromptScript does not support global" line in the output is expected noise.
+mise exec -- pnpm dlx skills add vercel-labs/agent-browser -g -y
