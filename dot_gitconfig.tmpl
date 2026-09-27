@@ -9,6 +9,28 @@
 	autoSetupRemote = true
 [rerere]
 	enabled = true
+# The options below are ones both Julia Evans' 2024 survey (jvns.ca) and Scott
+# Chacon's 2025 "how core git devs configure git" endorse. All need git >= 2.35
+# (zdiff3); the Mac has 2.50, WSL's Ubuntu 2.43.
+[merge]
+	# Conflict markers also show the common ancestor, not just the two sides.
+	conflictStyle = zdiff3
+[diff]
+	# Cleaner hunks when code moves or is reordered than the default Myers.
+	algorithm = histogram
+[fetch]
+	# Drop remote-tracking branches deleted upstream. (Not pruneTags: that would
+	# also delete local tags that were never pushed.)
+	prune = true
+[rebase]
+	# Stash + restore a dirty tree around a rebase (pull.rebase above included).
+	autoStash = true
+[branch]
+	# `git branch` lists the most recently committed-to branches first.
+	sort = -committerdate
+[commit]
+	# Show the diff in the commit message editor.
+	verbose = true
 [credential "https://github.com"]
 	helper =
 	helper = !gh auth git-credential

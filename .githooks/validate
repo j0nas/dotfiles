@@ -14,7 +14,7 @@
 #   6. /bin/bash scripts avoid bash-4 builtins (macOS ships bash 3.2)
 #   7. everything else that can be parsed is: zsh configs (`zsh -n`), plists
 #      (+ Label matches the filename), Lua (stylua as a parser), Python (ast),
-#      GitHub workflows (actionlint)
+#      the gitconfig, GitHub workflows (actionlint)
 #   8. every Claude skill/command/rule has its ~/.claude symlink stub, skills and
 #      commands have usable frontmatter, and every stub into the repo resolves
 #   9. SHORTCUTS.md matches its `# sc:` tags
@@ -219,6 +219,10 @@ while IFS= read -r f; do
     || { fail "python syntax: $f"; show_err; py_ok=0; }
 done < <(git ls-files '*.py')
 [ "$py_ok" -eq 1 ] && ok "all Python parses"
+
+# gitconfig: git refuses to run at all under a malformed global config.
+if git config --file "$rendered/dot_gitconfig.tmpl" --list >/dev/null 2>"$err"; then
+  ok "gitconfig parses"; else fail "gitconfig: dot_gitconfig.tmpl"; show_err; fi
 
 # GitHub workflows (actionlint also shellchecks each run: block).
 if actionlint >"$err" 2>&1; then ok "actionlint: .github/workflows"; else fail "actionlint: .github/workflows"; show_err; fi
