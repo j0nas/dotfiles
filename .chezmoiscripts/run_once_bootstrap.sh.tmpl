@@ -31,32 +31,8 @@ if [[ ! -d "$HOME/.antidote" ]]; then
   git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
 fi
 
-# Claude Code skill stub for agent-browser. Thin SKILL.md that defers to
-# `agent-browser skills get core` at runtime, so the workflow content stays
-# version-matched to the installed CLI. `pnpm dlx skills add` errors on re-add,
-# so guard with a file test. The `-y` is skills' own "ok to install?" — without
-# it, skills prompts interactively for the install + the find-skills
-# recommendation. (pnpm dlx, unlike npx, needs no separate download-confirm flag.)
-[ -f "$HOME/.claude/skills/agent-browser/SKILL.md" ] || \
-  mise exec -- bash -c 'pnpm dlx skills add vercel-labs/agent-browser -y'
-
 # Vite+ (vp) is provisioned declaratively via mise (npm:vite-plus in
 # dot_config/mise/config.toml), installed by the `mise install` above — no
 # separate curl|bash step here.
-
-{{ if eq .chezmoi.os "darwin" -}}
-# Lightpanda: opt-in alternative engine for agent-browser. Fast for SSR/URL-
-# level checks but limited DOM/event fidelity -- does NOT reliably drive
-# React's synthetic event handlers, so the default engine stays Chrome.
-# Invoke via `agent-browser --engine lightpanda <cmd>`. Direct binary
-# download (no Homebrew formula), so a file-exists guard is needed.
-if [ ! -x "$HOME/.local/bin/lightpanda" ]; then
-  mkdir -p "$HOME/.local/bin"
-  arch="aarch64"; [ "$(uname -m)" = "x86_64" ] && arch="x86_64"
-  curl -fsSL -o "$HOME/.local/bin/lightpanda" \
-    "https://github.com/lightpanda-io/browser/releases/download/nightly/lightpanda-${arch}-macos"
-  chmod +x "$HOME/.local/bin/lightpanda"
-fi
-{{ end -}}
 
 echo "==> Done!"

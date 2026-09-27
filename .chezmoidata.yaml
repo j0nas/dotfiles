@@ -51,7 +51,7 @@ packages:
 # .chezmoiscripts/run_onchange_install-agent-browser.sh.tmpl, which is keyed on
 # this string. Bump it here to roll the CLI forward; the next `chezmoi apply`
 # re-installs the pin and re-matches Chrome.
-agent_browser_version: "0.33.2"
+agent_browser_version: "0.38.1"
 
 # G9 desk (dot_config/g9-desk/README.md). Brews join the Brewfile only where
 # the g9_desk flag (.chezmoi.toml.tmpl) is true. Deskflow is not in Homebrew:

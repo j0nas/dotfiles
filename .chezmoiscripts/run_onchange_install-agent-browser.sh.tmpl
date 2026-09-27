@@ -12,6 +12,10 @@ set -e
 # survives Node switches. `mise exec` provides node + pnpm. Sorts after
 # run_once_bootstrap (b < i), so mise/node exist before this runs.
 #
+# Pick a release at least 7 days old when bumping — the same supply-chain
+# cooldown mise applies to its "latest" pins (minimum_release_age), which this
+# pnpm global sits outside of: `npm view agent-browser time`.
+#
 # The pinned version is embedded below, so bumping agent_browser_version in
 # .chezmoidata.yaml changes this script's rendered hash and re-runs it — pinning
 # the CLI and re-matching Chrome — on the next apply.
@@ -23,4 +27,29 @@ mise exec -- bash -c '
   export PATH="$PNPM_HOME/bin:$PATH"
   pnpm add -g "agent-browser@{{ .agent_browser_version }}"
   agent-browser install
+
+  # Each bump fetches a fresh ~350 MB Chrome for Testing and never removes the
+  # old ones (eight had piled up, 2.8 GB), and `doctor --fix` leaves them too.
+  # Keep only the build doctor reports in use; if that line is unreadable,
+  # prune nothing.
+  inuse="$(agent-browser doctor 2>/dev/null | grep -o "/[^ ]*/browsers/chrome-[0-9.]*" | head -1)"
+  if [ -n "$inuse" ] && [ -d "$inuse" ]; then
+    for d in "$(dirname "$inuse")"/chrome-*; do
+      [ "$d" = "$inuse" ] || { echo "==> Removing unused $(basename "$d")"; rm -rf "$d"; }
+    done
+  fi
 '
+
+# Claude Code skill stub (~/.agents/skills/agent-browser, surfaced into
+# ~/.claude/skills by the skills CLI). A thin SKILL.md that defers to
+# `agent-browser skills get core`, so the workflow content always matches the
+# installed CLI — but the stub's own list of specialized skills grows between
+# releases, so refresh it on every version bump rather than only creating it
+# once. `skills add` errors on re-add, hence the file test. `-y` is skills' own
+# "ok to install?" (plus its find-skills nudge); `update -g` names the scope, so
+# it doesn't prompt either. (pnpm dlx, unlike npx, needs no download-confirm flag.)
+if [ -f "$HOME/.agents/skills/agent-browser/SKILL.md" ]; then
+  mise exec -- pnpm dlx skills update -g agent-browser
+else
+  mise exec -- pnpm dlx skills add vercel-labs/agent-browser -y
+fi
