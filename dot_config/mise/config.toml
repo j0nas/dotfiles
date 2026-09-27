@@ -51,6 +51,13 @@ pnpm = "latest"
 # version is mise-managed rather than a network self-install. The `viteplus`
 # rule (~/.claude/rules) assumes this is present — keep them in sync.
 "npm:vite-plus" = "latest"
+# agent-browser: the browser-automation CLI behind the /agent-browser skill.
+# `agent-browser install` must fetch the Chrome for Testing build each CLI
+# version expects, so the postinstall hook runs that (and prunes the builds it
+# replaces) after every install/upgrade — which is what used to keep it a
+# hand-pinned pnpm global that nothing ever bumped. The hook runs under sh with
+# the CLI already on PATH, hence plain $HOME.
+"npm:agent-browser" = { version = "latest", postinstall = "$HOME/.config/mise/hooks/agent-browser-postinstall.sh" }
 # gdtoolkit: gdlint/gdformat/gdparse for GDScript (Godot projects) — static
 # analysis + formatting, the agent-friendly substitute for the editor's error
 # panel. pipx backend; uv (above) provides the venv.
