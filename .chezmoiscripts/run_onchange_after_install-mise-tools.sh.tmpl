@@ -28,6 +28,15 @@ set -e
 # `mise install` could fail building those backends. mise's npm/pipx backends use
 # mise's own node/uv, so installing both up front is all that's needed — no
 # external version manager.
+# mise itself first. The bootstrap installs it via mise.run into ~/.local/bin,
+# which no `mise install`/`upgrade` ever touches — so without this it froze at the
+# version that bootstrapped the machine (found five months stale), the same trap
+# the chezmoi retirement below closes. Runs first so the steps after it get any
+# settings a newer mise understands (e.g. minimum_release_age). A failed
+# self-update (offline) mustn't block converging the tools, hence `|| echo`.
+echo "==> Updating mise itself..."
+mise self-update -y || echo "==> mise self-update failed; continuing on $(mise --version)"
+
 echo "==> Installing backend prerequisites (Node, uv)..."
 mise install node uv
 

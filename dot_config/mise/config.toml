@@ -72,3 +72,9 @@ chezmoi = "latest"
 # files off by default (it prefers its own mise.toml), so without this only a
 # mise.toml pin would switch Node.
 idiomatic_version_file_enable_tools = ["node"]
+# Supply-chain cooldown: every "latest"/loose pin above resolves only to releases
+# at least this old, so the weekly `mise upgrade` never lands a version published
+# hours ago (the window in which a hijacked npm/pypi release is usually caught and
+# yanked). Also filters the npm/pipx backends' transitive deps. mise's default is
+# 24h; an exact pin bypasses it, so a real emergency upgrade is still one edit.
+minimum_release_age = "7d"
