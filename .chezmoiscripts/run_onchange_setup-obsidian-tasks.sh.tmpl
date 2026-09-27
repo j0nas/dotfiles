@@ -1,6 +1,9 @@
 #!/bin/bash
 # Install & enable the Obsidian Tasks plugin in the iCloud vault.
-# Runs when this file's hash changes — bump PLUGIN_VERSION to upgrade.
+# Installs PLUGIN_VERSION only when the plugin is missing; after that Obsidian
+# owns updates (Settings → Community plugins → Check for updates). A version
+# pin here used to put the pinned release back over anything newer Obsidian
+# had installed, whenever this script re-ran.
 #
 # Vault lives in iCloud so we write to the platform-specific iCloud path:
 #   macOS: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>
@@ -53,11 +56,10 @@ PLUGIN_DIR="$VAULT/.obsidian/plugins/$PLUGIN_ID"
 COMMUNITY_PLUGINS="$VAULT/.obsidian/community-plugins.json"
 MANIFEST="$PLUGIN_DIR/manifest.json"
 
-# Skip if already at the target version. Python handles missing/malformed JSON
-# via 2>/dev/null — any error falls through to the install branch.
-if python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["version"]==sys.argv[2] else 1)' \
-     "$MANIFEST" "$PLUGIN_VERSION" 2>/dev/null; then
-  echo "==> Obsidian Tasks $PLUGIN_VERSION already installed."
+# Already installed (any version)? Leave it to Obsidian. Python handles a
+# missing/malformed manifest via 2>/dev/null — that falls through to install.
+if installed="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$MANIFEST" 2>/dev/null)"; then
+  echo "==> Obsidian Tasks $installed already installed; Obsidian keeps it updated."
 else
   echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
   # Download to a temp dir first so a partial failure doesn't leave the
