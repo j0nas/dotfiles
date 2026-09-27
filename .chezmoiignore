@@ -9,7 +9,10 @@ rules
 .githooks
 .taplo.toml
 {{ if ne .chezmoi.os "darwin" -}}
-dot_aerospace.toml
+{{/* macOS-only: the AeroSpace tiler, its helper scripts, and the SwiftBar plugin that shows its workspace */}}
+.aerospace.toml
+.config/aerospace
+.config/swiftbar
 {{/* CUPS printer instances for the ET-8550 (mtg-proxy "4x2 Glossy" preset); the queue only exists on the Mac */}}
 .cups
 {{ end -}}

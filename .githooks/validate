@@ -78,6 +78,16 @@ else
   fail "source state (dry-run apply)"; show_err
 fi
 
+# .chezmoiignore patterns match TARGET paths (.aerospace.toml), never source
+# names (dot_aerospace.toml): a source-style pattern silently ignores nothing.
+# Checked on the raw file so every OS branch is covered, not just this one's.
+if bad="$(awk '!/^[[:space:]]*(\{\{|#|$)/ { print NR ": " $0 }' .chezmoiignore \
+     | grep -E '(: !?|/)(dot|private|executable|readonly|empty|exact|symlink|encrypted|create|modify|remove|run|literal)_')"; then
+  fail ".chezmoiignore uses source-state names (match target paths instead)"; printf '%s\n' "$bad" | sed 's/^/      /'
+else
+  ok ".chezmoiignore patterns are target paths"
+fi
+
 # 3. JSON well-formed (skips the vendored schemas) --------------------------
 json_ok=1
 while IFS= read -r f; do
