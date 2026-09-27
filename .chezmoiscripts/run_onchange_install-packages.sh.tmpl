@@ -3,7 +3,14 @@ set -e
 
 {{ if eq .chezmoi.os "darwin" -}}
 # brew bundle handles install and (with cleanup --force) uninstall — anything
-# installed as a brew cask but not in .chezmoidata.yaml will be removed.
+# installed as a brew cask but not in .chezmoidata.yaml will be removed. It also
+# upgrades anything outdated by default, but a run_onchange only re-runs when
+# the list changes, so upgrades used to wait on an edit. The Unix-week counter
+# (same trick as the mise converge) re-runs it on the first apply of each week.
+# Casks with their own updater (Brave, VS Code, …) are skipped by brew anyway.
+# Homebrew has no release-age cooldown; its PR + CI + pinned-checksum pipeline
+# is the gate instead (AeroSpace's own tap skips even that review).
+# upgrade cadence: week {{ div (now | unixEpoch) 604800 }}
 BREWFILE=$(cat <<EOF
 {{ range .packages.darwin.brews -}}
 brew {{ . | quote }}
