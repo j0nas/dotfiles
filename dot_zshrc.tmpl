@@ -20,21 +20,22 @@ setopt AUTO_CD
 export EDITOR='nano'
 
 # --- Completion ---
-# Rebuild the compdump at most once a day; otherwise load the cache with -C.
+# Re-check the compdump at most once a day; otherwise load the cache with -C.
+# The (#q) glob qualifier needs extendedglob — scoped to this function, since
+# globally it would turn `HEAD^` into a pattern — and without it the test was
+# a plain non-empty string, i.e. always true. A full compinit doesn't rewrite
+# an unchanged dump, so touch it or the check would fire in every later shell.
 autoload -Uz compinit
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
-  compinit
-else
-  compinit -C
-fi
+() {
+  setopt local_options extended_glob
+  if [[ -n $1(#qN.mh+24) ]]; then
+    compinit && touch $1
+  else
+    compinit -C
+  fi
+} ${ZDOTDIR:-$HOME}/.zcompdump
 zstyle ':completion:*' menu select
 zstyle ':completion:*' matcher-list 'm:{a-z}={A-Z}'
-
-# --- Plugins (antidote) ---
-if [[ -d "$HOME/.antidote" ]]; then
-  source "$HOME/.antidote/antidote.zsh"
-  antidote load
-fi
 
 # --- Aliases ---
 source "$HOME/.config/zsh/aliases.zsh"
@@ -97,3 +98,12 @@ fi
 # leaves PATH to `lms bootstrap`, which would edit this chezmoi-managed .zshrc.
 # Add it here instead. typeset -U path (above) keeps it dedup'd on re-source.
 [[ -d "$HOME/.lmstudio/bin" ]] && path+=("$HOME/.lmstudio/bin")
+
+# --- Plugins (antidote) ---
+# Last on purpose: zsh-syntax-highlighting wraps the ZLE widgets that exist when
+# it loads, so anything defined after it (fzf's Ctrl+R/Ctrl+T, starship's
+# keymap hook) would redraw without highlighting. Its README asks for the end.
+if [[ -d "$HOME/.antidote" ]]; then
+  source "$HOME/.antidote/antidote.zsh"
+  antidote load
+fi
