@@ -25,12 +25,6 @@ export PATH="$HOME/.local/bin:$PATH"
 mise install node uv
 mise install
 
-# --- antidote (zsh plugin manager) ---
-if [[ ! -d "$HOME/.antidote" ]]; then
-  echo "==> Installing antidote..."
-  git clone --depth=1 https://github.com/mattmc3/antidote.git "$HOME/.antidote"
-fi
-
 # Vite+ (vp) is provisioned declaratively via mise (npm:vite-plus in
 # dot_config/mise/config.toml), installed by the `mise install` above — no
 # separate curl|bash step here.

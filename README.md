@@ -18,7 +18,7 @@ curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/main/setup.sh | bash
 
 **[mise](https://mise.jdx.dev/)** owns CLI tool versions (node, gh, starship, zoxide, fzf, chezmoi itself…), upgrading them weekly within their pins, and only to releases at least 7 days old. Tool list: `dot_config/mise/config.toml`. Claude Code is the exception: it uses Anthropic's native installer so its own auto-updater works.
 
-**[antidote](https://github.com/mattmc3/antidote)** is the zsh plugin manager; plugins listed in `dot_zsh_plugins.txt`.
+**zsh plugins** (autosuggestions, syntax highlighting) have no plugin manager: chezmoi downloads pinned, checksummed release archives listed in `.chezmoiexternal.toml`, and `.zshrc` sources them.
 
 **GUI app + VS Code extension lists** live in `.chezmoidata.yaml`. Two `run_onchange_*` scripts consume them: `install-packages.sh.tmpl` (brew bundle on macOS with cleanup, winget on Windows, flatpak on Linux) and `install-vscode-extensions.sh.tmpl`. Edit YAML → `chezmoi apply`.
 
@@ -29,7 +29,7 @@ curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/main/setup.sh | bash
 | Add a GUI app | Add the per-platform IDs to `.chezmoidata.yaml` → `chezmoi apply`. IDs: brew.sh/cask, winstall.app, flathub.org. |
 | Add a VS Code extension | Add to `vscode_extensions:` in `.chezmoidata.yaml` → `chezmoi apply`. |
 | Add a CLI tool | `mise use -g <tool>@latest`, then commit `dot_config/mise/config.toml`. |
-| Add a zsh plugin | Edit `dot_zsh_plugins.txt` → `chezmoi apply`. |
+| Add a zsh plugin | Add its release archive URL + sha256 to `.chezmoiexternal.toml`, source it at the end of `dot_zshrc.tmpl` → `chezmoi apply`. |
 | Pull a dotfile in | `chezmoi add ~/.foo` (`--template` if it has personal data). |
 | Edit a managed dotfile | `chezmoi edit ~/.foo` (or edit directly under `~/.local/share/chezmoi/`). |
 | Push changes | `git commit` from the source dir — the post-commit hook auto-pushes. |
