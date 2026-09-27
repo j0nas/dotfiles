@@ -6,7 +6,7 @@
     "allow": [
       "WebSearch"
     ],
-    "defaultMode": "bypassPermissions"
+    "defaultMode": "auto"
   },
   "skillOverrides": {
     "verify": "user-invocable-only"
