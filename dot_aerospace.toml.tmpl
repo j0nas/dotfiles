@@ -35,6 +35,15 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 # ~/.config/swiftbar/plugins/aerospace.sh.
 exec-on-workspace-change = ['/usr/bin/open', '-g', 'swiftbar://refreshplugin?name=aerospace']
 
+# Tabs dragged out of Brave into their own window get floated: the new window
+# appears with its fullscreen button still disabled, which AeroSpace reads as a
+# dialog (it exempts Chrome from that check, not Brave). The script waits for
+# the drag to settle and tiles the window if AeroSpace no longer thinks it's a
+# dialog. The `if` keeps real tiled windows from spawning it at all.
+on-window-detected = [
+  { if = 'test %{app-bundle-id} = com.brave.Browser && test %{window-layout} = floating', check-further-callbacks = true, run = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-torn-off-tab.sh' },
+]
+
 [gaps]
 inner.horizontal = 6
 inner.vertical = 6
