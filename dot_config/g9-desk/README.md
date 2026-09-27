@@ -22,10 +22,10 @@ gates it (`g9_desk` flag) and symlinks two files into place.
 | `setup.sh` | Installs pinned Deskflow (not in Homebrew; sha256 from release `sums.txt`), (re)loads the agent. Run by `.chezmoiscripts/run_onchange_after_setup-g9-desk.sh.tmpl`. |
 | `pomelomadness.ps1` | PC provisioning, run over SSH. Not chezmoi-managed (see file). |
 
-Root-level pieces: `g9_desk` in `.chezmoi.toml.tmpl` (hostname match), `desk_g9:` in `.chezmoidata.yaml` (brews, Deskflow version+sha), ignore block in `.chezmoiignore`.
+Root-level pieces: `g9_desk` in `.chezmoi.toml.tmpl` (hardware-UUID hash match), `desk_g9:` in `.chezmoidata.yaml` (brews, Deskflow version+sha), ignore block in `.chezmoiignore`.
 
 ## Rebuild — new Mac
-1. Edit the hostname in `.chezmoi.toml.tmpl` (`g9_desk`) and `$server` in `pomelomadness.ps1`. `chezmoi init && chezmoi apply`.
+1. Put the new Mac's hardware-UUID hash in `.chezmoi.toml.tmpl` (`g9_desk`) — on that Mac: `ioreg -rd1 -c IOPlatformExpertDevice | awk -F'"' '/IOPlatformUUID/{printf "%s", $4}' | shasum -a 256` — and its hostname in `$server` in `pomelomadness.ps1` (Deskflow still addresses screens by hostname). `chezmoi init && chezmoi apply`.
 2. System Settings → Privacy & Security → **Accessibility** → enable `deskflow-core` (listed after first launch; until then the agent loops with "assistive devices does not trust this process").
 3. If the cable/port changed, re-find the input code: `m1ddc display 1 set input N` one code at a time with someone watching the screen (MCCS: DP1 15, DP2 16, HDMI1 17, HDMI2 18). Reads always return 0 on this monitor, so only eyes can confirm.
 

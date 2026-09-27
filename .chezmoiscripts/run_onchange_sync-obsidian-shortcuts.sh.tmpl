@@ -21,7 +21,7 @@ TARGET_REL="Tech/Shortcuts.md"
 {{ if eq .chezmoi.os "darwin" -}}
 VAULT="$HOME/Library/Mobile Documents/iCloud~md~obsidian/Documents/$VAULT_NAME"
 {{ else -}}
-VAULT="/mnt/c/Users/${USER}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
+VAULT="{{ template "win-home" . }}/iCloudDrive/iCloud~md~obsidian/$VAULT_NAME"
 {{ end -}}
 
 if [[ ! -d "$VAULT" ]]; then

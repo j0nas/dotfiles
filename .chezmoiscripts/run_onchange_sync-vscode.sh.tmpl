@@ -2,7 +2,7 @@
 #!/bin/bash
 # Sync VS Code settings to Windows on every change.
 # Hash: {{ include "Code-settings.json" | sha256sum }}
-WIN_HOME="/mnt/c/Users/${USER}"
+WIN_HOME="{{ template "win-home" . }}"
 VSCODE_WIN="$WIN_HOME/AppData/Roaming/Code/User"
 if [[ -d "$WIN_HOME" ]]; then
   mkdir -p "$VSCODE_WIN"

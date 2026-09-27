@@ -29,7 +29,7 @@ alias x='xclip -selection clipboard'
 # navigation
 # sc: desktop | cd to your Desktop | Navigation
 {{ if stat "/mnt/c/Users" -}}
-alias desktop='cd /mnt/c/Users/{{ .chezmoi.username }}/Desktop'
+alias desktop='cd "{{ template "win-home" . }}/Desktop"'
 {{ else -}}
 alias desktop='cd ~/Desktop'
 {{ end -}}
