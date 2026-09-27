@@ -2,11 +2,22 @@
 # Single source of truth for dotfiles validation. Run by the pre-commit hook
 # and by CI (.github/workflows/validate.yml) so both enforce identical checks.
 #
-#   1. every *.tmpl renders via `chezmoi execute-template`
-#   2. every JSON config is well-formed (jq)
-#   3. configs with a published schema validate against the PINNED vendored copy
-#      in .githooks/schemas/ (check-jsonschema for JSON, taplo for TOML)
-#   4. every shell script passes shellcheck (templates rendered first)
+#   1. every *.tmpl (and .chezmoiignore) renders via `chezmoi execute-template`
+#   2. the whole source state computes — a dry-run apply into an empty dir, which
+#      also exercises ignore rules, symlinks, the modify template and data files
+#   3. every JSON config is well-formed (jq)
+#   4. configs with a published schema validate against the PINNED vendored copy
+#      in .githooks/schemas/ (check-jsonschema for JSON, taplo for TOML), and the
+#      Claude settings carry no top-level key the schema doesn't know
+#   5. every shell script passes shellcheck — picked by shebang, not extension,
+#      so extensionless hooks/bin scripts are covered (templates rendered first)
+#   6. /bin/bash scripts avoid bash-4 builtins (macOS ships bash 3.2)
+#   7. everything else that can be parsed is: zsh configs (`zsh -n`), plists
+#      (+ Label matches the filename), Lua (stylua as a parser), Python (ast),
+#      GitHub workflows (actionlint)
+#   8. every Claude skill/command/rule has its ~/.claude symlink stub, skills and
+#      commands have usable frontmatter, and every stub into the repo resolves
+#   9. SHORTCUTS.md matches its `# sc:` tags
 #
 # Renders for the CURRENT OS — OS-gated branches are only checked on their own
 # platform, which is why CI runs a macOS + Linux matrix. Scripts gated behind a
@@ -16,30 +27,58 @@ set -uo pipefail
 repo="$(git rev-parse --show-toplevel)" && cd "$repo" || exit 1
 schemas="$repo/.githooks/schemas"
 export PATH="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
-for t in chezmoi jq taplo check-jsonschema shellcheck; do
+for t in chezmoi jq taplo check-jsonschema shellcheck zsh python3 stylua actionlint; do
   command -v "$t" >/dev/null 2>&1 || { echo "validate: '$t' not on PATH — run 'chezmoi apply' (local) or check the CI tool install"; exit 1; }
 done
 
-# --source keeps this portable: works against the user's config locally and
-# against a `chezmoi init --apply=false` config in CI.
-render() { chezmoi execute-template --source "$repo" < "$1" 2>&1; }
-is_blank() { [ -z "${1//[$'\n\t ']/}" ]; }
+# All scratch output lives here, never in the repo, and goes away however we exit.
+tmp="$(mktemp -d)" && trap 'rm -rf "$tmp"' EXIT
+err="$tmp/err"
+rendered="$tmp/rendered"
 
 status=0
 fail() { printf '  \033[31m✗\033[0m %s\n' "$1"; status=1; }
 ok()   { printf '  \033[32m✓\033[0m %s\n' "$1"; }
+show_err() { sed 's/^/      /' "$err"; }
+
+# A tracked file's effective content: templates as rendered in step 1 (empty if
+# the render failed — already reported there), everything else as-is.
+content_of() {
+  case "$1" in
+    *.tmpl) cat "$rendered/$1" 2>/dev/null ;;
+    *)      cat "$1" ;;
+  esac
+}
+# A regex, not ${1//[[:space:]]/}: bash's pattern substitution is quadratic and
+# pins a CPU for minutes on a 15 KB script.
+is_blank() { [[ "$1" =~ ^[[:space:]]*$ ]]; }
 
 # 1. Templates render -------------------------------------------------------
+# --source keeps this portable: works against the user's config locally and
+# against a `chezmoi init --apply=false` config in CI. Output is kept so later
+# steps lint what chezmoi would actually write, without re-rendering.
 render_ok=1
 while IFS= read -r f; do
   [ -n "$f" ] || continue
-  if ! out="$(render "$f")"; then
-    fail "template render: $f"; printf '%s\n' "$out" | sed 's/^/      /'; render_ok=0
+  mkdir -p "$rendered/$(dirname "$f")"
+  if ! chezmoi execute-template --source "$repo" < "$f" > "$rendered/$f" 2>"$err"; then
+    fail "template render: $f"; show_err; rm -f "$rendered/$f"; render_ok=0
   fi
-done < <(git ls-files '*.tmpl')
+done < <(git ls-files '*.tmpl' .chezmoiignore)
 [ "$render_ok" -eq 1 ] && ok "all templates render"
 
-# 2. JSON well-formed (skips the vendored schemas) --------------------------
+# 2. Whole source state -----------------------------------------------------
+# Encrypted files need the age key (absent in CI), scripts would run, externals
+# would hit the network — everything else is computed exactly as an apply would.
+mkdir "$tmp/dest"
+if chezmoi --source "$repo" --destination "$tmp/dest" apply --dry-run --force --no-tty \
+     --exclude=encrypted,scripts,externals >/dev/null 2>"$err"; then
+  ok "source state computes (dry-run apply)"
+else
+  fail "source state (dry-run apply)"; show_err
+fi
+
+# 3. JSON well-formed (skips the vendored schemas) --------------------------
 json_ok=1
 while IFS= read -r f; do
   [ -n "$f" ] || continue
@@ -48,63 +87,166 @@ while IFS= read -r f; do
 done < <(git ls-files '*.json')
 [ "$json_ok" -eq 1 ] && ok "all JSON well-formed"
 
-# 3. Schema validation ------------------------------------------------------
-# opencode.json is syntax-only: its schema pins a closed model enum that rejects
-# local models. VS Code settings are syntax-only: no static schema exists.
+# 4. Schema validation ------------------------------------------------------
+# VS Code settings are syntax-only: no static schema exists.
 # Claude Code settings: the managed keys (Claude-settings.json) are merged into the
 # live file by the modify template, so validate BOTH the managed source and the
 # merged result — rendered with the managed file standing in for the live one.
-if check-jsonschema --schemafile "$schemas/claude-code-settings.json" Claude-settings.json >/dev/null 2>err; then
-  ok "schema: Claude-settings.json"; else fail "schema: Claude-settings.json"; sed 's/^/      /' err; fi
-if merged="$(chezmoi execute-template --source "$repo" --with-stdin --file dot_claude/modify_settings.json < Claude-settings.json 2>err)" \
-   && printf '%s' "$merged" | check-jsonschema --schemafile "$schemas/claude-code-settings.json" - >/dev/null 2>>err; then
-  ok "schema: dot_claude/modify_settings.json (merged output)"; else fail "schema: dot_claude/modify_settings.json (merged output)"; sed 's/^/      /' err; fi
+if check-jsonschema --schemafile "$schemas/claude-code-settings.json" Claude-settings.json >/dev/null 2>"$err"; then
+  ok "schema: Claude-settings.json"; else fail "schema: Claude-settings.json"; show_err; fi
+if merged="$(chezmoi execute-template --source "$repo" --with-stdin --file dot_claude/modify_settings.json < Claude-settings.json 2>"$err")" \
+   && printf '%s' "$merged" | check-jsonschema --schemafile "$schemas/claude-code-settings.json" - >/dev/null 2>>"$err"; then
+  ok "schema: dot_claude/modify_settings.json (merged output)"; else fail "schema: dot_claude/modify_settings.json (merged output)"; show_err; fi
+# The schema allows additionalProperties, so a misspelt top-level key (say
+# "modelSetings") would pass the check above and silently do nothing. Every key
+# must be in the schema or in this allowlist of real settings SchemaStore hasn't
+# caught up with yet — each confirmed in the code.claude.com docs. An allowlisted
+# key the schema has since learned fails too, so a schema refresh prunes the list.
+claude_unschemaed='["modelSettings","feedbackDrafts"]'
+if keys="$(jq -r --slurpfile s "$schemas/claude-code-settings.json" --argjson extra "$claude_unschemaed" '
+      ($s[0].properties | keys) as $known
+      | ([keys[] | select(IN($known[]) | not) | select(IN($extra[]) | not) | "unknown key: \(.)"]
+         + [$extra[] | select(IN($known[])) | "now in the schema, drop from claude_unschemaed: \(.)"])[]' \
+      Claude-settings.json 2>"$err")" && [ -z "$keys" ]; then
+  ok "no unknown keys: Claude-settings.json"
+else
+  fail "unknown keys: Claude-settings.json"; { printf '%s\n' "$keys"; cat "$err"; } | sed '/^$/d; s/^/      /'
+fi
 taplo_schema() { # <file> <schema-basename>
-  if taplo check --schema "file://$schemas/$2" "$1" >/dev/null 2>err; then ok "schema: $1"; else fail "schema: $1"; sed 's/^/      /' err; fi
+  if taplo check --schema "file://$schemas/$2" "$1" >/dev/null 2>"$err"; then ok "schema: $1"; else fail "schema: $1"; show_err; fi
 }
 taplo_schema dot_config/starship.toml    starship.json
 taplo_schema dot_config/mise/config.toml mise.json
-# aerospace config is templated (embeds an absolute path) — render then check syntax.
-if render dot_aerospace.toml.tmpl | taplo check - >/dev/null 2>err; then ok "syntax: dot_aerospace.toml.tmpl"; else fail "syntax: dot_aerospace.toml.tmpl"; sed 's/^/      /' err; fi
+# aerospace config is templated (embeds an absolute path) — check the rendered copy.
+if content_of dot_aerospace.toml.tmpl | taplo check - >/dev/null 2>"$err"; then ok "syntax: dot_aerospace.toml.tmpl"; else fail "syntax: dot_aerospace.toml.tmpl"; show_err; fi
 
-# 4. shellcheck -------------------------------------------------------------
-# Plain scripts directly; templates rendered first (shellcheck reads the shebang
-# from stdin). --severity=warning: errors + warnings, not style/info noise.
-sc_ok=1
+# 5. shellcheck -------------------------------------------------------------
+# First line of every tracked file (templates as rendered), computed once for
+# the shebang-driven steps here and in 7.
 while IFS= read -r f; do
-  [ -n "$f" ] || continue
-  shellcheck --severity=warning "$f" 2>err >/dev/null || { fail "shellcheck: $f"; sed 's/^/      /' err; sc_ok=0; }
-done < <(git ls-files '*.sh')
-while IFS= read -r f; do
-  [ -n "$f" ] || continue
-  rendered="$(render "$f")" || continue          # render errors already reported in step 1
-  is_blank "$rendered" && continue                # OS-gated to a platform we're not on
-  printf '%s' "$rendered" | shellcheck --severity=warning - 2>err >/dev/null \
-    || { fail "shellcheck (rendered): $f"; sed 's/^/      /' err; sc_ok=0; }
-done < <(git ls-files '*.sh.tmpl')
-[ "$sc_ok" -eq 1 ] && ok "all shell scripts pass shellcheck"
-rm -f err
+  case "$f" in .githooks/schemas/*) continue ;; esac
+  printf '%s\t%s\n' "$f" "$(content_of "$f" | head -n1 | tr -d '\0\t')"
+done < <(git ls-files) > "$tmp/first-lines"
+# A file is a shell script if its first line is a sh/bash shebang, or if it's
+# named *.sh — the latter so a script that lost its shebang still gets checked
+# (shellcheck then fails it with SC2148). Blank renders are OS-gated to a
+# platform we're not on. --severity=warning: errors + warnings, not info noise.
+: > "$tmp/bash-scripts"
+sc_ok=1; sc_n=0
+while IFS=$'\t' read -r f first; do
+  case "$first" in
+    '#!'*zsh*) continue ;;                          # zsh: parsed in step 7
+    '#!'*bash*|'#!'*/sh|'#!'*' sh') ;;
+    *) case "$f" in *.sh|*.sh.tmpl) ;; *) continue ;; esac ;;
+  esac
+  body="$(content_of "$f")"
+  is_blank "$body" && continue
+  sc_n=$((sc_n + 1))
+  [ "$first" = "#!/bin/bash" ] && printf '%s\n' "$f" >> "$tmp/bash-scripts"
+  printf '%s\n' "$body" | shellcheck --severity=warning --format=gcc - >"$err" 2>&1 \
+    || { fail "shellcheck: $f"; show_err; sc_ok=0; }
+done < "$tmp/first-lines"
+[ "$sc_ok" -eq 1 ] && ok "all $sc_n shell scripts pass shellcheck"
 
-# 5. bash 3.2 compatibility -------------------------------------------------
+# 6. bash 3.2 compatibility -------------------------------------------------
 # macOS ships /bin/bash 3.2, so scripts with a `#!/bin/bash` shebang must avoid
 # bash-4+ builtins. shellcheck assumes a modern bash and won't flag these.
 b4="mapfile|readarray|declare[[:space:]]+-A|local[[:space:]]+-A"
 b4_ok=1
-check_bash4() { # <label> <script-text>
-  printf '%s\n' "$2" | head -1 | grep -q '^#!/bin/bash' || return 0   # only system-bash scripts
+while IFS= read -r f; do
   # grep -n keeps real line numbers; drop comment lines so a comment that merely
   # mentions a banned builtin doesn't false-positive.
-  local hits
-  hits="$(printf '%s\n' "$2" | grep -nE "(^|[^[:alnum:]_])($b4)([^[:alnum:]_]|=|\$)" | grep -vE '^[0-9]+:[[:space:]]*#')"
-  [ -n "$hits" ] || return 0
-  fail "bash-4 builtin in a /bin/bash script (breaks macOS bash 3.2): $1"
+  hits="$(content_of "$f" | grep -nE "(^|[^[:alnum:]_])($b4)([^[:alnum:]_]|=|\$)" | grep -vE '^[0-9]+:[[:space:]]*#')"
+  [ -n "$hits" ] || continue
+  fail "bash-4 builtin in a /bin/bash script (breaks macOS bash 3.2): $f"
   printf '%s\n' "$hits" | sed 's/^/      /'; b4_ok=0
-}
-while IFS= read -r f; do [ -n "$f" ] && check_bash4 "$f" "$(cat "$f")"; done < <(git ls-files '*.sh')
-while IFS= read -r f; do [ -n "$f" ] && check_bash4 "$f" "$(render "$f")"; done < <(git ls-files '*.sh.tmpl')
+done < "$tmp/bash-scripts"
 [ "$b4_ok" -eq 1 ] && ok "no bash-4 builtins in /bin/bash scripts"
 
-# 6. Shortcuts cheat sheet --------------------------------------------------
+# 7. Everything else that parses --------------------------------------------
+# zsh: shellcheck can't read it, and a broken .zshrc is the most painful failure
+# this repo can ship. -n parses without executing; -f skips the startup files.
+zsh_ok=1; zsh_n=0
+while IFS=$'\t' read -r f first; do
+  case "$f" in
+    dot_zshrc*|dot_zshenv*|dot_zprofile*|dot_zlogin*|*.zsh|*.zsh.tmpl) ;;
+    *) case "$first" in '#!'*zsh*) ;; *) continue ;; esac ;;
+  esac
+  zsh_n=$((zsh_n + 1))
+  content_of "$f" | zsh -nf 2>"$err" || { fail "zsh -n: $f"; show_err; zsh_ok=0; }
+done < "$tmp/first-lines"
+[ "$zsh_ok" -eq 1 ] && ok "all $zsh_n zsh files parse"
+
+# plists: launchd refuses a malformed one silently (the agent just never loads),
+# and its Label is what the setup scripts bootout/bootstrap by name.
+pl_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  case "$(basename "$f")" in symlink_*) continue ;; esac
+  want="$(basename "$f")"; want="${want%.tmpl}"; want="${want%.plist}"
+  content_of "$f" | python3 -c '
+import plistlib, sys
+label = plistlib.loads(sys.stdin.buffer.read()).get("Label")
+if label != sys.argv[1]:
+    sys.exit(f"Label is {label!r}, expected {sys.argv[1]!r} (the filename)")' "$want" 2>"$err" \
+    || { fail "plist: $f"; show_err; pl_ok=0; }
+done < <(git ls-files '*.plist' '*.plist.tmpl')
+[ "$pl_ok" -eq 1 ] && ok "all plists parse, Labels match filenames"
+
+# Lua: stylua formats to /dev/null — it only fails when the file doesn't parse.
+lua_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  content_of "$f" | stylua - >/dev/null 2>"$err" || { fail "lua syntax: $f"; show_err; lua_ok=0; }
+done < <(git ls-files '*.lua' '*.lua.tmpl')
+[ "$lua_ok" -eq 1 ] && ok "all Lua parses"
+
+# Python: ast.parse, so nothing is executed or byte-compiled into the repo.
+py_ok=1
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  python3 -c 'import ast, sys; ast.parse(open(sys.argv[1]).read(), sys.argv[1])' "$f" 2>"$err" \
+    || { fail "python syntax: $f"; show_err; py_ok=0; }
+done < <(git ls-files '*.py')
+[ "$py_ok" -eq 1 ] && ok "all Python parses"
+
+# GitHub workflows (actionlint also shellchecks each run: block).
+if actionlint >"$err" 2>&1; then ok "actionlint: .github/workflows"; else fail "actionlint: .github/workflows"; show_err; fi
+
+# 8. Claude Code skills, commands, rules -------------------------------------
+# Each lives repo-only and reaches ~/.claude through a symlink stub; forgetting
+# the stub (or renaming the dir under it) leaves it silently invisible.
+cc_ok=1
+cc_fail() { fail "$1"; cc_ok=0; }
+frontmatter() { awk 'NR == 1 { if ($0 != "---") exit; next } $0 == "---" { exit } { print }' "$1"; }
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  n="$(basename "$(dirname "$f")")"
+  [ -f "dot_claude/skills/symlink_$n.tmpl" ] || cc_fail "skill $n: no dot_claude/skills/symlink_$n.tmpl"
+  fm="$(frontmatter "$f")"
+  grep -qx "name: $n" <<<"$fm" || cc_fail "skill $n: frontmatter needs 'name: $n'"
+  grep -q '^description: *[^ ]' <<<"$fm" || cc_fail "skill $n: frontmatter needs a description"
+done < <(git ls-files 'skills/*/SKILL.md')
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  n="$(basename "$f" .md)"
+  [ -f "dot_claude/commands/symlink_$n.md.tmpl" ] || cc_fail "command $n: no dot_claude/commands/symlink_$n.md.tmpl"
+  grep -q '^description: *[^ ]' <<<"$(frontmatter "$f")" || cc_fail "command $n: frontmatter needs a description"
+done < <(git ls-files 'commands/*.md')
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  n="$(basename "$f" .md)"
+  [ -f "dot_claude/rules/symlink_$n.md.tmpl" ] || cc_fail "rule $n: no dot_claude/rules/symlink_$n.md.tmpl"
+done < <(git ls-files 'rules/*.md')
+# Any symlink stub that points back into the repo must land on something real.
+while IFS= read -r f; do
+  [ -n "$f" ] || continue
+  target="$(content_of "$f")"
+  case "$target" in "$repo"/*) [ -e "$target" ] || cc_fail "dangling symlink: $f -> $target" ;; esac
+done < <(git ls-files '*symlink_*')
+[ "$cc_ok" -eq 1 ] && ok "Claude skills/commands/rules wired, no dangling symlinks"
+
+# 9. Shortcuts cheat sheet --------------------------------------------------
 # SHORTCUTS.md is generated from `# sc:` tags by .githooks/generate-shortcuts.
 # The pre-commit hook regenerates + stages it; assert the committed copy still
 # matches, so --no-verify commits and drift get caught here and in CI.
