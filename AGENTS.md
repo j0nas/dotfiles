@@ -39,6 +39,7 @@
 GUI apps and VS Code extensions are declared in `.chezmoidata.yaml` and consumed by `run_onchange_*` scripts that re-run when the data changes.
 
 - **macOS** (`brew bundle` with `cleanup --force`) — strict declarative state. Removing a cask from the YAML uninstalls it. The script also carries the Unix-week counter, so `brew bundle` (which upgrades outdated entries by default) runs weekly, not only when the list changes. Homebrew has no release-age cooldown; its PR/CI/checksum pipeline is the gate.
+- **One-off tools need no ceremony.** A plain `brew install <x>` (formula or cask) is a trial: the next weekly `brew bundle cleanup --force` uninstalls everything the Brewfile doesn't declare, formulae included, so it cleans itself up. Add it to `.chezmoidata.yaml` only once it earns a permanent place. For a CLI mise can fetch, `mise x <tool> -- <cmd>` runs it without touching the config. Any edit to the package list or to `run_onchange_install-packages.sh.tmpl` re-runs the bundle on the next apply and removes trials early.
 - **VS Code extensions** — same: extensions not in YAML get uninstalled.
 - **winget** (Windows) — install-only. Removing from YAML does NOT uninstall.
 - **flatpak** (Linux) — install-only. Removing from YAML does NOT uninstall.
