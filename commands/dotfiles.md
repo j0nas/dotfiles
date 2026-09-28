@@ -17,7 +17,7 @@ The argument describes a change the user wants persisted across machines.
 
 1. **Route** the change to the right file/directory. Common patterns:
    - shell alias → `dot_config/zsh/aliases.zsh.tmpl`
-   - Homebrew brew or cask, flatpak, winget package, or VS Code extension → `.chezmoidata.yaml`
+   - Homebrew brew or cask, flatpak, winget package, or VS Code extension to keep → `.chezmoidata.yaml` (a one-off is just `brew install`, not a dotfiles change)
    - new personal skill → `skills/<name>/SKILL.md` + `dot_claude/skills/symlink_<name>.tmpl` (contents `{{ .chezmoi.sourceDir }}/skills/<name>`)
    - new slash command → `commands/<name>.md` + `dot_claude/commands/symlink_<name>.md.tmpl` (contents `{{ .chezmoi.sourceDir }}/commands/<name>.md`)
    - secret → `chezmoi edit ~/.claude/secrets/<file>.json` (existing) or `chezmoi add --encrypt ~/.claude/secrets/<file>.json` (new); the source lands at `dot_claude/private_secrets/encrypted_private_<file>.json.age`

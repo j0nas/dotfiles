@@ -2,8 +2,9 @@
 set -e
 
 {{ if eq .chezmoi.os "darwin" -}}
-# brew bundle handles install and (with cleanup --force) uninstall — anything
-# installed as a brew cask but not in .chezmoidata.yaml will be removed. It also
+# brew bundle handles install and (with cleanup --force) uninstall — any brew
+# formula or cask not in .chezmoidata.yaml is removed, so one-offs clean
+# themselves up. It also
 # upgrades anything outdated by default, but a run_onchange only re-runs when
 # the list changes, so upgrades used to wait on an edit. The Unix-week counter
 # (same trick as the mise converge) re-runs it on the first apply of each week.
