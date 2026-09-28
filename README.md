@@ -26,7 +26,8 @@ curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/main/setup.sh | bash
 
 | Task | How |
 |---|---|
-| Add a GUI app | Add the per-platform IDs to `.chezmoidata.yaml` → `chezmoi apply`. IDs: brew.sh/cask, winstall.app, flathub.org. |
+| Try a tool once | `brew install <x>` or `mise x <tool> -- <cmd>`; the weekly apply removes undeclared brews. |
+| Keep a GUI app | Add the per-platform IDs to `.chezmoidata.yaml` → `chezmoi apply`. IDs: brew.sh/cask, winstall.app, flathub.org. |
 | Add a VS Code extension | Add to `vscode_extensions:` in `.chezmoidata.yaml` → `chezmoi apply`. |
 | Add a CLI tool | `mise use -g <tool>@latest`, then commit `dot_config/mise/config.toml`. |
 | Add a zsh plugin | Add its release archive URL + sha256 to `.chezmoiexternal.toml`, source it at the end of `dot_zshrc.tmpl` → `chezmoi apply`. |
@@ -34,7 +35,7 @@ curl -fsLS https://raw.githubusercontent.com/j0nas/dotfiles/main/setup.sh | bash
 | Edit a managed dotfile | `chezmoi edit ~/.foo` (or edit directly under `~/.local/share/chezmoi/`). |
 | Push changes | `git commit` from the source dir — the post-commit hook auto-pushes. |
 
-**`brew bundle` and VS Code extensions are strict declarative state**: anything installed locally but missing from `.chezmoidata.yaml` gets uninstalled on next apply. Add it to the YAML or it goes away. `winget` and `flatpak` are install-only — remove those manually.
+**`brew bundle` and VS Code extensions are declarative**: anything installed locally but missing from `.chezmoidata.yaml` is uninstalled by the next weekly apply, so one-offs clean themselves up. Declare only what should stay. `winget` and `flatpak` are install-only — remove those manually.
 
 Example — adding Slack:
 
