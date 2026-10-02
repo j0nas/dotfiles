@@ -10,6 +10,7 @@ packages:
       - android-platform-tools  # adb/fastboot: talk to the Meta Quest 3 over USB (push GLBs, adb reverse for localhost WebXR, screenshots)
       - bambu-studio
       - brave-browser
+      - claude
       - discord
       - epson-print-layout
       - font-jetbrains-mono-nerd-font
@@ -26,6 +27,7 @@ packages:
       - xtool-studio  # xTool Studio (formerly Creative Space) — design/control for the xTool P2 laser
   windows:
     winget:
+      - Anthropic.Claude
       - Apple.iCloud
       - Bambulab.Bambustudio
       - Brave.Brave
