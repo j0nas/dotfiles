@@ -35,18 +35,19 @@ alias desktop='cd ~/Desktop'
 {{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 
-# mtg proxies. The project (github.com/j0nas/mtg-proxy, private) lives under
-# ~/Desktop/projects (where all projects go) — MTG_PROXY_DIR overrides, and the
-# old ~/projects location is accepted as a fallback for machines not yet moved.
+# mtg proxies. The project (github.com/j0nas/mtg-proxy, private) lives at
+# ~/Desktop/projects/code/mtg-proxy (projects are grouped by category under
+# ~/Desktop/projects) — MTG_PROXY_DIR overrides, and the old ~/projects
+# location is accepted as a fallback for machines not yet moved (WSL).
 # The script guards its Windows-mirror step behind a /mnt/c check itself, so one
 # entry point serves macOS, Linux and WSL. A function, not an alias, so a
 # machine without the clone gets the clone command instead of "no such file".
 _mtg_proxy_dir() {
   local d
-  for d in "${MTG_PROXY_DIR:-}" "$HOME/Desktop/projects/mtg-proxy" "$HOME/projects/mtg-proxy"; do
+  for d in "${MTG_PROXY_DIR:-}" "$HOME/Desktop/projects/code/mtg-proxy" "$HOME/projects/mtg-proxy"; do
     [[ -n "$d" && -d "$d" ]] && { echo "$d"; return 0; }
   done
-  echo "$1: mtg-proxy clone not found — run: gh repo clone j0nas/mtg-proxy ~/Desktop/projects/mtg-proxy" >&2
+  echo "$1: mtg-proxy clone not found — run: gh repo clone j0nas/mtg-proxy ~/Desktop/projects/code/mtg-proxy" >&2
   return 1
 }
 # sc: make-proxies <deck> | Build MTG proxy PDF + cut file | Tools
