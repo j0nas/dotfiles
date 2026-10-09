@@ -1,9 +1,11 @@
 #!/bin/bash
-# Open a new WezTerm window in the next empty workspace on the focused monitor.
+# Open a new WezTerm window in the focused workspace, or with --empty in the
+# next empty workspace on the focused monitor.
 #
-# Bound to cmd-alt-enter in dot_aerospace.toml. AeroSpace assigns a new window to
-# whichever workspace is focused when the window appears, so the trick is to
-# switch to an empty workspace *first*, then spawn — the window lands there.
+# Bound to cmd-alt-enter / cmd-alt-shift-enter in dot_aerospace.toml. AeroSpace
+# assigns a new window to whichever workspace is focused when the window appears,
+# so for --empty the trick is to switch to an empty workspace *first*, then
+# spawn — the window lands there.
 #
 # AeroSpace's exec-and-forget gives GUI-launched processes a minimal PATH (no
 # Homebrew, no shims), so binaries are resolved explicitly — same reason as the
@@ -15,8 +17,10 @@ wezterm_bin="/opt/homebrew/bin/wezterm"
 
 # Lowest-numbered empty workspace on the monitor we're looking at. When the
 # monitor is full this is empty and we just spawn in the current workspace.
-empty="$("$aerospace_bin" list-workspaces --monitor focused --empty 2>/dev/null | head -n1)"
-[ -n "$empty" ] && "$aerospace_bin" workspace "$empty"
+if [ "$1" = "--empty" ]; then
+  empty="$("$aerospace_bin" list-workspaces --monitor focused --empty 2>/dev/null | head -n1)"
+  [ -n "$empty" ] && "$aerospace_bin" workspace "$empty"
+fi
 
 # Prefer a new window in the already-running GUI (shares the mux, one process).
 # If no GUI is up — or the mux socket isn't reachable from this minimal env —
