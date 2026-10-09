@@ -128,12 +128,9 @@ cmd-alt-shift-c = 'reload-config'   # sc: Cmd+Alt+Shift+C | Reload AeroSpace con
 cmd-alt-shift-tab = 'move-workspace-to-monitor --wrap-around next'   # sc: Cmd+Alt+Shift+Tab | Move workspace to next monitor | Window mgmt
 
 # New WezTerm window. AeroSpace drops new windows into the *focused* workspace,
-# so plain Cmd-Alt-Enter opens it right where you are; with Shift the script
-# first switches to the lowest-numbered empty workspace on the focused monitor,
-# so the window lands there instead. Like the label plugin below, this runs with
-# a minimal exec-and-forget PATH, so the script resolves its binaries explicitly.
+# so it opens right where you are. Like the label plugin below, this runs with a
+# minimal exec-and-forget PATH, so the script resolves its binaries explicitly.
 cmd-alt-enter = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/new-wezterm-workspace.sh'   # sc: Cmd+Alt+Return | New WezTerm window in current workspace | Workspaces
-cmd-alt-shift-enter = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/new-wezterm-workspace.sh --empty'   # sc: Cmd+Alt+Shift+Return | New WezTerm window in next empty workspace | Workspaces
 
 # Ad-hoc workspace labels — AeroSpace has no native rename, so these drive a
 # sidecar label store shown in the SwiftBar menu bar. n = name (prompt + set),

@@ -19,7 +19,6 @@
 | `Cmd+Alt+1…9` | Switch to workspace 1–9 |
 | `Cmd+Alt+Shift+1…9` | Send focused window to workspace 1–9 and follow |
 | `Cmd+Alt+Return` | New WezTerm window in current workspace |
-| `Cmd+Alt+Shift+Return` | New WezTerm window in next empty workspace |
 
 ### Layout
 
