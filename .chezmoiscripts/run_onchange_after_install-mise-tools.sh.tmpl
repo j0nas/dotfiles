@@ -56,12 +56,22 @@ mise upgrade -y
 # overwrites idempotently, and it repairs a stub the lock file lost track of, as
 # WSL's had); `update -g` refreshes the rest. `remove` retires find-skills, whose
 # "how do I do X" trigger fired on unrelated requests; it exits 0 once the skill
-# is gone. A "PromptScript does not support global" line is expected noise. Not
-# worth failing the converge over a network blip, hence the `|| echo`.
+# is gone. Not worth failing the converge over a network blip, hence the `|| echo`.
+#
+# The skills CLI draws spinners and summary boxes even without a TTY, and `add`
+# reports a PromptScript failure on every run (that agent has no global scope,
+# but the exit code stays 0). Together they buried the rest of the apply output,
+# so `add` and `remove` only print when they fail. `update` is already short and
+# says what changed. pnpm --silent drops pnpm's own resolve and progress lines.
+skills() { mise exec -- pnpm --silent dlx skills "$@"; }
+quietly() {
+  local out
+  out=$("$@" 2>&1) || { printf '%s\n' "$out"; return 1; }
+}
 echo "==> Refreshing third-party Claude Code skills..."
-{ mise exec -- pnpm dlx skills add vercel-labs/agent-browser -g -y &&
-  mise exec -- pnpm dlx skills remove find-skills -g -y &&
-  mise exec -- pnpm dlx skills update -g; } || echo "==> skills refresh failed; continuing"
+{ quietly skills add vercel-labs/agent-browser -g -y &&
+  quietly skills remove find-skills -g -y &&
+  skills update -g; } || echo "==> skills refresh failed; continuing"
 
 # chezmoi manages itself now (see config.toml). setup.sh bootstrapped a copy into
 # ~/.local/bin to get a bare machine off the ground, and that dir precedes mise's
