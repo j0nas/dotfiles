@@ -1,0 +1,13 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+Obsidian rewrites obsidian.json itself (vault list, window state), so this sets
+"cli": true on the live file and leaves the rest alone. That key is the entire
+Settings > General > Advanced "Command line interface" toggle; the Homebrew
+cask's binary symlink covers putting `obsidian` on PATH. Obsidian reads the file
+at launch and writes its in-memory copy back when it saves, so if it is running
+during an apply it may drop the key again; a later apply restores it.
+*/ -}}
+{{- $cur := dict -}}
+{{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- $_ := set $cur "cli" true -}}
+{{- $cur | toJson -}}
