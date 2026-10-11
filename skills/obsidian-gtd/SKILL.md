@@ -205,8 +205,8 @@ Current sections in that file (keep in sync if the file changes):
 
 1. **Process Inbox** → run Process mode on `Inbox.md`. Empty his head — ask if anything is floating around to capture.
 2. **Check Dashboard** → walk `Dashboard.md` sections: Overdue (real deadlines), Should have started, Due this week, Waiting for, Agenda. Flag anything that needs attention. Offer to add/update `📅` / `⏳` dates.
-3. **Scan active projects** → walk through `Projects/` notes. For each: does it have a clear next action? If done, archive it using the Obsidian CLI's `move` command — it rewrites inbound wikilinks, where a filesystem `mv` would silently break every `[[<name>]]` reference. See `${CLAUDE_SKILL_DIR}/references/obsidian-cli.md` for exact syntax (and for the fail-loud rule: if the CLI errors, stop and ask Jonas rather than falling back to filesystem `mv`). Tag actively-worked items with `#doing`.
-4. **Review Someday-Maybe** → skim `Someday-Maybe/`. Activate anything ready using the Obsidian CLI's `move` command (same reason as step 3: preserves backlinks; syntax in `${CLAUDE_SKILL_DIR}/references/obsidian-cli.md`). Capture new ideas.
+3. **Scan active projects** → walk through `Projects/` notes. For each: does it have a clear next action? If done, archive it using the Obsidian CLI's `move` command — it rewrites inbound wikilinks, where a filesystem `mv` would silently break every `[[<name>]]` reference. `obsidian help move` has the syntax. If the CLI errors, stop and ask Jonas rather than falling back to filesystem `mv`. Tag actively-worked items with `#doing`.
+4. **Review Someday-Maybe** → skim `Someday-Maybe/`. Activate anything ready using the Obsidian CLI's `move` command (same reason and same stop-and-ask rule as step 3). Capture new ideas.
 
 At the end, confirm: Inbox is zero, Dashboard is clean, every active project has a next action.
 
@@ -278,9 +278,7 @@ Every decision in this skill should trace to one of these:
 
 ## Response style
 
-- **Terse by default.** No "Great! Let's get started!", no "I'll help you with that." Just do the thing.
 - **One item at a time** during processing. No mid-flow recaps.
-- **Let data speak.** When showing counts or status, don't narrate what's obvious.
 - **Warmth at boundaries, not during flow.** `Inbox zero. Nice.` at the end is fine. `Great job!` between items is not.
 - **Errors: retry once silently, then say plainly.** `Couldn't read Inbox.md — vault synced?` beats a stack trace.
 
@@ -297,4 +295,4 @@ Every decision in this skill should trace to one of these:
 - Don't congratulate Jonas between items.
 - Don't recreate a conventions or how-to note in the vault. Jonas deleted them as noise; this skill file is where conventions live.
 - Don't edit `Tech/Shortcuts.md` — chezmoi overwrites it.
-- Don't use the Obsidian CLI for capture or Inbox processing — it auto-launches the desktop app, which kills the zero-friction property. The CLI is reserved for `move` (link preservation) and similar API-level operations during Weekly Review.
+- Don't use the Obsidian CLI for capture or Inbox processing. It only works while the desktop app is running with the CLI enabled (Settings > General > Advanced), and capture has to work without either. The CLI is reserved for `move` (link preservation) and similar API-level operations during Weekly Review.
