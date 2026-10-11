@@ -20,13 +20,16 @@ The argument describes a change the user wants persisted across machines.
    - Homebrew brew or cask, flatpak, winget package, or VS Code extension to keep → `.chezmoidata.yaml` (a one-off is just `brew install`, not a dotfiles change)
    - new personal skill → `skills/<name>/SKILL.md` + `dot_claude/skills/symlink_<name>.tmpl` (contents `{{ .chezmoi.sourceDir }}/skills/<name>`)
    - new slash command → `commands/<name>.md` + `dot_claude/commands/symlink_<name>.md.tmpl` (contents `{{ .chezmoi.sourceDir }}/commands/<name>.md`)
+   - new rule (loaded into every Claude session) → `rules/<name>.md` + `dot_claude/rules/symlink_<name>.md.tmpl` (contents `{{ .chezmoi.sourceDir }}/rules/<name>.md`)
+   - retire a managed file, symlink, skill, command or rule → `git rm` its source and add an empty `remove_<target name>` in the same source dir (e.g. `dot_claude/skills/remove_<name>`). Deleting the source alone leaves the old target on every machine. A third-party skill instead gets `skills remove <name> -g -y` in the mise-tools converge script.
+   - setting in a file the app rewrites itself → `modify_<file>` template that reads `.chezmoi.stdin` and sets only the managed keys (examples: `dot_claude/modify_settings.json`, `private_Library/private_Application Support/private_obsidian/modify_obsidian.json`)
    - secret → `chezmoi edit ~/.claude/secrets/<file>.json` (existing) or `chezmoi add --encrypt ~/.claude/secrets/<file>.json` (new); the source lands at `dot_claude/private_secrets/encrypted_private_<file>.json.age`
    - macOS default → `.chezmoiscripts/run_onchange_macos-defaults.sh.tmpl`
    - one-time setup task → `.chezmoiscripts/run_once_<name>.sh.tmpl` (alphabetical sort matters)
    - re-runs on content change → `.chezmoiscripts/run_onchange_<name>.sh.tmpl`
 2. **Apply repo rules** from AGENTS.md: idempotency, no hardcoded usernames, OS gating with `{{ if eq .chezmoi.os "darwin" -}}`, shared data via `.chezmoi.toml.tmpl` / `.chezmoidata.yaml`.
 3. **Make the edit** in the chezmoi source dir.
-4. **Apply** with `chezmoi apply` and read the output for errors. This both validates the template and lands the change locally.
+4. **Apply** with `chezmoi apply` and read the output for errors. This both validates the template and lands the change locally. Editing a `run_onchange_` script re-runs it on this apply (the mise-tools one also upgrades tools), so report what it did.
 5. Proceed to **Commit**.
 
 ### Catch-up mode (no argument)
