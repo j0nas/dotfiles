@@ -1,5 +1,0 @@
-{{- /* The parametric-kit skill ships with the kit, which lives in the formeriet workspace
-       (packages/parametric-kit). Linked only where that checkout exists: an empty render
-       leaves no symlink on machines without it. */ -}}
-{{- $kit := joinPath .chezmoi.homeDir "Desktop/projects/code/formeriet/packages/parametric-kit/.claude/skills/parametric-kit" -}}
-{{- if stat $kit }}{{ $kit }}{{ end -}}
