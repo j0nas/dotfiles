@@ -31,6 +31,7 @@ import statistics
 import subprocess
 import sys
 import time
+import urllib.error
 import urllib.request
 from datetime import datetime, timezone
 from pathlib import Path
@@ -52,6 +53,7 @@ PRIOR = {
 }
 PRIOR_SIZE = {"haiku": 100_000, "sonnet": 250_000, "opus": 300_000, "fable": 300_000}
 PRIOR_WEIGHT = 2.0  # Mtok
+FRESH = 60.0  # seconds a reading stays good enough for start, end and plan
 RATIO_MIN_FIVE = 30.0  # 5h points observed before the week is derived from the 5h rates
 
 
@@ -81,13 +83,25 @@ def epoch(iso: str | None) -> float | None:
     return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
 
 
-def snapshot() -> dict:
+def snapshot(max_age: float = FRESH) -> dict:
+    """A fresh reading, logged; the last one if it's under max_age old (the endpoint is
+    rate-limited: a burst of calls gets 429s) or if the endpoint can't be reached."""
+    snaps = [e for e in entries() if e["kind"] == "snap"]
+    if snaps and time.time() - snaps[-1]["t"] < max_age:
+        return snaps[-1]
     req = urllib.request.Request(
         URL,
         headers={"Authorization": f"Bearer {token()}", "anthropic-beta": "oauth-2025-04-20"},
     )
-    with urllib.request.urlopen(req, timeout=10) as r:
-        u = json.load(r)
+    try:
+        with urllib.request.urlopen(req, timeout=10) as r:
+            u = json.load(r)
+    except (urllib.error.URLError, TimeoutError) as err:
+        if not snaps:
+            sys.exit(f"claude-quota: can't read the usage ({err}) and there's no earlier reading")
+        print(f"claude-quota: can't read the usage ({err}); using the reading from "
+              f"{hours(time.time() - snaps[-1]['t'])} ago", file=sys.stderr)
+        return snaps[-1]
     scoped = {
         ((lim.get("scope") or {}).get("model") or {}).get("display_name", "?"): lim.get("percent")
         for lim in u.get("limits", [])
@@ -288,7 +302,7 @@ def cmd_status(args) -> None:
 def cmd_start(args) -> None:
     s = snapshot()
     aid = datetime.now(timezone.utc).strftime("a%m%d-%H%M%S-") + os.urandom(2).hex()  # unique within a second
-    append({"t": s["t"], "kind": "start", "id": aid, "label": args.label, "model": model_of(args.model), "task": args.kind})
+    append({"t": time.time(), "kind": "start", "id": aid, "label": args.label, "model": model_of(args.model), "task": args.kind})
     print(aid)
 
 
@@ -296,7 +310,7 @@ def cmd_end(args) -> None:
     if args.outcome and args.outcome not in OUTCOMES:
         sys.exit(f"claude-quota: outcome must be one of {OUTCOMES}")
     s = snapshot()
-    append({"t": s["t"], "kind": "end", "id": args.id, "tokens": amount(args.tokens), "outcome": args.outcome})
+    append({"t": time.time(), "kind": "end", "id": args.id, "tokens": amount(args.tokens), "outcome": args.outcome})
     a = agents(entries()).get(args.id)
     if a:
         print(f"{args.id} {a['label']}: {hours(s['t'] - a['t'])}, {amount(args.tokens) / 1e3:.0f}k tokens")
