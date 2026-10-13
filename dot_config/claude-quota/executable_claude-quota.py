@@ -287,7 +287,7 @@ def cmd_status(args) -> None:
 
 def cmd_start(args) -> None:
     s = snapshot()
-    aid = datetime.now(timezone.utc).strftime("a%m%d-%H%M%S")
+    aid = datetime.now(timezone.utc).strftime("a%m%d-%H%M%S-") + os.urandom(2).hex()  # unique within a second
     append({"t": s["t"], "kind": "start", "id": aid, "label": args.label, "model": model_of(args.model), "task": args.kind})
     print(aid)
 
