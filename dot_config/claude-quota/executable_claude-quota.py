@@ -258,6 +258,8 @@ def learn(log: list[dict]) -> dict:
     for key, toks in by_kind.items():
         sizes[key] = statistics.median(toks)
     model_size = {m: statistics.median(t) if t else PRIOR_SIZE[m] for m, t in by_model.items()}
+    runs = [(ag["end"] - ag["t"]) / 3600 for ag in ended]
+    run_hours = statistics.median(runs) if runs else 0.5
     return {
         "rates": rates,
         "baseline": baseline,
@@ -265,6 +267,7 @@ def learn(log: list[dict]) -> dict:
         "sizes": sizes,
         "model_size": model_size,
         "outcomes": outcomes,
+        "run_hours": run_hours,
         "agents": len(ended),
         "evidence": {m: sum(t) / 1e6 for m, t in by_model.items()},
     }
@@ -326,6 +329,7 @@ def cmd_learn(args) -> None:
             f"   typical agent {m['model_size'][model] / 1e3:4.0f}k   (logged {m['evidence'][model]:.1f} Mtok)"
         )
     print(f"  baseline (main session and other use): week {m['baseline']['week']:.2f} %/h, 5h {m['baseline']['five']:.2f} %/h")
+    print(f"  an agent's median run: {m['run_hours'] * 60:.0f} min")
     if m["sizes"]:
         print("by model and kind: median tokens, outcomes (merged/fixed/partial/discarded)")
         for (model, kind), size in sorted(m["sizes"].items()):
@@ -350,13 +354,21 @@ def cmd_plan(args) -> None:
         for w in cost:
             cost[w] += n * size / 1e6 * m["rates"][w][model]
         count += n
+    # The main session (and anything else) keeps spending while the agents run: a parallel batch
+    # lasts about one agent's run, a serial one the sum.
+    hours_running = m["run_hours"] * (count if args.serial else 1)
+    for w in cost:
+        cost[w] += m["baseline"][w] * hours_running
     week_left = args.target - s["week"]
     five_left = FIVE_CAP - s["five"]
     now = s["t"]
     show_status(s, args.target)
     print()
     items = ", ".join(f"{mo}{':' + k if k else ''}×{n:g}" for mo, k, n in want)
-    print(f"to run  {items}  ≈ {cost['week']:.1f} pts of the week, {cost['five']:.0f} pts of a 5h window")
+    print(
+        f"to run  {items}  ≈ {cost['week']:.1f} pts of the week, {cost['five']:.0f} pts of a 5h window"
+        f" (incl. ~{hours_running:.1f} h of the main session alongside)"
+    )
     if cost["week"] > week_left:
         print(
             f"week    short by {cost['week'] - week_left:.1f} pts: move agents down a model "
@@ -410,6 +422,7 @@ def main() -> None:
     pl.add_argument("agents", nargs="+", help="model[:kind]=count, e.g. sonnet:implement=3 opus=1")
     pl.add_argument("--size", nargs="*", help="model=tokens per agent, overriding the learned size")
     pl.add_argument("--target", type=float, default=TARGET)
+    pl.add_argument("--serial", action="store_true", help="the agents run one after another")
     pl.set_defaults(func=cmd_plan)
     sub.add_parser("learn", help="show the fitted rates, sizes and outcomes").set_defaults(func=cmd_learn)
     lg = sub.add_parser("log", help="show the latest log entries")
