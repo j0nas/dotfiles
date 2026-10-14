@@ -83,12 +83,22 @@ def epoch(iso: str | None) -> float | None:
     return datetime.fromisoformat(iso.replace("Z", "+00:00")).timestamp()
 
 
+def started(s: dict) -> dict:
+    """A window nothing has been used in yet has no reset time: it ends a full window from the
+    reading."""
+    return {
+        **s,
+        "five_reset": s["five_reset"] or s["t"] + 5 * 3600,
+        "week_reset": s["week_reset"] or s["t"] + 7 * 86400,
+    }
+
+
 def snapshot(max_age: float = FRESH) -> dict:
     """A fresh reading, logged; the last one if it's under max_age old (the endpoint is
     rate-limited: a burst of calls gets 429s) or if the endpoint can't be reached."""
     snaps = [e for e in entries() if e["kind"] == "snap"]
     if snaps and time.time() - snaps[-1]["t"] < max_age:
-        return snaps[-1]
+        return started(snaps[-1])
     req = urllib.request.Request(
         URL,
         headers={"Authorization": f"Bearer {token()}", "anthropic-beta": "oauth-2025-04-20"},
@@ -101,7 +111,7 @@ def snapshot(max_age: float = FRESH) -> dict:
             sys.exit(f"claude-quota: can't read the usage ({err}) and there's no earlier reading")
         print(f"claude-quota: can't read the usage ({err}); using the reading from "
               f"{hours(time.time() - snaps[-1]['t'])} ago", file=sys.stderr)
-        return snaps[-1]
+        return started(snaps[-1])
     scoped = {
         ((lim.get("scope") or {}).get("model") or {}).get("display_name", "?"): lim.get("percent")
         for lim in u.get("limits", [])
@@ -117,7 +127,7 @@ def snapshot(max_age: float = FRESH) -> dict:
         "scoped": scoped,
     }
     append(s)
-    return s
+    return started(s)
 
 
 def append(entry: dict) -> None:
