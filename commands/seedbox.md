@@ -1,6 +1,6 @@
 ---
 name: seedbox
-description: Interact with your USBx seedbox — Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), Plex, Jellyfin, Audiobookshelf, plus ad-hoc Prowlarr→qBittorrent grabs for games/audiobooks/ebooks.
+description: Interact with your USBx seedbox — Sonarr (TV), Radarr (movies), Seerr (requests), Bazarr (subtitles), Prowlarr (indexers), qBittorrent (downloads), Plex, Jellyfin, Audiobookshelf, the self-installed music stack (Navidrome, Lidarr nightly), plus ad-hoc Prowlarr→qBittorrent grabs for games/audiobooks/ebooks.
 argument-hint: "[what you want to do]"
 ---
 
@@ -22,7 +22,7 @@ Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_us
 
 `app-<name> start|stop|restart|upgrade|backup|version`; `app-<name> password <pw>` (reset UI pw); `app-plex claim`.
 
-**Install only via CP → Installers, never `app-<name> install` over SSH.** SSH/manual installs run but aren't registered with the panel (no CP tile/controls/auto-update, port hidden) — this is how Jellyfin got orphaned. Use the CLI only to *manage* CP-installed apps.
+**Install only via CP → Installers, never `app-<name> install` over SSH.** SSH/manual installs run but aren't registered with the panel (no CP tile/controls/auto-update, port hidden) — this is how Jellyfin got orphaned. Use the CLI only to *manage* CP-installed apps. The one deliberate exception is the music stack (Navidrome, Lidarr nightly), self-installed because CP apps can't load plugins; see *Music stack* below.
 - **Is `<name>` managed?** `command -v app-<name>` (exists → managed; full list `ls /usr/bin/app-*`) and `app-ports show` (official app→port table, e.g. Jellyfin 12602).
 - **Is it installed?** CP → Apps is the ground truth. A failing `app-<name> version` ("Unable to retrieve application version") or a 502 on `/<app>` means the backend isn't answering (stopped, or Docker mapped elsewhere), not that it's uninstalled: in 2026-05 the Docker *arr apps failed `version` while installed and running. As of 2026-10 every app answers `version`.
 - **Orphaned install** = on disk (`~/.apps/<name>`, `app-<name> version` works) but absent from CP → Apps. Fix: `app-<name> uninstall` (`--keep-config` keeps settings; `~/media` untouched) → reinstall via CP.
@@ -57,6 +57,8 @@ Read `~/.claude/secrets/seedbox.json` before any call. Keys: `ssh_host`, `ssh_us
 | Audiobookshelf | `https://audiobookshelf-<ssh_username>.comet.usbx.me/audiobookshelf` (internal `127.0.0.1:37600`) | `ui_password` (root user = `<ssh_username>`) |
 | LazyLibrarian | `https://<ssh_host>/lazylibrarian` (internal `127.0.0.1:12632`, Docker) | web users `<ssh_username>`/`ui_password` (admin), `tora`/`ui_password` (Friend; changed 2026-09-14 at Jonas's request — NOT her ABS/Calibre-Web password). Failed-login lockout ("retry after 1 hour") lives in memory: `app-lazylibrarian restart` clears it. Login form POSTs to `/lazylibrarian/user_login` (`/login` 400s); API `lazylibrarian_api_key` |
 | Calibre-Web | `https://<ssh_host>/calibre-web/` (internal `127.0.0.1:37604`, Docker); OPDS `https://<ssh_host>/calibre-web/opds/` (trailing slash — without it nginx 301s) | web/OPDS users `<ssh_username>`/`ui_password` (admin), `tora`/`audiobookshelf_tora_password` (download+viewer+shelves) |
+| Navidrome | `https://<ssh_host>/navidrome` (internal `127.0.0.1:37649`; self-installed, see *Music stack*) | `~/.claude/secrets/music.json`: `navidrome_jonas_user`/`navidrome_jonas_password` |
+| Lidarr (nightly) | `https://<ssh_host>/lidarr2` (internal `127.0.0.1:37640/lidarr2`; self-installed) | `music.json`: `lidarr_api_key`, `lidarr_user`/`lidarr_password` |
 
 ## Docs (Context7)
 
@@ -138,9 +140,21 @@ Serves the Calibre library at `~/media/Books` (EPUB-only clone of Tora's 340 DRM
 - **Tora's user manual** (artifact, shareable): https://claude.ai/code/artifact/fbf5c58c-13cd-40c0-96ca-9f4d101e8e04 — source `~/Desktop/projects/electronics/kindle/TORAS-KINDLE-GUIDE.html`. Keep it in sync when URLs/flows change.
 - **Refresh library from the Mac**: rebuild `calibre-library-epub/` there, tar-stream it over SSH into `~/media/Books/` (metadata.db included), `app-calibre-web restart`. Anything uploaded via the bridge since would be lost unless merged in Calibre first.
 
-### Ad-hoc grab (no *arr — games, audiobooks, ebooks, comics, music)
+### Music stack (self-installed, absent from the CP; set up 2026-10-17)
 
-For media with no request/automation layer (games, comics, music; **audiobooks go through LazyLibrarian above; ebooks are grabbed by LL and served by Calibre-Web**). Questarr for games isn't on the Ultra.cc CP / no Docker access, and a seedbox can't *play* games anyway — so drive it by hand:
+Jonas's Spotify replacement; Tora joins once it has proven itself. The project lives on the Mac at `~/Desktop/projects/home/music/`. `PLAN.md` (Status section) has the current state and `runbooks/` (`navidrome.md`, `lidarr.md`, `release-radar.md`, `explo.md`) has the operations detail. Read the matching runbook before changing anything. Neither app has a CP tile, and no `app-*` command manages them.
+- **Navidrome 0.64.2** (official binary). Install, config and data live in `~/.apps/navidrome-self/`: `navidrome.toml` (mode 600), `data/navidrome.db`, `backups/`, and `plugins/` with the ListenBrainz playlist plugin. Unit `navidrome-self.service` (systemd --user), port `127.0.0.1:37649`. `proxy.d/navidrome.conf` is replaced; Ultra.cc's stock file pointed at the CP app's port 37602 and is kept in `~/.apps/nginx/proxy.d.bak/`. Never install `app-navidrome` from the CP, since it would take that conf back. Never set `ReverseProxyWhitelist`, since anyone could then log in by sending a `Remote-User` header through nginx. `~/scripts/navidrome_update_check.py` checks for releases daily; upgrades are by hand per the runbook.
+- **Lidarr nightly 3.1.6 + Tubifarry**, installed with Ultra.cc's "2nd Instance of Mediarr" script at `/lidarr2`, port `127.0.0.1:37640`. Binaries are in `~/.config/lidarr2/`, data in `~/.apps/lidarr2/`. Unit `lidarr.service` has the drop-in `lidarr.service.d/gc.conf` (`DOTNET_GCRegionRange=0x140000000`, `MALLOC_ARENA_MAX=2`); without it .NET dies under the 10.24 GB `LimitAS`. Update only through Lidarr's own updater. The script's Update & Repair rewrites the unit and puts master binaries over the nightly DB. Root folder `~/media/Music`, which Plex and Jellyfin also read.
+- **Access**: `/navidrome` has its own `proxy.d` file, so it skips Ultra.cc's basic auth and Navidrome's login is the only gate (Subsonic apps need that). Lidarr's UI sits behind Ultra.cc's login plus its own; `/lidarr2/api` takes the API key.
+- **Crons** in `~/scripts/` (logs alongside):
+  - `lidarr_feeder.py` every 20 min searches 15 wanted albums; it holds off under 400 GB free or with more than 25 active downloads.
+  - `release_radar/` runs daily, with a Friday digest and ntfy push.
+  - `explo_weekly.py` runs on Tuesdays.
+  - `navidrome_update_check.py` runs daily.
+
+### Ad-hoc grab (no *arr — games, audiobooks, ebooks, comics)
+
+For media with no request/automation layer (games, comics; **music goes through Lidarr above; audiobooks go through LazyLibrarian above; ebooks are grabbed by LL and served by Calibre-Web**). Questarr for games isn't on the Ultra.cc CP / no Docker access, and a seedbox can't *play* games anyway — so drive it by hand:
 1. **Search** `GET /prowlarr/api/v1/search?query=<term>&type=search&limit=100` (`X-Api-Key`). Fields: `title`, `seeders`, `size`, `categories`, `downloadUrl`|`magnetUrl`|`infoHash`. Sort by seeders; pick a trusted source at the right version. Games: trusted repackers FitGirl/DODI, scene RUNE/FLT/CODEX — avoid unlabeled re-uploads for anything you'll execute.
 2. **Quota** big grabs first: `quota -s` (limit 3725G; box `/home30` 17T).
 3. **Add**: qBittorrent login → `POST /torrents/add` `urls=<downloadUrl|magnet>&category=<games|audiobooks|...>`. A non-*arr `category` keeps it out of Sonarr/Radarr import paths; it lands in `~/downloads/qbittorrent/`.
