@@ -13,6 +13,7 @@ packages:
       - claude
       - discord
       - epson-print-layout
+      - fastmail
       - font-jetbrains-mono-nerd-font
       - godot  # Godot 4.x game engine; cask puts a `godot` CLI shim on PATH (headless runs, script checks)
       - lm-studio
