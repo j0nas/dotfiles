@@ -11,13 +11,18 @@ run, plus a per-hour baseline for the main session and whatever else ran. The ut
 whole percents and the 5-hour window moves several times faster than the week, so the weekly
 rates come from the 5-hour ones times the observed week-to-5h ratio once there's enough of it.
 `plan` prices the work still to do against the budget left: spend follows the backlog, never a
-line drawn through the clock.
+line drawn through the clock. A limit reset (Settings > Usage, redeemed on the web or in the
+desktop app) refills the week, the 5-hour window or both; logged with `reset add`, it counts as a
+full week more to spend until it expires (a 5-hour-only reset as a 5-hour window more), and its
+redemption is read off the snapshots: a window drops while its reset time stays put.
 
   claude-quota [status]                       snapshot; the windows and any open agents
   claude-quota start "label" sonnet [--kind implement]    -> prints an agent id
   claude-quota end <id> 229k [--outcome merged|fixed|discarded|partial]
   claude-quota plan sonnet:implement=3 opus:design=1 [--size sonnet=250k]
   claude-quota learn                          fitted rates, typical sizes, outcomes per kind
+  claude-quota reset add both 2026-10-22 [--note "…"]     a limit reset (week|5h|both) to spend before then
+  claude-quota reset [list] | reset used <id>
   claude-quota log [-n 20]
 """
 
@@ -43,6 +48,7 @@ TARGET = float(os.environ.get("CLAUDE_QUOTA_TARGET", 92))  # % of the week used 
 FIVE_CAP = 90.0  # never plan the 5-hour window past this
 MODELS = ("haiku", "sonnet", "opus", "fable")
 OUTCOMES = ("merged", "fixed", "partial", "discarded")
+WINDOWS = {"week": "week", "5h": "five", "both": "both"}  # a reset's window, as typed → as logged
 # Starting guesses, in % of the window per million tokens an agent's notification reports, and a
 # typical agent's tokens. Each weighs PRIOR_WEIGHT Mtok of evidence and fades as agents are
 # logged. Seeded from 2026-10-13: Sonnet agents moved the week ~5 points over ~2.7M tokens and
@@ -182,6 +188,40 @@ def agents(log: list[dict]) -> dict[str, dict]:
     return out
 
 
+def refilled(a: dict, b: dict, window: str) -> bool:
+    """The window dropped while its reset time stayed put: a limit reset was redeemed (or
+    Anthropic reset everyone's limits). Within a window the utilisation otherwise only rises."""
+    return a[f"{window}_reset"] == b[f"{window}_reset"] and b[window] < a[window]
+
+
+def resets(log: list[dict]) -> dict[str, dict]:
+    """Every logged limit reset, with `used` set to when it was redeemed: logged with `reset
+    used`, else read off the first refill of its window after it was logged and before it
+    expired."""
+    out: dict[str, dict] = {}
+    for e in log:
+        if e["kind"] == "reset":
+            out[e["id"]] = {**e, "used": None}
+        elif e["kind"] == "redeem" and e["id"] in out:
+            out[e["id"]]["used"] = e["t"]
+    snaps = [e for e in log if e["kind"] == "snap"]
+    for a, b in zip(snaps, snaps[1:]):
+        for w in ("week", "five"):
+            if not refilled(a, b, w):
+                continue
+            open_ = [r for r in out.values()
+                     if r["window"] in (w, "both") and not r["used"] and r["t"] <= b["t"] and r["expires"] >= a["t"]]
+            if open_:
+                min(open_, key=lambda r: r["expires"])["used"] = b["t"]
+    return out
+
+
+def live_resets(now: float) -> list[dict]:
+    """Resets still there to spend: not redeemed, not expired."""
+    return sorted((r for r in resets(entries()).values() if not r["used"] and r["expires"] > now),
+                  key=lambda r: r["expires"])
+
+
 def lstsq(rows: list[list[float]], ys: list[float]) -> list[float] | None:
     """Ordinary least squares by the normal equations (a handful of unknowns)."""
     k = len(rows[0])
@@ -225,14 +265,15 @@ def learn(log: list[dict]) -> dict:
     baseline: dict[str, float] = {}
     moved = {"week": 0.0, "five": 0.0}  # points each window rose where neither reset
     for a, b in zip(snaps, snaps[1:]):
-        if a["five_reset"] == b["five_reset"] and a["week_reset"] == b["week_reset"]:
+        if (a["five_reset"] == b["five_reset"] and a["week_reset"] == b["week_reset"]
+                and not refilled(a, b, "five") and not refilled(a, b, "week")):
             for w in moved:
                 moved[w] += max(0.0, b[w] - a[w])
     for window in ("week", "five"):
         rows, ys = [], []
         for a, b in zip(snaps, snaps[1:]):
-            if a[f"{window}_reset"] != b[f"{window}_reset"] or b["t"] <= a["t"]:
-                continue  # the window reset in between: the delta means nothing
+            if a[f"{window}_reset"] != b[f"{window}_reset"] or b["t"] <= a["t"] or refilled(a, b, window):
+                continue  # the window reset (or was refilled) in between: the delta means nothing
             row = [0.0] * (len(MODELS) + 1)
             for ag in ended:
                 run = max(ag["end"] - ag["t"], 1.0)
@@ -303,6 +344,19 @@ def show_status(s: dict, target: float) -> None:
     for name, pct in s.get("scoped", {}).items():
         if pct:
             print(f"      {name} weekly {pct:.0f}%")
+    for r in live_resets(now):
+        name = {"week": "week", "five": "5h", "both": "week + 5h"}[r["window"]]
+        left = r["expires"] - now
+        need = 100 - s["five" if r["window"] == "five" else "week"]
+        when = datetime.fromtimestamp(r["expires"]).strftime("%b %d %H:%M")
+        print(f"reset {r['id']}  a {name} reset, expires in {hours(left)} ({when}), not redeemed"
+              + (f": {r['note']}" if r.get("note") else ""))
+        if r["window"] != "five":
+            per = need / max(left / (5 * 3600), 1)
+            print(f"      worth up to {need:.0f} pts if the week reaches its limit first: ≈ {per:.0f} week pts per"
+                  " 5-hour window until then. Redeem it in Settings > Usage (web or desktop app).")
+        if left < 24 * 3600:
+            print("      It lapses within a day: redeem it before then, near the limit or not.")
     for a in agents(entries()).values():
         if not a["end"]:
             print(f"open  {a['id']}  {a['model']}:{a.get('task') or '-'}  {a['label']}  ({hours(now - a['t'])})")
@@ -369,9 +423,14 @@ def cmd_plan(args) -> None:
     hours_running = m["run_hours"] * (count if args.serial else 1)
     for w in cost:
         cost[w] += m["baseline"][w] * hours_running
-    week_left = args.target - s["week"]
-    five_left = FIVE_CAP - s["five"]
     now = s["t"]
+    # Each unredeemed reset is a full window more. One that refills both counts for the week only:
+    # it's worth most redeemed once the week is spent, not to widen the 5-hour window at hand.
+    extra = {"week": 0.0, "five": 0.0}
+    for r in live_resets(now):
+        extra["five" if r["window"] == "five" else "week"] += 100
+    week_left = args.target - s["week"] + extra["week"]
+    five_left = FIVE_CAP - s["five"] + extra["five"]
     show_status(s, args.target)
     print()
     items = ", ".join(f"{mo}{':' + k if k else ''}×{n:g}" for mo, k, n in want)
@@ -387,6 +446,9 @@ def cmd_plan(args) -> None:
     else:
         spare = week_left - cost["week"]
         print(f"week    fits with {spare:.1f} pts to spare; the week doesn't limit this. Don't pad the work.")
+        if extra["week"]:
+            print("        That counts the unredeemed limit reset: spend the week toward its limit before it"
+                  " expires, then redeem it.")
         if s["week_reset"] - now < 24 * 3600 and spare > 15:
             print("        The reset is close and the spare is large: put it into quality (a stronger model, a review pass).")
     if cost["five"] <= five_left:
@@ -400,6 +462,42 @@ def cmd_plan(args) -> None:
         )
 
 
+def deadline(s: str) -> float:
+    """An expiry as Settings > Usage shows it, in local time. A bare date means its start, so a
+    reset is never planned past the moment it lapses."""
+    try:
+        return datetime.fromisoformat(s).timestamp()
+    except ValueError:
+        sys.exit(f"claude-quota: expiry must be a date or date and time, e.g. 2026-10-22 or 2026-10-22T18:00, got {s!r}")
+
+
+def cmd_reset_add(args) -> None:
+    rid = datetime.now(timezone.utc).strftime("r%m%d-%H%M%S-") + os.urandom(2).hex()
+    append({"t": time.time(), "kind": "reset", "id": rid, "window": WINDOWS[args.window],
+            "expires": deadline(args.expires), "note": args.note})
+    print(rid)
+
+
+def cmd_reset_used(args) -> None:
+    if args.id not in resets(entries()):
+        sys.exit(f"claude-quota: no reset {args.id!r}; `claude-quota reset` lists them")
+    append({"t": time.time(), "kind": "redeem", "id": args.id})
+
+
+def cmd_reset_list(args) -> None:
+    now = time.time()
+    for r in resets(entries()).values():
+        name = {"week": "week", "five": "5h", "both": "both"}[r["window"]]
+        when = datetime.fromtimestamp(r["expires"]).strftime("%Y-%m-%d %H:%M")
+        if r["used"]:
+            state = "redeemed " + datetime.fromtimestamp(r["used"]).strftime("%m-%d %H:%M")
+        elif r["expires"] <= now:
+            state = "lapsed"
+        else:
+            state = f"open, {hours(r['expires'] - now)} left"
+        print(f"{r['id']}  {name:4}  expires {when}  {state}" + (f"  {r['note']}" if r.get("note") else ""))
+
+
 def cmd_log(args) -> None:
     for e in entries()[-args.n :]:
         when = datetime.fromtimestamp(e["t"]).strftime("%m-%d %H:%M")
@@ -407,6 +505,10 @@ def cmd_log(args) -> None:
             print(f"{when}  snap   5h {e['five']:>3.0f}%  week {e['week']:>3.0f}%")
         elif e["kind"] == "start":
             print(f"{when}  start  {e['id']}  {e['model']}:{e.get('task') or '-'}  {e['label']}")
+        elif e["kind"] == "reset":
+            print(f"{when}  reset  {e['id']}  {e['window']} until {datetime.fromtimestamp(e['expires']):%m-%d %H:%M}")
+        elif e["kind"] == "redeem":
+            print(f"{when}  redeem {e['id']}")
         else:
             print(f"{when}  end    {e['id']}  {e.get('tokens', 0) / 1e3:.0f}k  {e.get('outcome') or ''}")
 
@@ -435,6 +537,18 @@ def main() -> None:
     pl.add_argument("--serial", action="store_true", help="the agents run one after another")
     pl.set_defaults(func=cmd_plan)
     sub.add_parser("learn", help="show the fitted rates, sizes and outcomes").set_defaults(func=cmd_learn)
+    rs = sub.add_parser("reset", help="log a limit reset to spend before it expires; list them")
+    rs.set_defaults(func=cmd_reset_list)
+    rsub = rs.add_subparsers()
+    ra = rsub.add_parser("add", help="a reset from Settings > Usage; prints its id")
+    ra.add_argument("window", choices=tuple(WINDOWS), help="what it refills")
+    ra.add_argument("expires", help="local date or date and time, e.g. 2026-10-22 or 2026-10-22T18:00")
+    ra.add_argument("--note")
+    ra.set_defaults(func=cmd_reset_add)
+    ru = rsub.add_parser("used", help="log a reset as redeemed (else read off the snapshots)")
+    ru.add_argument("id")
+    ru.set_defaults(func=cmd_reset_used)
+    rsub.add_parser("list", help="every logged reset and what became of it").set_defaults(func=cmd_reset_list)
     lg = sub.add_parser("log", help="show the latest log entries")
     lg.add_argument("-n", type=int, default=20)
     lg.set_defaults(func=cmd_log)
