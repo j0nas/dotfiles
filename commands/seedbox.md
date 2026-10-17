@@ -147,7 +147,7 @@ Jonas's Spotify replacement; Tora joins once it has proven itself. The project l
 - **Lidarr nightly 3.1.6 + Tubifarry**, installed with Ultra.cc's "2nd Instance of Mediarr" script at `/lidarr2`, port `127.0.0.1:37640`. Binaries are in `~/.config/lidarr2/`, data in `~/.apps/lidarr2/`. Unit `lidarr.service` has the drop-in `lidarr.service.d/gc.conf` (`DOTNET_GCRegionRange=0x140000000`, `MALLOC_ARENA_MAX=2`); without it .NET dies under the 10.24 GB `LimitAS`. Update only through Lidarr's own updater. The script's Update & Repair rewrites the unit and puts master binaries over the nightly DB. Root folder `~/media/Music`, which Plex and Jellyfin also read.
 - **Access**: `/navidrome` has its own `proxy.d` file, so it skips Ultra.cc's basic auth and Navidrome's login is the only gate (Subsonic apps need that). Lidarr's UI sits behind Ultra.cc's login plus its own; `/lidarr2/api` takes the API key.
 - **Crons** in `~/scripts/` (logs alongside):
-  - `lidarr_feeder.py` every 20 min searches 15 wanted albums; it holds off under 400 GB free or with more than 25 active downloads.
+  - `lidarr_feeder.py` every 20 min searches 8 wanted albums (72 h before searching one again; spare slots go to MP3→FLAC upgrades); it holds off under 400 GB free or with more than 25 active downloads.
   - `release_radar/` runs daily, with a Friday digest and ntfy push.
   - `explo_weekly.py` runs on Tuesdays.
   - `navidrome_update_check.py` runs daily.
