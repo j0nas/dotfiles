@@ -151,6 +151,7 @@ Jonas's Spotify replacement; Tora joins once it has proven itself. The project l
   - `release_radar/` runs daily, with a Friday digest and ntfy push.
   - `explo_weekly.py` runs on Tuesdays.
   - `navidrome_update_check.py` runs daily.
+  - `playlist_sync.py` runs daily at 05:37. It rebuilds Jonas's Spotify playlists in Navidrome from the Exportify backup as songs arrive, and stars liked songs and saved albums. Its data is in `~/scripts/playlist_sync/` and it only touches playlists it created.
 
 ### Ad-hoc grab (no *arr — games, audiobooks, ebooks, comics)
 
