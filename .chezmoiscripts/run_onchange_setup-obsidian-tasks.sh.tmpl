@@ -14,6 +14,17 @@
 # Obsidian built-in defaults (not bindings we set; documented for SHORTCUTS.md):
 # sc: Cmd+P | Command palette — fuzzy-find any command, e.g. "daily" → Open today's daily note
 # sc: Cmd+O | Quick switcher — fuzzy-open a note by name
+#
+# A run that skips because the vault hasn't synced yet still counts as done,
+# so the rendered script has to change once the vault exists for chezmoi to
+# run it again. This line is that change:
+{{ $vault := "" -}}
+{{ if eq .chezmoi.os "darwin" -}}
+{{   $vault = joinPath .chezmoi.homeDir "Library/Mobile Documents/iCloud~md~obsidian/Documents" .obsidian_vault -}}
+{{ else if stat "/mnt/c/Users" -}}
+{{   $vault = joinPath (includeTemplate "win-home" . | trim) "iCloudDrive/iCloud~md~obsidian" .obsidian_vault -}}
+{{ end -}}
+# vault present: {{ if and $vault (stat $vault) }}yes{{ else }}no{{ end }}
 set -e
 
 PLUGIN_ID="obsidian-tasks-plugin"
