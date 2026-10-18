@@ -1,14 +1,18 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<!-- Headless Deskflow server via ~/.config/g9-desk/deskflow-server. Symlinked
-     into ~/Library/LaunchAgents; (re)loaded by setup.sh. See README.md. -->
+<!-- Headless Deskflow server, run directly by launchd. Symlinked into
+     ~/Library/LaunchAgents; (re)loaded by setup.sh. See README.md. -->
 <plist version="1.0">
 <dict>
 	<key>Label</key>
 	<string>org.deskflow.server</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>{{ .chezmoi.homeDir }}/.config/g9-desk/deskflow-server</string>
+		<string>/Applications/Deskflow.app/Contents/MacOS/deskflow-core</string>
+		<string>server</string>
+		<string>--new-instance</string>
+		<string>-s</string>
+		<string>{{ .chezmoi.homeDir }}/.config/g9-desk/settings.conf</string>
 	</array>
 	<key>RunAtLoad</key>
 	<true/>
