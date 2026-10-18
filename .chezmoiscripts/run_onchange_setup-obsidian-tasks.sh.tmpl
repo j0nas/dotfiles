@@ -1,9 +1,10 @@
 #!/bin/bash
 # Install & enable the Obsidian Tasks plugin in the iCloud vault.
-# Installs PLUGIN_VERSION only when the plugin is missing; after that Obsidian
-# owns updates (Settings → Community plugins → Check for updates). A version
-# pin here used to put the pinned release back over anything newer Obsidian
-# had installed, whenever this script re-ran.
+# PLUGIN_VERSION is a floor: a missing or older plugin gets the pinned release
+# (its settings in data.json stay), a newer one is left alone. Obsidian only
+# updates plugins when someone clicks Settings → Community plugins → Check for
+# updates, so without the floor the vault sat on 7.23.1 for months. An exact
+# pin that put the pinned release back over a newer one was the earlier bug.
 #
 # Vault lives in iCloud so we write to the platform-specific iCloud path:
 #   macOS: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents/<vault>
@@ -56,12 +57,19 @@ PLUGIN_DIR="$VAULT/.obsidian/plugins/$PLUGIN_ID"
 COMMUNITY_PLUGINS="$VAULT/.obsidian/community-plugins.json"
 MANIFEST="$PLUGIN_DIR/manifest.json"
 
-# Already installed (any version)? Leave it to Obsidian. Python handles a
-# missing/malformed manifest via 2>/dev/null — that falls through to install.
-if installed="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$MANIFEST" 2>/dev/null)"; then
-  echo "==> Obsidian Tasks $installed already installed; Obsidian keeps it updated."
+# Installed version, or empty when the manifest is missing or malformed.
+installed="$(python3 -c 'import json,sys; print(json.load(open(sys.argv[1]))["version"])' "$MANIFEST" 2>/dev/null || true)"
+# True when $1 >= $2, comparing the leading numeric parts (so a beta such as
+# 8.6.0-beta.1 counts as 8.6.0 and is never rolled back to the pin).
+version_at_least() {
+  python3 -c 'import re,sys
+v = lambda s: [int(x) for x in re.findall(r"\d+", s)[:3]]
+sys.exit(0 if v(sys.argv[1]) >= v(sys.argv[2]) else 1)' "$1" "$2"
+}
+if [[ -n "$installed" ]] && version_at_least "$installed" "$PLUGIN_VERSION"; then
+  echo "==> Obsidian Tasks $installed installed (pin $PLUGIN_VERSION); leaving it."
 else
-  echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME'..."
+  echo "==> Installing Obsidian Tasks $PLUGIN_VERSION into '$VAULT_NAME' (found: ${installed:-none})..."
   # Download to a temp dir first so a partial failure doesn't leave the
   # plugin in a half-installed state that the version check would skip over.
   TMP="$(mktemp -d)"
@@ -77,6 +85,7 @@ else
   done
   mkdir -p "$PLUGIN_DIR"
   mv "$TMP"/main.js "$TMP"/manifest.json "$TMP"/styles.css "$PLUGIN_DIR/"
+  echo "    Reload Obsidian (or the plugin) to run it; until then it keeps the old one."
 fi
 
 # Enable the plugin in community-plugins.json (a JSON array of plugin ids).
