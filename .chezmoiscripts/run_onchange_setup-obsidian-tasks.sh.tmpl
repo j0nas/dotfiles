@@ -16,7 +16,7 @@
 set -e
 
 PLUGIN_ID="obsidian-tasks-plugin"
-PLUGIN_VERSION="7.23.1"
+PLUGIN_VERSION="8.5.0"
 # sha256 of each release asset — GitHub's own asset digests, not a local
 # download (`gh api repos/obsidian-tasks-group/obsidian-tasks/releases/tags/<v>
 # --jq '.assets[] | "\(.name) \(.digest)"'`). A mismatching download is refused,
@@ -25,9 +25,9 @@ PLUGIN_VERSION="7.23.1"
 # `/* nosourcemap */` line to main.js — which is fine: only downloads are checked.)
 expected_sha256() {
   case "$1" in
-    main.js)       echo 7c8df16eafe2317fa61d6dda247b4e8bc450f05de9a7cf215e955a03188f884f ;;
-    manifest.json) echo 7cbcc44d7cd6db65a49b0d94230f89bc3842fcf8a8385a8ee626b98d8fd4cd84 ;;
-    styles.css)    echo b4a955fce5f7cf953348e56a94e9aecaee37171bd983379aabbf40c8f58b2eae ;;
+    main.js)       echo f901cc5537518787cd07db251d8b0db43491a127440d1b415f9cae950fbb587b ;;
+    manifest.json) echo 1920ee9d69357bdc4685becf9738da59a43132a57edf2ef4cf06ec62f2445eff ;;
+    styles.css)    echo 1e2cbfff193a8086c07219b140fb52782348a7cf037ea101d8a5e5e92f7093b9 ;;
   esac
 }
 sha256_of() { # sha256sum on Linux/WSL, shasum on macOS
