@@ -41,6 +41,7 @@ Registers logon task `Deskflow-Client` (interactive session — required to inje
 ```bash
 pgrep -x deskflow-core | wc -l                      # 1
 lsof -nP -iTCP:24800 -sTCP:ESTABLISHED               # one line from the PC
+netstat -Lanp tcp | grep '\.24800 '                  # 0/0/3; a first number that stays above 0 = core wedged
 tail ~/Library/Logs/deskflow-server.log              # client "PomeloMadness" has connected; hotkey adds: switch from …
 g9 pc; sleep 3; g9 mac                               # monitor flips and returns
 ```
@@ -52,6 +53,7 @@ Client log: `C:\Users\jonas\deskflow-client.log`.
 - G9 answers **no DDC reads** (all 0) but **honours writes**. Never `m1ddc chg` (reads 0, writes 0±n). Samsung-G7 codes 3/9 are no-ops here; forum "G9 has no DDC" claims are wrong for writes. The Mac's command still reaches the monitor while it shows the PC, so both directions run from the Mac.
 - Deskflow `keystroke(key,<server>)` actions are dropped (PrimaryClient stub) and its macOS key table stops at F16 — no synthetic-key relay can work; hence the log-tail wrapper.
 - deskflow-core **ignores SIGTERM**; an orphan keeps port 24800 and wedges on its dead stdout pipe, so replacements die with "already running" and the PC never reconnects. Wrapper `pkill -9`s stale cores on start and SIGKILLs its child on exit.
+- "Ignores SIGTERM" is half the story (1.26, macOS): a quit (SIGTERM does it; something unlogged did on 2026-10-13) ends the core's event thread but not the process. It keeps 24800 open with no `accept()`, so the PC's retries fill the accept queue (`netstat -Lanp tcp` shows `3/0/3` on `*.24800`; healthy is `0/0/3`), `nc -z 127.0.0.1 24800` times out, the PC's client log repeats `connecting to …` and the hotkeys do nothing. Nothing is logged. `[NSApp stop:]` takes effect only at the next AppKit event (a monitor wake on 2026-10-14, ~22 h later): then the core logs `cocoa: release` and deadlocks in `closeServer()`, which waits for events `OSXEventQueueBuffer` posts to the main dispatch queue, which nothing drains any more. The wrapper restarts on that line, and its watchdog restarts when the queue is backed up on two reads 20 s apart. `sample <core pid> 3` shows the state: no `runEventsLoop` thread, main thread in `NSApplication run` or `ServerApp::closeServer`. Deskflow 1.27 drops the Cocoa loop ("fix(mac): Remove Cocoa app loop…"), but it also renames screen→computer, so check the log lines the relay matches before bumping.
 - Sleep/wake disables the core's event tap (`ERROR: quartz event tap was disabled by user input`) and Deskflow never re-arms it: hotkeys silently dead. The error line arrives mid-suspend and a kill there never landed; the wrapper restarts the core on the `INFO: resume` line instead. An HDMI replug is harmless; `g9` looks the monitor up by model each call anyway.
 - Client resolves the Mac's `.local` to IPv6 link-local first: ~6 s to fall back to IPv4.
 - TLS off: LAN-only, and the headless client has no dialog to trust a fingerprint. Anti-cheat games may reject Deskflow's synthetic input — use the PC's own keyboard there.
