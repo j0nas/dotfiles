@@ -13,6 +13,11 @@ set -e
 # set matches the server's tool list. PyPI 0.1.0 (Apr 2026) lacks the later
 # tools (bbox, import_mesh, parametric box, unified export). Bump FUSION_MCP_SHA
 # to upgrade; the script re-runs on change and refreshes both.
+#
+# A run before Fusion is installed skips the add-in and still counts as done,
+# so this line changes the rendered script once the AddIns folder exists and
+# chezmoi runs it again (the self-heal promised above):
+# Fusion AddIns present: {{ if stat (joinPath .chezmoi.homeDir "Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns") }}yes{{ else }}no{{ end }}
 
 FUSION_MCP_SHA="19b9f1e"
 FUSION_MCP_REPO="https://github.com/faust-machines/fusion360-mcp-server"
