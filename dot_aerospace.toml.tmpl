@@ -13,6 +13,10 @@ config-version = 2
 
 after-startup-command = []
 start-at-login = true
+# Re-read this file whenever it changes, so a `chezmoi apply` lands in the
+# running instance (the SwiftBar workspace hook below depends on it). The
+# setting itself only takes effect after one manual reload or a restart.
+auto-reload-config = true
 enable-normalization-flatten-containers = true
 enable-normalization-opposite-orientation-for-nested-containers = true
 accordion-padding = 30
