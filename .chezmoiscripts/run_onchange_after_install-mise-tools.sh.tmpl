@@ -50,6 +50,12 @@ mise install
 echo "==> Upgrading tools within their pinned ranges..."
 mise upgrade -y
 
+# Dropping a tool from config.toml leaves it installed, so each retired tool
+# gets an uninstall here; it's a no-op once the tool is gone. flyctl: Fly.io
+# isn't used any more.
+echo "==> Removing retired tools..."
+mise uninstall --all flyctl 2>/dev/null || true
+
 # Third-party Claude Code skills (~/.agents/skills, via the skills CLI, symlinked
 # into ~/.claude/skills): the agent-browser stub, refreshed on the same weekly
 # beat as the tools. `add` (re)registers the agent-browser stub (skills 1.7+
