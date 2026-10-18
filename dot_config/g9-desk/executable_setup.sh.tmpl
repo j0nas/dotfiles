@@ -12,7 +12,7 @@ label="org.deskflow.server"
 agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/$label.plist"
 
 # Stop first: the bundle must not be swapped under a running core, and a
-# stale core (ignores SIGTERM) would keep port 24800.
+# stray one (started by hand, say) would keep port 24800.
 launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
 pkill -x deskflow-core 2>/dev/null || true
 for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx deskflow-core || break; sleep 0.2; done

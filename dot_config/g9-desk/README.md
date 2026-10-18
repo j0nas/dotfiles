@@ -16,9 +16,8 @@ gates it (`g9_desk` flag) and symlinks two files into place.
 |---|---|
 | `settings.conf` | deskflow-core settings (server mode): the computers (`[computer_<name>]` groups, with PomeloMadness's `modifierSuper=ctrl`) and the enter/exit commands that run `g9`. No comments, QSettings canonical layout — the core rewrites it on start; any other layout = chezmoi drift. `log/level` is a name (`Info`); an unknown value resets to Info. |
 | `server.conf` | Hotkeys only: since 1.27 the core reads just the `keystroke`/`mousepress` lines here (a `section: screens` is skipped with a warning). No `links`: one shared monitor, edge-crossing would move input to an invisible computer. |
-| `deskflow-server` | LaunchAgent entry point: runs the core, restarts it on resume (event tap, below), clears stale cores. |
 | `g9` | `g9 pc\|mac` → DDC input switch. Symlinked to `~/.local/bin/g9`. |
-| `org.deskflow.server.plist` | LaunchAgent (KeepAlive). Symlinked into `~/Library/LaunchAgents/`. |
+| `org.deskflow.server.plist` | LaunchAgent (KeepAlive) that runs deskflow-core directly; output goes to `~/Library/Logs/deskflow-server.log`. Symlinked into `~/Library/LaunchAgents/`. |
 | `setup.sh` | Installs pinned Deskflow (not in Homebrew; sha256 from release `sums.txt`), (re)loads the agent. Run by `.chezmoiscripts/run_onchange_after_setup-g9-desk.sh.tmpl`. |
 | `pomelomadness.ps1` | PC provisioning, run over SSH. Templated so winget installs the Mac's pinned version; the PC itself isn't chezmoi-managed (see file). |
 
@@ -59,7 +58,7 @@ Client log: `C:\Users\jonas\deskflow-client.log`.
 - 1.26: `keystroke(key,<server>)` actions were dropped (PrimaryClient stub) and the macOS key table stopped at F16, so the switch was relayed by tailing the log. 1.27's enter/exit commands replace that relay.
 - Hotkeys can't be tested with `osascript … key code`: synthetic events never reach the core's tap. Press them for real.
 - 1.26 (macOS) never finished a quit, SIGTERM included: the event thread stopped but the process kept 24800 open without accepting, silently, then deadlocked in `closeServer()` at the next AppKit event (`cocoa: release`). The server sat dead like that 2026-10-13 → 10-18 (PC log: endless `connecting to …`). 1.27 dropped the Cocoa loop: SIGTERM now exits in ~1 s and launchd restarts the core, PC back in ~5 s (verified 2026-10-18).
-- Sleep/wake disables the core's event tap (`ERROR: quartz event tap was disabled by user input`) and Deskflow never re-arms it: hotkeys silently dead (seen on 1.26; 1.27 moved the tap to its own thread but still doesn't re-enable it on that event, not yet re-tested). The error line arrives mid-suspend and a kill there never landed; the wrapper restarts the core on the `INFO: resume` line instead. An HDMI replug is harmless; `g9` looks the monitor up by model each call anyway.
+- 1.26 lost its event tap on every sleep (`ERROR: quartz event tap was disabled by user input` at suspend): hotkeys dead until the core restarted, so a wrapper script restarted it on the `INFO: resume` line. 1.27 runs the tap on its own thread and keeps it. A `pmset sleepnow` on 2026-10-19 logged no tap error, the same process served both hotkeys after wake, and the PC reconnected 2 s after resume, so the wrapper is gone. If the hotkeys die after a sleep again, that error line in the log is the tell. An HDMI replug is harmless; `g9` looks the monitor up by model each call anyway.
 - Client resolves the Mac's `.local` to IPv6 link-local first: ~6 s to fall back to IPv4.
 - TLS off: LAN-only, and the headless client has no dialog to trust a fingerprint. Anti-cheat games may reject Deskflow's synthetic input — use the PC's own keyboard there.
 - The Windows installer also registers a `Deskflow` service (`deskflow-daemon.exe`, LocalSystem, auto start; there since the 1.26 install). It only launches a core once the GUI hands it a config file, which never happens here, so it idles next to the logon task.

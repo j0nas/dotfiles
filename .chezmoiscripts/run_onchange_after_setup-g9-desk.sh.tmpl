@@ -6,7 +6,6 @@
 #   {{ include "dot_config/g9-desk/executable_setup.sh.tmpl" | sha256sum }}
 #   {{ include "dot_config/g9-desk/settings.conf.tmpl" | sha256sum }}
 #   {{ include "dot_config/g9-desk/server.conf.tmpl" | sha256sum }}
-#   {{ include "dot_config/g9-desk/executable_deskflow-server.tmpl" | sha256sum }}
 #   {{ include "dot_config/g9-desk/org.deskflow.server.plist.tmpl" | sha256sum }}
 exec "{{ .chezmoi.homeDir }}/.config/g9-desk/setup.sh"
 {{ end -}}
