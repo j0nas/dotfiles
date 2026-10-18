@@ -13,11 +13,8 @@ set -e
 # set matches the server's tool list. PyPI 0.1.0 (Apr 2026) lacks the later
 # tools (bbox, import_mesh, parametric box, unified export). Bump FUSION_MCP_SHA
 # to upgrade; the script re-runs on change and refreshes both.
-#
-# `--with "mcp<2"`: the package pins mcp>=1.0 unbounded, and mcp 2.x removed
-# Server.list_tools -> crashes on startup (upstream issue #14).
 
-FUSION_MCP_SHA="ba8560f"
+FUSION_MCP_SHA="19b9f1e"
 FUSION_MCP_REPO="https://github.com/faust-machines/fusion360-mcp-server"
 FUSION_ADDINS="$HOME/Library/Application Support/Autodesk/Autodesk Fusion 360/API/AddIns"
 ADDIN="$FUSION_ADDINS/Fusion360MCP"
@@ -47,8 +44,7 @@ fi
 if command -v claude &>/dev/null; then
   claude mcp remove --scope user fusion360 >/dev/null 2>&1 || true
   claude mcp add --scope user fusion360 -- \
-    uvx --with "mcp<2" \
-    --from "git+${FUSION_MCP_REPO}@${FUSION_MCP_SHA}" \
+    uvx --from "git+${FUSION_MCP_REPO}@${FUSION_MCP_SHA}" \
     fusion360-mcp-server --mode socket
 fi
 {{ end -}}
