@@ -1,16 +1,8 @@
-# Deskflow server layout — see README.md. `super` = Command, `alt` = Option.
-# No `links`: one shared monitor. Hotkeys only; the monitor follows via
-# deskflow-server, which watches the core's "switch from … to …" log lines.
-section: screens
-    {{ .chezmoi.hostname }}:
-    PomeloMadness:
-        # Mac muscle memory: Cmd arrives as Ctrl (Cmd+C/V/Z/T…). Ctrl stays
-        # Ctrl, so the Windows key is unreachable from this keyboard.
-        super = ctrl
-end
-
+# Deskflow hotkeys — see README.md. `super` = Command, `alt` = Option.
+# Since 1.27 only keystroke/mousepress lines here are read: the computers and
+# PomeloMadness's Cmd-as-Ctrl mapping live in settings.conf. No `links`: one
+# shared monitor. The monitor follows via settings.conf's enter/exit commands.
 section: options
-    clipboardSharing = true
     # sc: Cmd+Alt+P | Hand keyboard, trackpad and the G9 to PomeloMadness | G9 switching
     keystroke(super+alt+p) = switchToScreen(PomeloMadness)
     # sc: Cmd+Alt+M | Take keyboard, trackpad and the G9 back to the Mac | G9 switching

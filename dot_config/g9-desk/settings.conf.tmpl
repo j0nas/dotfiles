@@ -1,8 +1,19 @@
+[computer_{{ .chezmoi.hostname }}]
+name={{ .chezmoi.hostname }}
+
+[computer_PomeloMadness]
+modifierSuper=ctrl
+name=PomeloMadness
+
 [core]
 computerName={{ .chezmoi.hostname }}
+enableEnterCommand=true
+enableExitCommand=true
+enterCommand={{ .chezmoi.homeDir }}/.config/g9-desk/g9 mac
+exitCommand={{ .chezmoi.homeDir }}/.config/g9-desk/g9 pc
 
 [log]
-level=4
+level=Info
 
 [security]
 tlsEnabled=false

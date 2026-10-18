@@ -1,63 +1,32 @@
 #!/bin/bash
 # LaunchAgent entry point. Runs deskflow-core, mirrors its output to the log,
-# runs `g9` on its INFO `switch from "…" to "…"` lines (the only working relay —
-# see README.md), and owns the core's lifetime: the core doesn't exit on
-# SIGTERM (below) and an orphan wedges on port 24800, so clear stale cores on
-# start and SIGKILL the child on exit. If the core dies, `wait` returns and
-# KeepAlive restarts us.
-# A quit (SIGTERM does it, so did something unlogged on 2026-10-13) ends the
-# 1.26 macOS core's event thread but not the process: it holds 24800 without
-# accepting, so the PC can't connect and the hotkeys are dead, and says nothing.
-# The Cocoa loop notices only at its next AppKit event, often hours later, logs
-# "cocoa: release" and then deadlocks in closeServer(). The relay restarts on
-# that line; the watchdog catches it sooner from the PC's retries piling up in
-# the accept queue (netstat reads the queue without connecting, so no log noise).
+# and restarts it after sleep. The monitor switch itself is Deskflow's own
+# enter/exit command (settings.conf), so nothing here parses switch lines.
 # Sleep kills the core's macOS event tap ("quartz event tap was disabled")
 # and it never re-arms it, leaving the hotkeys dead. Acting on that line is
 # useless — it arrives mid-suspend and the kill never landed — so the relay
 # restarts the core on the "resume" line instead, once the machine is awake,
 # by TERMing the wrapper itself: its EXIT trap kills the core by the pid it
-# recorded and launchd restarts the pair. (pgrep/pkill inside the relay
-# subshell find no deskflow-core — observed, unexplained — so nothing here
-# relies on them.)
+# recorded and launchd restarts the pair. An orphaned core keeps port 24800,
+# so stale ones are cleared on start. (pgrep/pkill inside the relay subshell
+# find no deskflow-core — observed, unexplained — so the relay doesn't use them.)
 set -u
 dir="{{ .chezmoi.homeDir }}/.config/g9-desk"
-mac="{{ .chezmoi.hostname }}"
 
 relay() {
   while IFS= read -r line; do
     printf '%s\n' "$line"
     case "$line" in
-      *'switch from "'*'" to "PomeloMadness" at '*) "$dir/g9" pc  || true ;;
-      *'switch from "'*"\" to \"$mac\" at "*)       "$dir/g9" mac || true ;;
       *'INFO: resume'*)
         printf 'deskflow-server: resume — restarting core to re-arm the event tap\n'
         kill -TERM "$$" 2>/dev/null || true ;;
-      *'cocoa: release'*)
-        printf 'deskflow-server: core quit and hangs in shutdown — restarting it\n'
-        kill -TERM "$$" 2>/dev/null || true ;;
     esac
-  done
-}
-
-watchdog() {
-  local stuck=0 q
-  while sleep 20; do
-    q="$(/usr/sbin/netstat -Lanp tcp 2>/dev/null | awk '$2 == "*.24800" { split($1, a, "/"); print a[1]; exit }')"
-    if [ "${q:-0}" -gt 0 ]; then stuck=$((stuck + 1)); else stuck=0; fi
-    if [ "$stuck" -ge 2 ]; then
-      printf 'deskflow-server: %s connections queued on 24800, none accepted — restarting core\n' "$q"
-      kill -TERM "$$" 2>/dev/null || true
-      return
-    fi
   done
 }
 
 pkill -9 -x deskflow-core 2>/dev/null || true
 /Applications/Deskflow.app/Contents/MacOS/deskflow-core server --new-instance -s "$dir/settings.conf" > >(relay) 2>&1 &
 core_pid=$!
-watchdog &
-watchdog_pid=$!
-trap 'kill -9 "$core_pid" 2>/dev/null; kill "$watchdog_pid" 2>/dev/null' EXIT
+trap 'kill -9 "$core_pid" 2>/dev/null' EXIT
 trap 'exit 143' TERM INT HUP
 wait "$core_pid"
