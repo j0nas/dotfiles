@@ -55,8 +55,8 @@ packages:
 desk_g9:
   brews:
     - m1ddc   # DDC/CI from Apple Silicon (`g9 pc|mac`)
-  deskflow_version: "1.26.0"
-  deskflow_sha256_macos_arm64: "bae6befc2c3119de3d751c1200aab30af3efa5496e91d5ca1029cc388eea69c5"
+  deskflow_version: "1.27.0"
+  deskflow_sha256_macos_arm64: "dd21e79e566314394214906d3338c505d337af536fc580c022ee3fadffad0c97"
 
 # JetBrains Mono Nerd Font on plain Linux (macOS gets the brew cask; WSL gets
 # winget's, since its terminal runs Windows-side), consumed by
