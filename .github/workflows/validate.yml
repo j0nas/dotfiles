@@ -20,11 +20,14 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
-      - uses: jdx/mise-action@v4
+      # minimum_release_age covers the mise binary only; 7d matches the
+      # cooldown mise itself applies locally (dot_config/mise/config.toml).
+      - uses: jdx/mise-action@v5
         with:
           cache: true
+          minimum_release_age: 7d
 
       # Pinned-to-latest like the repo's mise config; schemas themselves are
       # vendored, so validation behaviour is stable regardless of tool version.
