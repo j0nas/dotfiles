@@ -1,0 +1,15 @@
+# jactionlint, run by .githooks/validate. The default profile: actionlint's
+# checks plus the security and policy rules. jactionlint parses this strictly,
+# so a misspelt key fails the hook.
+profile: default
+
+rules:
+  unpinned-uses:
+    # Every other action must be pinned to a commit SHA. jactionlint can pin a
+    # tag (--online --fix) but never bumps a pin, so a SHA here would freeze
+    # these two with no update path. They ride their major tags instead:
+    # GitHub's own actions, and mise's author, whose releases already supply
+    # every tool binary this repo installs.
+    policies:
+      actions/*: ref-pin
+      jdx/*: ref-pin

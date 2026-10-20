@@ -5,12 +5,20 @@ name: validate
 # clones. The macOS + Linux matrix lints each platform's rendered templates,
 # closing the gap where the local hook only sees the committer's OS.
 
+# Runs on pushes to main and on pull requests. A branch push without a PR is
+# left to the pre-commit hook.
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
   contents: read
+
+# A newer push to the same branch or PR cancels the run it supersedes.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   validate:
@@ -19,11 +27,18 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
+    # A warm run takes about 20s.
+    timeout-minutes: 10
+    # The same 7-day cooldown that dot_config/mise/config.toml sets locally, so
+    # `@latest` below resolves to the versions the hook ran with.
+    env:
+      MISE_MINIMUM_RELEASE_AGE: 7d
     steps:
       - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
 
-      # minimum_release_age covers the mise binary only; 7d matches the
-      # cooldown mise itself applies locally (dot_config/mise/config.toml).
+      # minimum_release_age here covers the mise binary itself.
       - uses: jdx/mise-action@v5
         with:
           cache: true
@@ -40,7 +55,7 @@ jobs:
       - name: Install validators
         run: |
           mise use -g uv@latest
-          mise use -g jq@latest taplo@latest shellcheck@latest actionlint@latest stylua@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest"
+          mise use -g jq@latest taplo@latest shellcheck@latest jactionlint@latest stylua@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest"
 
       # validate parses the zsh configs with `zsh -n`; macOS ships zsh, the
       # ubuntu image doesn't.
