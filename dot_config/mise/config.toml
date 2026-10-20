@@ -19,11 +19,11 @@ taplo = "latest"
 uv = "latest"
 "pipx:check-jsonschema" = "latest"  # pipx backend; uv (above) provides the venv
 shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook + CI
-# More pre-commit/CI validators (.githooks/validate): actionlint lints the GitHub
-# workflow (and shellchecks its run: blocks); stylua is used purely as a Lua
-# *parser* — formatting the WezTerm config to /dev/null fails only on a syntax
-# error, never on style.
-actionlint = "latest"
+# More pre-commit/CI validators (.githooks/validate): jactionlint lints the GitHub
+# workflow and shellchecks its run: blocks (mise's registry deprecated actionlint
+# in favour of this fork); stylua is used purely as a Lua *parser* — formatting
+# the WezTerm config to /dev/null fails only on a syntax error, never on style.
+jactionlint = "latest"
 stylua = "latest"
 # node: managed directly by mise (no separate fnm layer). mise's shell-activation
 # hook auto-switches Node per project on cd; idiomatic_version_file_enable_tools
