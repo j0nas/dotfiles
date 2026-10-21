@@ -520,7 +520,7 @@ def cmd_end(args) -> None:
     append({"t": time.time(), "kind": "end", "id": args.id, "tokens": amount(args.tokens), "outcome": args.outcome})
     a = agents(entries()).get(args.id)
     if a:
-        print(f"{args.id} {a['label']}: {hours(s['t'] - a['t'])}, {amount(args.tokens) / 1e3:.0f}k tokens")
+        print(f"{args.id} {a['label']}: ran {hours(active(a, a['t'], s['t']))}, {amount(args.tokens) / 1e3:.0f}k tokens")
 
 
 def cmd_learn(args) -> None:
