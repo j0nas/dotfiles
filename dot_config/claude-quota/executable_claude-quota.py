@@ -16,11 +16,25 @@ desktop app) refills the week, the 5-hour window or both; logged with `reset add
 full week more to spend until it expires (a 5-hour-only reset as a 5-hour window more), and its
 redemption is read off the snapshots: a window drops while its reset time stays put.
 
-  claude-quota [status]                       snapshot; the windows and any open agents
+The 5-hour window is a hard limit: an agent running when it's reached is stopped mid-task. `plan`
+counts what the agents still running will spend. `watch`, run in the background beside them,
+exits once the window will reach its limit before it resets (at the rate it's filling, else the
+fitted rates), so the session can have them commit their work and stop. `suspend` logs each one
+paused, `queue` holds work not started yet, and `wait`, run in the background, sleeps until the
+window resets and then hands both out again. A paused agent's tokens are spread over the time it
+ran, not the time it waited.
+
+  claude-quota [status]                       snapshot; the windows, open agents, queued work
   claude-quota start "label" sonnet [--kind implement]    -> prints an agent id
   claude-quota end <id> 229k [--outcome merged|fixed|discarded|partial]
   claude-quota plan sonnet:implement=3 opus:design=1 [--size sonnet=250k]
   claude-quota learn                          fitted rates, typical sizes, outcomes per kind
+  claude-quota guard [--at 90] [--lead 20]    ok, hold or suspend: will the 5h window hit its limit first?
+  claude-quota watch [--every 180]            poll beside running agents; exits when it's time to suspend
+  claude-quota suspend <id> [--ref <agent>] [--note "…"]  an agent paused (or stopped by the limit)
+  claude-quota queue add "label" opus:implement [--note "…"] | queue [list] | queue drop <id>
+  claude-quota wait [--margin 2]              sleep until the 5h window resets, then hand out the work
+  claude-quota resume [--dry-run]             hand out the suspended agents and queued work now
   claude-quota reset add both 2026-10-22 [--note "…"]     a limit reset (week|5h|both) to spend before then
   claude-quota reset [list] | reset used <id>
   claude-quota log [-n 20]
@@ -61,6 +75,11 @@ PRIOR_SIZE = {"haiku": 100_000, "sonnet": 250_000, "opus": 300_000, "fable": 300
 PRIOR_WEIGHT = 2.0  # Mtok
 FRESH = 60.0  # seconds a reading stays good enough for start, end and plan
 RATIO_MIN_FIVE = 30.0  # 5h points observed before the week is derived from the 5h rates
+SUSPEND_AT = FIVE_CAP  # % of the 5h window where running agents are paused, if it'd fill before resetting
+LEAD = 20.0  # minutes: pause sooner when the limit is this close, wherever the window stands
+BURN_SPAN = 30 * 60  # seconds of readings the observed burn rate is taken over
+WATCH_EVERY = 180  # seconds between watch's readings (the endpoint 429s a burst)
+WAIT_MARGIN = 2.0  # minutes past the reset before wait reads the new window
 
 
 # --- reading ------------------------------------------------------------------------------
@@ -178,13 +197,53 @@ def hours(seconds: float) -> str:
 
 
 def agents(log: list[dict]) -> dict[str, dict]:
-    """Every logged agent: its start entry, plus end time, tokens and outcome once it ended."""
+    """Every logged agent: its start entry, plus end time, tokens and outcome once it ended, and
+    its pauses ([suspended, resumed or None]) with the session's handle on it and where it was."""
     out: dict[str, dict] = {}
     for e in log:
         if e["kind"] == "start":
-            out[e["id"]] = {**e, "end": None}
-        elif e["kind"] == "end" and e["id"] in out:
-            out[e["id"]].update(end=e["t"], tokens=e.get("tokens"), outcome=e.get("outcome"))
+            out[e["id"]] = {**e, "end": None, "paused": [], "ref": None, "note": None}
+            continue
+        a = out.get(e.get("id", ""))
+        if a is None:
+            continue
+        if e["kind"] == "end":
+            a.update(end=e["t"], tokens=e.get("tokens"), outcome=e.get("outcome"))
+        elif e["kind"] == "suspend":
+            a["paused"].append([e["t"], None])
+            a["ref"] = e.get("ref") or a["ref"]
+            a["note"] = e.get("note")
+        elif e["kind"] == "resume" and a["paused"] and a["paused"][-1][1] is None:
+            a["paused"][-1][1] = e["t"]
+    return out
+
+
+def suspended(a: dict) -> bool:
+    return not a["end"] and bool(a["paused"]) and a["paused"][-1][1] is None
+
+
+def running(log: list[dict]) -> list[dict]:
+    """The agents started and neither ended nor paused."""
+    return [a for a in agents(log).values() if not a["end"] and not suspended(a)]
+
+
+def active(a: dict, lo: float, hi: float) -> float:
+    """Seconds of [lo, hi] the agent ran: from its start to its end (or hi), less its pauses."""
+    end = a["end"] or hi
+    span = max(0.0, min(hi, end) - max(lo, a["t"]))
+    for p0, p1 in a["paused"]:
+        span -= max(0.0, min(hi, end, p1 if p1 is not None else end) - max(lo, a["t"], p0))
+    return max(0.0, span)
+
+
+def queued(log: list[dict]) -> dict[str, dict]:
+    """Work queued for a later window and not yet handed out or dropped."""
+    out: dict[str, dict] = {}
+    for e in log:
+        if e["kind"] == "queue":
+            out[e["id"]] = e
+        elif e["kind"] in ("resume", "drop"):
+            out.pop(e.get("id"), None)
     return out
 
 
@@ -276,8 +335,8 @@ def learn(log: list[dict]) -> dict:
                 continue  # the window reset (or was refilled) in between: the delta means nothing
             row = [0.0] * (len(MODELS) + 1)
             for ag in ended:
-                run = max(ag["end"] - ag["t"], 1.0)
-                overlap = min(b["t"], ag["end"]) - max(a["t"], ag["t"])
+                run = max(active(ag, ag["t"], ag["end"]), 1.0)
+                overlap = active(ag, a["t"], b["t"])
                 if overlap > 0:
                     row[MODELS.index(ag["model"])] += ag["tokens"] / 1e6 * overlap / run
             row[-1] = (b["t"] - a["t"]) / 3600
@@ -309,7 +368,7 @@ def learn(log: list[dict]) -> dict:
     for key, toks in by_kind.items():
         sizes[key] = statistics.median(toks)
     model_size = {m: statistics.median(t) if t else PRIOR_SIZE[m] for m, t in by_model.items()}
-    runs = [(ag["end"] - ag["t"]) / 3600 for ag in ended]
+    runs = [active(ag, ag["t"], ag["end"]) / 3600 for ag in ended]
     run_hours = statistics.median(runs) if runs else 0.5
     return {
         "rates": rates,
@@ -326,6 +385,77 @@ def learn(log: list[dict]) -> dict:
 
 def size_of(m: dict, model: str, kind: str | None) -> float:
     return m["sizes"].get((model, kind or "-")) or m["model_size"][model]
+
+
+def in_flight(m: dict, now: float) -> tuple[dict[str, float], int]:
+    """What the agents running now will still spend, in points of each window: a typical agent
+    of its model and kind, less the share of a typical run it has had. One past its typical run is
+    still going, so it's counted at a quarter at least."""
+    cost = {"week": 0.0, "five": 0.0}
+    going = running(entries())
+    for a in going:
+        had = active(a, a["t"], now) / 3600 / max(m["run_hours"], 0.1)
+        left = size_of(m, a["model"], a.get("task")) * max(0.25, 1 - had)
+        for w in cost:
+            cost[w] += left / 1e6 * m["rates"][w][a["model"]]
+    return cost, len(going)
+
+
+def burn(s: dict, m: dict) -> tuple[float, str]:
+    """How fast the 5-hour window is filling, in points an hour: the faster of what the last half
+    hour of readings shows and what the running agents' fitted rates say (a batch that just
+    started hasn't shown in the readings yet)."""
+    recent = [started(e) for e in entries()
+              if e["kind"] == "snap" and 0 <= s["t"] - e["t"] <= BURN_SPAN]
+    recent = [e for e in recent if abs(e["five_reset"] - s["five_reset"]) < 300]  # this window only
+    seen = None
+    if recent and s["t"] - recent[0]["t"] >= 300:
+        seen = max(0.0, s["five"] - recent[0]["five"]) / ((s["t"] - recent[0]["t"]) / 3600)
+    modelled = m["baseline"]["five"]
+    for a in running(entries()):
+        per_hour = size_of(m, a["model"], a.get("task")) / max(m["run_hours"], 0.1)
+        modelled += per_hour / 1e6 * m["rates"]["five"][a["model"]]
+    if seen is not None and seen >= modelled:
+        return seen, f"seen over the last {hours(s['t'] - recent[0]['t'])}"
+    return modelled, "from the fitted rates of what's running"
+
+
+def verdict(s: dict, m: dict, at: float = SUSPEND_AT, lead: float = LEAD) -> tuple[str, str]:
+    """ok, hold (start nothing more), suspend (pause the running agents) or limited (the window
+    is spent): whether the 5-hour window will reach its limit before it resets."""
+    now = s["t"]
+    to_reset = max(0.0, s["five_reset"] - now)
+    if s["five"] >= 100:
+        return "limited", f"the 5h window is spent until it resets in {hours(to_reset)}"
+    rate, how = burn(s, m)
+    eta = (100 - s["five"]) / rate * 3600 if rate > 0 else float("inf")
+    pace = f"at {s['five']:.0f}%, filling ~{rate:.0f} pts/h ({how})"
+    if eta >= to_reset:
+        return "ok", f"{pace}: it resets in {hours(to_reset)}, before its limit"
+    if s["five"] >= at or eta <= lead * 60:
+        state = "suspend" if running(entries()) else "hold"
+        return state, f"{pace}: its limit in ~{hours(eta)}, before it resets in {hours(to_reset)}"
+    return "ok", f"{pace}: its limit in ~{hours(eta)}; suspend at {at:.0f}% or {lead:.0f} min before it"
+
+
+def at_clock(t: float) -> str:
+    return datetime.fromtimestamp(t).strftime("%H:%M")
+
+
+def advise(state: str, s: dict) -> str:
+    wake = at_clock(s["five_reset"] + WAIT_MARGIN * 60)
+    then = (f"then run `claude-quota wait` in the background: it exits at the reset (~{wake}) with"
+            " what to resume, which wakes the session.")
+    if state == "suspend":
+        return ("Tell each running agent to commit its work in progress and stop at the next safe point,"
+                " saying where it was. Log each with `claude-quota suspend <id> --ref <agent> --note \"…\"`,"
+                f" queue anything not started (`claude-quota queue add`), {then}")
+    if state == "hold":
+        return f"Start nothing more in this window: queue it (`claude-quota queue add`), {then}"
+    if state == "limited":
+        return ("Agents still running are stopped by the limit: log each with `claude-quota suspend <id>"
+                f" --ref <agent> --note \"…\"`, {then}")
+    return ""
 
 
 # --- commands -----------------------------------------------------------------------------
@@ -359,11 +489,21 @@ def show_status(s: dict, target: float) -> None:
             print("      It lapses within a day: redeem it before then, near the limit or not.")
     for a in agents(entries()).values():
         if not a["end"]:
-            print(f"open  {a['id']}  {a['model']}:{a.get('task') or '-'}  {a['label']}  ({hours(now - a['t'])})")
+            ran = hours(active(a, a["t"], now))
+            paused = f", suspended {hours(now - a['paused'][-1][0])} ago" if suspended(a) else ""
+            print(f"open  {a['id']}  {a['model']}:{a.get('task') or '-'}  {a['label']}  (ran {ran}{paused})")
+    for q in queued(entries()).values():
+        print(f"queued {q['id']}  {q['model']}:{q.get('task') or '-'}  {q['label']}")
 
 
 def cmd_status(args) -> None:
-    show_status(snapshot(), args.target)
+    s = snapshot()
+    show_status(s, args.target)
+    if running(entries()):
+        state, why = verdict(s, learn(entries()))
+        print(f"5h    {state}: {why}")
+        if state != "ok":
+            print(f"      {advise(state, s)}")
 
 
 def cmd_start(args) -> None:
@@ -424,15 +564,20 @@ def cmd_plan(args) -> None:
     for w in cost:
         cost[w] += m["baseline"][w] * hours_running
     now = s["t"]
+    # The agents already running keep spending too: what's left is what they leave.
+    going, n_going = in_flight(m, now)
     # Each unredeemed reset is a full window more. One that refills both counts for the week only:
     # it's worth most redeemed once the week is spent, not to widen the 5-hour window at hand.
     extra = {"week": 0.0, "five": 0.0}
     for r in live_resets(now):
         extra["five" if r["window"] == "five" else "week"] += 100
-    week_left = args.target - s["week"] + extra["week"]
-    five_left = FIVE_CAP - s["five"] + extra["five"]
+    week_left = args.target - s["week"] + extra["week"] - going["week"]
+    five_left = max(0.0, FIVE_CAP - s["five"] + extra["five"] - going["five"])
     show_status(s, args.target)
     print()
+    if n_going:
+        print(f"running {n_going} agent{'s' if n_going > 1 else ''} still going ≈ {going['five']:.0f} pts more"
+              f" of this 5h window, {going['week']:.1f} of the week: counted as spent below")
     items = ", ".join(f"{mo}{':' + k if k else ''}×{n:g}" for mo, k, n in want)
     print(
         f"to run  {items}  ≈ {cost['week']:.1f} pts of the week, {cost['five']:.0f} pts of a 5h window"
@@ -458,8 +603,110 @@ def cmd_plan(args) -> None:
         fit = int(five_left // each) if each else 0
         print(
             f"5h      about {fit} of {count:g} fit in this window (~{each:.1f} pts each, {five_left:.0f} left);"
-            f" queue the rest for the reset in {hours(s['five_reset'] - now)}."
+            f" queue the rest for the reset in {hours(s['five_reset'] - now)}"
+            " (`claude-quota queue add`, then `claude-quota wait` in the background)."
         )
+    if count:
+        print("        While agents run, keep `claude-quota watch` going in the background: it exits in time to"
+              " pause them before the window's limit stops them.")
+
+
+def cmd_guard(args) -> None:
+    s = snapshot()
+    state, why = verdict(s, learn(entries()), args.at, args.lead)
+    print(f"{state}: {why}")
+    if state != "ok":
+        print(advise(state, s))
+
+
+def cmd_watch(args) -> None:
+    """Reads the usage every few minutes while agents run, and exits (waking the session that
+    started it in the background) once they should be paused, or once none are running."""
+    while True:
+        s = snapshot()
+        state, why = verdict(s, learn(entries()), args.at, args.lead)
+        if state != "ok":
+            print(f"{state} ({at_clock(s['t'])}): {why}\n{advise(state, s)}")
+            return
+        if not running(entries()):
+            print(f"no agents running ({at_clock(s['t'])}): watch ends. {why}")
+            return
+        time.sleep(args.every)
+
+
+def cmd_suspend(args) -> None:
+    a = agents(entries()).get(args.id)
+    if not a or a["end"]:
+        sys.exit(f"claude-quota: no open agent {args.id!r}; `claude-quota status` lists them")
+    if suspended(a):
+        sys.exit(f"claude-quota: {args.id} is already suspended")
+    append({"t": time.time(), "kind": "suspend", "id": args.id, "ref": args.ref, "note": args.note})
+
+
+def cmd_queue_add(args) -> None:
+    model, _, kind = args.spec.partition(":")
+    qid = datetime.now(timezone.utc).strftime("q%m%d-%H%M%S-") + os.urandom(2).hex()
+    append({"t": time.time(), "kind": "queue", "id": qid, "label": args.label,
+            "model": model_of(model), "task": kind or None, "note": args.note})
+    print(qid)
+
+
+def cmd_queue_drop(args) -> None:
+    if args.id not in queued(entries()):
+        sys.exit(f"claude-quota: nothing queued as {args.id!r}; `claude-quota queue` lists it")
+    append({"t": time.time(), "kind": "drop", "id": args.id})
+
+
+def cmd_queue_list(args) -> None:
+    for q in queued(entries()).values():
+        print(f"{q['id']}  {q['model']}:{q.get('task') or '-'}  {q['label']}"
+              + (f"  — {q['note']}" if q.get("note") else ""))
+
+
+def hand_out(dry: bool) -> None:
+    """Lists the suspended agents and the queued work, and (unless dry) logs them handed out: a
+    suspended agent runs again from now, a queued item is started with `start` as any agent is."""
+    log = entries()
+    paused = [a for a in agents(log).values() if suspended(a)]
+    waiting = list(queued(log).values())
+    if not paused and not waiting:
+        print("nothing suspended or queued")
+        return
+    for a in paused:
+        to = f" → resume it (SendMessage {a['ref']})" if a["ref"] else " → resume it"
+        print(f"resume {a['id']}  {a['model']}:{a.get('task') or '-'}  {a['label']}{to}"
+              + (f": {a['note']}" if a.get("note") else ""))
+    for q in waiting:
+        print(f"start  {q['id']}  {q['model']}:{q.get('task') or '-'}  {q['label']} → `claude-quota start` it"
+              + (f": {q['note']}" if q.get("note") else ""))
+    if waiting:
+        print("Price the queued work with `claude-quota plan` first, leaving room for the session itself,"
+              " and keep `claude-quota watch` going in the background while it runs.")
+    if not dry:
+        for x in [*paused, *waiting]:
+            append({"t": time.time(), "kind": "resume", "id": x["id"]})
+
+
+def cmd_resume(args) -> None:
+    hand_out(args.dry_run)
+
+
+def cmd_wait(args) -> None:
+    """Sleeps until the 5-hour window resets, confirms it with a fresh reading, then hands out
+    what's suspended and queued. Run in the background, its exit wakes the session at the reset."""
+    s = snapshot()
+    target = s["five_reset"] + args.margin * 60
+    print(f"waiting for the 5h window to reset (~{at_clock(target)}, in {hours(target - time.time())})", flush=True)
+    time.sleep(max(0.0, target - time.time()))
+    n = s
+    for _ in range(15):  # the reading may lag the reset by a minute or two
+        n = snapshot(max_age=0)
+        if n["five_reset"] > s["five_reset"] + 60 or n["five"] < s["five"]:
+            break
+        time.sleep(120)
+    show_status(n, TARGET)
+    print()
+    hand_out(dry=False)
 
 
 def deadline(s: str) -> float:
@@ -509,6 +756,12 @@ def cmd_log(args) -> None:
             print(f"{when}  reset  {e['id']}  {e['window']} until {datetime.fromtimestamp(e['expires']):%m-%d %H:%M}")
         elif e["kind"] == "redeem":
             print(f"{when}  redeem {e['id']}")
+        elif e["kind"] == "suspend":
+            print(f"{when}  pause  {e['id']}" + (f"  {e['note']}" if e.get("note") else ""))
+        elif e["kind"] == "queue":
+            print(f"{when}  queue  {e['id']}  {e['model']}:{e.get('task') or '-'}  {e['label']}")
+        elif e["kind"] in ("resume", "drop"):
+            print(f"{when}  {e['kind']:6} {e['id']}")
         else:
             print(f"{when}  end    {e['id']}  {e.get('tokens', 0) / 1e3:.0f}k  {e.get('outcome') or ''}")
 
@@ -537,6 +790,39 @@ def main() -> None:
     pl.add_argument("--serial", action="store_true", help="the agents run one after another")
     pl.set_defaults(func=cmd_plan)
     sub.add_parser("learn", help="show the fitted rates, sizes and outcomes").set_defaults(func=cmd_learn)
+    for name, func, text in (
+        ("guard", cmd_guard, "ok, hold or suspend: will the 5h window reach its limit before it resets?"),
+        ("watch", cmd_watch, "poll while agents run; exit when they should be suspended, or none run"),
+    ):
+        g = sub.add_parser(name, help=text)
+        g.add_argument("--at", type=float, default=SUSPEND_AT, help="%% of the 5h window to suspend at")
+        g.add_argument("--lead", type=float, default=LEAD, help="minutes before the limit to suspend at")
+        if name == "watch":
+            g.add_argument("--every", type=float, default=WATCH_EVERY, help="seconds between readings")
+        g.set_defaults(func=func)
+    su = sub.add_parser("suspend", help="log an agent paused (or stopped by the limit), to resume later")
+    su.add_argument("id")
+    su.add_argument("--ref", help="the session's handle on it, e.g. its agent id for SendMessage")
+    su.add_argument("--note", help="where it was, for whoever resumes it")
+    su.set_defaults(func=cmd_suspend)
+    qu = sub.add_parser("queue", help="work waiting for a later window; list it")
+    qu.set_defaults(func=cmd_queue_list)
+    qsub = qu.add_subparsers()
+    qa = qsub.add_parser("add", help="queue an agent not started yet; prints its id")
+    qa.add_argument("label")
+    qa.add_argument("spec", help="model[:kind], e.g. opus:implement")
+    qa.add_argument("--note")
+    qa.set_defaults(func=cmd_queue_add)
+    qd = qsub.add_parser("drop", help="drop a queued item")
+    qd.add_argument("id")
+    qd.set_defaults(func=cmd_queue_drop)
+    qsub.add_parser("list", help="the queued work").set_defaults(func=cmd_queue_list)
+    wt = sub.add_parser("wait", help="sleep until the 5h window resets, then hand out the work")
+    wt.add_argument("--margin", type=float, default=WAIT_MARGIN, help="minutes past the reset")
+    wt.set_defaults(func=cmd_wait)
+    rm = sub.add_parser("resume", help="hand out the suspended agents and queued work now")
+    rm.add_argument("--dry-run", action="store_true", help="list them without marking them handed out")
+    rm.set_defaults(func=cmd_resume)
     rs = sub.add_parser("reset", help="log a limit reset to spend before it expires; list them")
     rs.set_defaults(func=cmd_reset_list)
     rsub = rs.add_subparsers()
