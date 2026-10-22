@@ -1,4 +1,4 @@
-When scaffolding a **new** web/frontend project, default to Vite+ (https://viteplus.dev/) via `vp create` — not `npm create vite`, CRA, or a hand-rolled build/lint/test stack. Vite+ is one CLI over Vite/Rolldown build, Oxc lint/format/typecheck, Vitest, monorepo task caching, and library packaging. `vp` is already on PATH (mise `npm:vite-plus`) — don't re-install or gate on `command -v vp`.
+When scaffolding a **new** web/frontend project, default to Vite+ (https://viteplus.dev/) — not `npm create vite`, CRA, or a hand-rolled build/lint/test stack. Vite+ is one CLI (`vp`) over Vite/Rolldown build, Oxc lint/format/typecheck, Vitest, monorepo task caching, and library packaging. There is no global `vp` on PATH, on purpose: each project runs the `vite-plus` pinned in its own lockfile, and scaffolding fetches the latest release with `pnpm dlx`.
 
 ## Defaults
 
@@ -12,6 +12,7 @@ When scaffolding a **new** web/frontend project, default to Vite+ (https://vitep
 
 ## Commands
 
-- Create: `vp create` (interactive); scripted `vp create vite:application|vite:monorepo|vite:library --no-interactive`; shorthands `vp create vite` / `@tanstack/start` / `react-router`.
-- Flags: `--directory`, `--package-manager`, `--git`, `--no-interactive`. Day-to-day: `vp install` / `dev` / `check` / `build` / `run`.
+- Create: `pnpm --package=vite-plus dlx vp create` (interactive); scripted `pnpm --package=vite-plus dlx vp create vite:application|vite:monorepo|vite:library --no-interactive`; shorthands `vite` / `@tanstack/start` / `react-router` in place of the template. `--package=vite-plus` is required: the package ships two binaries (`vp`, `vpr`).
+- Flags: `--directory`, `--package-manager`, `--git`, `--no-interactive`.
+- Inside a project: `pnpm install`, then `pnpm vp check` / `test` / `build` / `dev` / `run`, or the package scripts. A bare `vp` is "command not found" outside a git hook (Vite+'s hook dispatcher adds `node_modules/.bin` to PATH).
 - New projects only — don't rip out an existing toolchain unless asked. In CI prefer `--no-interactive` + explicit template.

@@ -3,7 +3,7 @@
 #
 # `mise activate` (in ~/.zshrc) sets up PATH only in interactive shells. Non-
 # interactive shells — Claude Code's Bash tool, IDE-spawned shells, CI runners,
-# `zsh -c …` — never source ~/.zshrc, so mise-managed tools (node, vp, pnpm, …)
+# `zsh -c …` — never source ~/.zshrc, so mise-managed tools (node, pnpm, gh, …)
 # are absent there and you'd have to fall back to `mise exec -- <cmd>`. Putting
 # mise's shims dir on PATH here closes that gap: each shim resolves the correct
 # per-project tool version on every call, so mise is opaque in every shell.
