@@ -23,7 +23,7 @@ set -e
 # upgrade cadence: week {{ div (now | unixEpoch) 604800 }}
 
 # Install the backend prerequisites first. The npm-backed tools (npm:ccusage,
-# npm:vite-plus) shell out to npm, and the pipx-backed tool (check-jsonschema)
+# npm:agent-browser) shell out to npm, and the pipx-backed tool (check-jsonschema)
 # shells out to uv; on a fresh machine neither node nor uv exists yet, so a plain
 # `mise install` could fail building those backends. mise's npm/pipx backends use
 # mise's own node/uv, so installing both up front is all that's needed — no
@@ -53,9 +53,14 @@ mise upgrade -y
 # Dropping a tool from config.toml leaves it installed, so each retired tool
 # gets an uninstall here; it's a no-op once the tool is gone. flyctl: Fly.io
 # isn't used any more. actionlint: replaced by its fork jactionlint.
+# npm:vite-plus: the npm package, unlike Vite+'s standalone global CLI, never
+# hands a project's commands to the vite-plus in its lockfile, so a stale copy
+# ran its own toolchain against newer projects. Projects run their local `vp`
+# (`pnpm vp …`) and new ones scaffold with `pnpm dlx`; see rules/viteplus.md.
 echo "==> Removing retired tools..."
 mise uninstall --all flyctl 2>/dev/null || true
 mise uninstall --all actionlint 2>/dev/null || true
+mise uninstall --all npm:vite-plus 2>/dev/null || true
 
 # Third-party Claude Code skills (~/.agents/skills, via the skills CLI, symlinked
 # into ~/.claude/skills): the agent-browser stub, refreshed on the same weekly
