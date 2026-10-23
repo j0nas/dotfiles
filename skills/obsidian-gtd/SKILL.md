@@ -31,7 +31,7 @@ Synced via iCloud between devices. Do NOT open the parent `iCloud~md~obsidian/` 
 | `MtG/`                    | Magic: the Gathering — decks, proxy backlog, deck box, supplies. Tasks live here too.                                                                                  |
 | `Ruter/`                  | Work notes (Ruter client).                                                                                                                                             |
 | `attachments/`            | Images and voice memos embedded from notes.                                                                                                                            |
-| `Dashboard.md`            | Tasks-plugin queries: Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress.                                 |
+| `Dashboard.md`            | Obsidian opens it on launch (core setting "Default file to open", `openBehavior: file:Dashboard.md` in `.obsidian/app.json`). Top: the Inbox embedded, then Next actions (one task per project note). Then Tasks-plugin queries: Pick one now / Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress. |
 | `Weekly Review.md`        | Jonas's own 15-20 min weekly checklist. **Use this file verbatim for Weekly Review mode** — don't invent a new one.                                                    |
 
 Daily notes live in `Daily notes/`. They are journals, not task homes: any `- [ ]` left there leaks onto the Dashboard with no owner, so file such tasks into a project during Weekly Review.
@@ -58,6 +58,8 @@ The distinction is load-bearing. Only use checkboxes when the thing should be in
 **`📅` vs `⏳`:** rule of thumb — if Jonas would feel guilty missing the date, it's `📅`. Otherwise `⏳`. Keeps the real Overdue list trustworthy.
 
 **`#waiting-for` vs `#agenda`:** different states. Waiting-for = "I've asked, they're handling it." Agenda = "I haven't mentioned it yet, need the right moment." Never conflate them.
+
+**Next action:** a project note's next action is the task the Dashboard's Next actions query picks, which is its most urgent open task: dated and `⏫` tasks first, otherwise the one highest up in the note. Undated tasks below the top one only surface in the Weekly Review's dateless list, so when filing something Jonas wants to see soon, put it at the top of the note or give it a `⏳`. The query can't sort by line number: Tasks 8.5 disables JavaScript in queries (`sort by function`) by default, and it's left off.
 
 Examples (Norwegian and English both fine — mix is normal):
 
@@ -218,7 +220,7 @@ Target duration: 15-20 min (per his checklist). If it's drifting past 40, someth
 
 "What should I work on?"
 
-1. Read `Dashboard.md` — it already has the Tasks-plugin queries for Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress. Trust the queries; don't duplicate their logic.
+1. Read `Dashboard.md` — it already has the Tasks-plugin queries for Next actions / Pick one now / Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress. Trust the queries; don't duplicate their logic.
 2. Ask one orienting question if you can't infer: available time? energy level?
 3. Surface 1-3 candidates from the Dashboard sections with brief project context. Weight real overdue highest, then due-this-week, then should-have-started, then in-progress.
 4. Don't pick for him — he knows his priorities better than you.
