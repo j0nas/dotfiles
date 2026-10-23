@@ -61,6 +61,24 @@ The distinction is load-bearing. Only use checkboxes when the thing should be in
 
 **Next action:** a project note's next action is the task the Dashboard's Next actions query picks, which is its most urgent open task: dated and `⏫` tasks first, otherwise the one highest up in the note. Undated tasks below the top one only surface in the Weekly Review's dateless list, so when filing something Jonas wants to see soon, put it at the top of the note or give it a `⏳`. The query can't sort by line number: Tasks 8.5 disables JavaScript in queries (`sort by function`) by default, and it's left off.
 
+### Project links
+
+A note tied to things outside the vault lists them as Obsidian properties (frontmatter), using only the keys that apply:
+
+```yaml
+---
+folder: ~/Desktop/projects/home/pantry-workstation   # project folder; claude --resume must run here
+fusion: Pantry workshop (Admin Project)                # Fusion document and its project
+artifacts:                                             # claude.ai artifact links
+  - https://claude.ai/artifact/XvVFvR6QtbKoJ4oQjZt6yg
+sessions:                                              # Claude Code session ids, newest first
+  - 69d7f558-15a5-49a5-91ba-397bc5636145
+repo: https://github.com/j0nas/...                     # git remote
+---
+```
+
+The folder links back: its `CLAUDE.md` names the vault note and tells the session to tick off what's done, keep the top open task the real next step, and add its session id to `sessions` (newest first). Create the `CLAUDE.md` if the folder has none. When an Inbox item carries a `claude --resume <id>` or a path, it belongs in these properties, not in the task text: find the session's folder under `~/.claude/projects/` (the folder name is the cwd with `/` → `-`). Notes made before 2026-10-23 get their properties during Weekly Review as they come up.
+
 Examples (Norwegian and English both fine — mix is normal):
 
 ```markdown
@@ -152,6 +170,7 @@ What is it?
 - **Things to raise with a specific person** → add `#agenda` — do NOT use `#waiting-for` (different state)
 - **Blocked on someone else's action** → add `#waiting-for`
 - **Imported dumps** (Google Keep, Trello, Sheets) → same rules; skip anything tagged "done" or "won't do"
+- **Item tied to code, a Fusion doc, an artifact or a Claude session** → the links go in the project note's properties, with a back-link in the folder's `CLAUDE.md` (see "Project links")
 
 When a target note doesn't obviously exist, propose creating one: `→ New project note Projects/Florence trip.md? Or add to Someday-Maybe/?`
 
@@ -207,7 +226,7 @@ Current sections in that file (keep in sync if the file changes):
 
 1. **Process Inbox** → run Process mode on `Inbox.md`. Empty his head — ask if anything is floating around to capture.
 2. **Check Dashboard** → walk `Dashboard.md` sections: Overdue (real deadlines), Should have started, Due this week, Waiting for, Agenda. Flag anything that needs attention. Offer to add/update `📅` / `⏳` dates.
-3. **Scan active projects** → walk through `Projects/` notes. For each: does it have a clear next action? If done, archive it using the Obsidian CLI's `move` command — it rewrites inbound wikilinks, where a filesystem `mv` would silently break every `[[<name>]]` reference. `obsidian help move` has the syntax. If the CLI errors, stop and ask Jonas rather than falling back to filesystem `mv`. Tag actively-worked items with `#doing`.
+3. **Scan active projects** → walk through `Projects/` notes. For each: does it have a clear next action? Does it have its project-link properties, if it's tied to a folder, Fusion doc or session? If done, archive it using the Obsidian CLI's `move` command — it rewrites inbound wikilinks, where a filesystem `mv` would silently break every `[[<name>]]` reference. `obsidian help move` has the syntax. If the CLI errors, stop and ask Jonas rather than falling back to filesystem `mv`. Tag actively-worked items with `#doing`.
 4. **Review Someday-Maybe** → skim `Someday-Maybe/`. Activate anything ready using the Obsidian CLI's `move` command (same reason and same stop-and-ask rule as step 3). Capture new ideas.
 
 At the end, confirm: Inbox is zero, Dashboard is clean, every active project has a next action.
