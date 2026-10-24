@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Restart the Handoff daemons nightly so Universal Clipboard keeps working.
+     After a few weeks of uptime sharingd holds stale per-device Handoff state:
+     it stops surfacing the iPhone's "clipboard available" flag, or rejects its
+     adverts as replays. Restarting the iPhone or toggling Handoff doesn't help;
+     restarting sharingd + useractivityd fixes it in seconds (launchd respawns
+     both). Diagnosis: `/usr/bin/log show` on useractivityd for CopyPasteKey.
+     04:00 so it is unlikely to cut off an AirDrop; a Mac asleep then runs it on
+     wake. No RunAtLoad — loading the agent shouldn't kill anything.
+     Loaded for the current session by run_onchange_after_load-universal-clipboard-reset. -->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>local.universal-clipboard.reset</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/bin/killall</string>
+		<string>sharingd</string>
+		<string>useractivityd</string>
+	</array>
+	<key>StartCalendarInterval</key>
+	<dict>
+		<key>Hour</key>
+		<integer>4</integer>
+		<key>Minute</key>
+		<integer>0</integer>
+	</dict>
+	<key>StandardOutPath</key>
+	<string>/dev/null</string>
+	<key>StandardErrorPath</key>
+	<string>/dev/null</string>
+</dict>
+</plist>
