@@ -1,0 +1,20 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# Load the nightly Universal Clipboard reset agent now, so it doesn't wait for
+# the next login. The plist header explains why the reset exists.
+#
+# run_onchange: keyed on the plist's hash, so a schedule change reloads it.
+# plist: {{ include "private_Library/LaunchAgents/local.universal-clipboard.reset.plist" | sha256sum }}
+# _after_: runs once the plist target is already written.
+
+agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/local.universal-clipboard.reset.plist"
+label="local.universal-clipboard.reset"
+
+# Idempotent reload: bootout is a no-op the first time. The agent has no
+# RunAtLoad, so bootstrapping it doesn't restart the daemons.
+echo "==> Loading Universal Clipboard reset agent (nightly 04:00)"
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$agent"
+{{ end -}}
