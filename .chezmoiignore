@@ -15,9 +15,13 @@ rules
 .config/swiftbar
 {{/* CUPS printer instances for the ET-8550 (mtg-proxy "4x2 Glossy" preset); the queue only exists on the Mac */}}
 .cups
+{{/* Tinycast launcher (replaces Spotlight); its settings.json symlink */}}
+.config/tinycast
 {{ end -}}
 {{/* VS Code: symlinked settings.json points here; repo-only content file */}}
 Code-settings.json
+{{/* Tinycast: symlinked ~/.config/tinycast/settings.json points here; repo-only content file */}}
+Tinycast-settings.json
 {{/* Claude Code: managed keys merged into ~/.claude/settings.json by dot_claude/modify_settings.json; repo-only */}}
 Claude-settings.json
 {{ if eq .chezmoi.os "darwin" -}}
