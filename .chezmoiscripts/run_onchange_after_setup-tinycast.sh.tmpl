@@ -1,0 +1,46 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# Tinycast setup — the ⌘Space launcher that replaces Spotlight.
+#
+#   1. Switch on its settings-file mirror, so it starts from the repo's
+#      Tinycast-settings.json (through the ~/.config/tinycast symlink) instead of
+#      its defaults. Only its Settings pane shows the switch, but it is a plain
+#      `settingsFileEnabled` default, and a launch with it on imports the file.
+#      The Import/Replace dialog only appears when the pane turns it on over an
+#      existing file, so this path never risks Replace.
+#   2. Start it at login via the tracked LaunchAgent, and load that agent now
+#      (RunAtLoad launches it, unless it is already running).
+#
+# Full Disk Access (its file index) and Accessibility (pasting) are TCC grants
+# that no script can make. The first-run walkthrough asks for Accessibility.
+#
+# run_onchange: re-runs when this script or the agent changes. _after_: runs
+# once the settings symlink and the agent plist are written and the
+# install-packages script has installed the cask.
+# agent: {{ include "private_Library/LaunchAgents/com.tinycast.app.autostart.plist" | sha256sum }}
+
+domain="com.tinycast.app"
+agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/com.tinycast.app.autostart.plist"
+label="com.tinycast.app.autostart"
+
+if [ "$(defaults read "$domain" settingsFileEnabled 2>/dev/null)" != 1 ]; then
+  # A running Tinycast caches its prefs and would flush the switch back off on
+  # exit (the same footgun SwiftBar has). Quit it and wait for it to go.
+  killall Tinycast 2>/dev/null || true
+  for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx Tinycast || break; sleep 0.2; done
+  echo "==> Switching on Tinycast's settings file (it imports Tinycast-settings.json at launch)"
+  defaults write "$domain" settingsFileEnabled -bool true
+fi
+
+# Idempotent reload: bootout is a no-op the first time.
+echo "==> Loading Tinycast login agent"
+launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
+launchctl bootstrap "gui/$(id -u)" "$agent"
+
+# No index folder means it has never been able to crawl: Full Disk Access is missing.
+if [ ! -d "{{ .chezmoi.homeDir }}/Library/Application Support/$domain/FileIndex" ]; then
+  echo "NOTE: Tinycast's file search needs Full Disk Access: System Settings → Privacy & Security → Full Disk Access → Tinycast."
+fi
+{{ end -}}
