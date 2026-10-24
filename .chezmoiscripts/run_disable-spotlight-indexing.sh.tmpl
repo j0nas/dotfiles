@@ -1,0 +1,29 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# Keep Spotlight indexing and searching off on every volume. Tinycast's own
+# file index replaces it, and mds otherwise keeps re-crawling the projects tree.
+#
+# `mdutil -d` rather than `-i off`: `-i off` stops indexing but searches still
+# run against the old store; `-d` stops both. Re-enable with
+# `sudo mdutil -a -i on`. What stops working: Finder search, Apple Mail search,
+# `mdfind`, and zsh's `open -a <Tab>` app completion (it calls mdfind).
+#
+# A bare run_ script, re-checked on every apply: a macOS update can switch
+# indexing back on, and the check is one local mdutil call (no sudo, no
+# network). sudo runs only while a volume still indexes. Without a terminal
+# for the password (an apply from an agent) it says so and leaves the apply
+# green, so the next apply from a terminal finishes the job.
+
+if ! mdutil -a -s 2>/dev/null | grep -q 'Indexing enabled'; then
+  exit 0
+fi
+
+echo "==> Spotlight indexing is on; disabling it on all volumes (needs sudo)"
+if sudo mdutil -a -d; then
+  mdutil -a -s
+else
+  echo "NOTE: couldn't disable Spotlight indexing (no sudo). Run 'chezmoi apply' in a terminal."
+fi
+{{ end -}}
