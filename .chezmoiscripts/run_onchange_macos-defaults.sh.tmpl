@@ -41,5 +41,25 @@ else
   echo "==> Skipped cursor settings — grant Full Disk Access to your terminal to apply automatically."
 fi
 
+# Spotlight is replaced by Tinycast, which keeps its own launcher, clipboard
+# history and file index (indexing is switched off by run_disable-spotlight-indexing).
+# Free ⌘Space and ⌥⌘Space for it: symbolic hotkeys 64 (Show Spotlight search)
+# and 65 (Finder search window), written disabled with their stock chords so
+# re-enabling one in System Settings restores the usual key. activateSettings
+# applies them without a logout.
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 64 \
+  '<dict><key>enabled</key><false/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>1048576</integer></array><key>type</key><string>standard</string></dict></dict>'
+defaults write com.apple.symbolichotkeys AppleSymbolicHotKeys -dict-add 65 \
+  '<dict><key>enabled</key><false/><key>value</key><dict><key>parameters</key><array><integer>32</integer><integer>49</integer><integer>1572864</integer></array><key>type</key><string>standard</string></dict></dict>'
+/System/Library/PrivateFrameworks/SystemAdministration.framework/Resources/activateSettings -u
+# Stop it recording the clipboard; Spotlight caches its prefs, so restart it
+# (launchd respawns it). The menu-bar icon is Control Center's, in its group
+# container: Spotlight's own "NSStatusItem VisibleCC" key is rewritten from the
+# live icon on restart, so writing that one does nothing.
+defaults write com.apple.Spotlight PasteboardHistoryEnabled -bool false
+killall Spotlight 2>/dev/null || true
+defaults write "$HOME/Library/Group Containers/group.com.apple.controlcenter/Library/Preferences/group.com.apple.controlcenter" showSpotlight -bool false
+killall ControlCenter 2>/dev/null || true
+
 echo "==> Done. Log out and back in for key repeat changes to take effect."
 {{ end -}}
