@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Launch Tinycast at login, reproducibly. Its own "Launch at login" toggle
+     registers an SMAppService login item (no defaults key, GUI-only), so this
+     LaunchAgent is the chezmoi-trackable equivalent; leave that toggle off.
+     The pgrep guard matters: `open -a` on a running Tinycast is a reopen,
+     which pops up the launcher palette. RunAtLoad fires once at login (and on
+     `launchctl bootstrap`); no KeepAlive, so quitting it stays quit.
+     Loaded for the current session by run_onchange_after_setup-tinycast. -->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.tinycast.app.autostart</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/sh</string>
+		<string>-c</string>
+		<string>/usr/bin/pgrep -qx Tinycast || exec /usr/bin/open -a Tinycast</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardOutPath</key>
+	<string>/dev/null</string>
+	<key>StandardErrorPath</key>
+	<string>/dev/null</string>
+</dict>
+</plist>
