@@ -81,6 +81,15 @@ print-sheet() {
   "$dir/print-sheet.sh" "$@"
 }
 
+# A printed paper deck box's cut, the formeriet workbench's own command (a subshell, so the
+# caller stays where it was): cut-box <deck> [--proof] [--passes N] [--dry-run]
+# sc: cut-box <deck> | Cut a printed deck box on the Cameo (formeriet workbench) | Tools
+cut-box() {
+  local dir="${FORMERIET_DIR:-$HOME/Desktop/projects/code/formeriet}/apps/paper-deck-box"
+  [[ -d "$dir" ]] || { echo "cut-box: no workbench at $dir — run: gh repo clone j0nas/formeriet ~/Desktop/projects/code/formeriet" >&2; return 1; }
+  (cd "$dir" && pnpm -s cut "$@")
+}
+
 # The rest of the CLI (after a deck is cut): `mtg-proxy redo <card|p3.5|last>`
 # queues miscuts and skipped pages into BACKLOG.txt, `mtg-proxy backlog build`
 # prints the queue as one sheet. Also notes/doctor/cache/offset.
