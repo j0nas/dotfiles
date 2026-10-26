@@ -34,6 +34,14 @@ alias desktop='cd "{{ template "win-home" . }}/Desktop"'
 alias desktop='cd ~/Desktop'
 {{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
+# Each extra dot climbs one more level, as in oh-my-zsh. Global aliases expand as
+# a whole word anywhere on the line: typed alone, AUTO_CD (dot_zshrc) cds there,
+# and `ls ....` or `cp f ...` work too. Quote it ('...') to pass literal dots.
+# sc: ... / .... / ..... | cd up 2, 3, 4 levels (also works as an argument) | Navigation
+alias -g ...='../..'
+alias -g ....='../../..'
+alias -g .....='../../../..'
+alias -g ......='../../../../..'
 
 # mtg proxies. The project (github.com/j0nas/mtg-proxy, private) lives at
 # ~/Desktop/projects/code/mtg-proxy (projects are grouped by category under

@@ -139,6 +139,7 @@
 | --- | --- |
 | `desktop` | cd to your Desktop |
 | `mcd <dir>` | mkdir -p then cd into it |
+| `... / .... / .....` | cd up 2, 3, 4 levels (also works as an argument) |
 
 ### Tools
 
