@@ -73,6 +73,14 @@ cut-proxies() {
   "$dir/cut-proxies.sh" "$@"
 }
 
+# Same repo: print a PDF through the Windows PC's Epson queues (nothing prints from the Mac).
+# print-sheet <pdf> [--paper plain|glossy|premium] [--dry-run]
+# sc: print-sheet <pdf> | Print a sheet on the PC's Epson (plain/glossy/premium) | Tools
+print-sheet() {
+  local dir; dir=$(_mtg_proxy_dir print-sheet) || return 1
+  "$dir/print-sheet.sh" "$@"
+}
+
 # The rest of the CLI (after a deck is cut): `mtg-proxy redo <card|p3.5|last>`
 # queues miscuts and skipped pages into BACKLOG.txt, `mtg-proxy backlog build`
 # prints the queue as one sheet. Also notes/doctor/cache/offset.
