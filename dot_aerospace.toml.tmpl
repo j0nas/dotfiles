@@ -48,6 +48,22 @@ on-window-detected = [
   { if = 'test %{app-bundle-id} = com.brave.Browser && test %{window-layout} = floating', check-further-callbacks = true, run = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-torn-off-tab.sh' },
 ]
 
+# Detection is the only point where AeroSpace picks tile vs float, and the
+# script above gives up after two seconds, so a Brave window that still looked
+# like a dialog by then (e.g. one caught during AeroSpace's own startup at
+# login) floats for good, and moving it to another workspace keeps it floating.
+# Re-run the same check whenever a floating Brave window takes focus, which
+# includes flinging it with cmd-alt-shift-N. Nothing here floats a window on
+# purpose, so there is no deliberate float for this to undo.
+#
+# AeroSpace only accepts exec-and-forget as a whole callback string, so the
+# `test` guard above can't go in front of it here; the script checks for a
+# floating Brave window itself and exits otherwise. `run-callback` would keep
+# the guard in-process, but every command except exec-and-forget and the
+# focus/list family wipes the closed-windows cache that restores the layout
+# when windows vanish and come back, and this fires on every focus change.
+on-focus-changed = ['exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-torn-off-tab.sh']
+
 [gaps]
 inner.horizontal = 6
 inner.vertical = 6

@@ -2,7 +2,8 @@
 # Tile a browser window that AeroSpace floated because it appeared mid tab-drag.
 #
 # Run by the on-window-detected callback in dot_aerospace.toml (with
-# AEROSPACE_WINDOW_ID set) for Brave windows that were detected as floating.
+# AEROSPACE_WINDOW_ID set) for Brave windows that were detected as floating,
+# and by on-focus-changed when a floating Brave window takes focus later.
 #
 # AeroSpace decides tile-vs-float once, when a window appears, and floats any
 # window whose fullscreen button is disabled. Chromium keeps that button
@@ -21,7 +22,12 @@
 
 export PATH="/opt/homebrew/bin:/usr/bin:/bin:$PATH"
 aerospace_bin="/opt/homebrew/bin/aerospace"
-window_id="${AEROSPACE_WINDOW_ID:?}"
+# on-focus-changed runs this on every focus change, so leave unless the window
+# is a floating Brave one. Focus on an empty workspace sets no window id.
+window_id="${AEROSPACE_WINDOW_ID:-}"
+[ -n "$window_id" ] || exit 0
+"$aerospace_bin" list-windows --monitor all --app-bundle-id com.brave.Browser \
+  --format '%{window-id} %{window-layout}' | grep -qx "$window_id floating" || exit 0
 
 for _ in $(seq 20); do
   sleep 0.1
