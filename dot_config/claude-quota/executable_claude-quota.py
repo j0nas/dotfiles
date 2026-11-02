@@ -80,6 +80,7 @@ LEAD = 20.0  # minutes: pause sooner when the limit is this close, wherever the 
 BURN_SPAN = 30 * 60  # seconds of readings the observed burn rate is taken over
 WATCH_EVERY = 180  # seconds between watch's readings (the endpoint 429s a burst)
 WAIT_MARGIN = 2.0  # minutes past the reset before wait reads the new window
+SAME_RESET = 300.0  # seconds: readings whose reset times are this close are of one window
 
 
 # --- reading ------------------------------------------------------------------------------
@@ -247,10 +248,20 @@ def queued(log: list[dict]) -> dict[str, dict]:
     return out
 
 
+def same_window(a: dict, b: dict, window: str) -> bool:
+    """Both readings are of one window. The endpoint gives its reset time a different fraction of
+    a second at each reading, so they're compared to within SAME_RESET; a new window resets a full
+    window later."""
+    ra, rb = a[f"{window}_reset"], b[f"{window}_reset"]
+    if ra is None or rb is None:
+        return ra is None and rb is None
+    return abs(ra - rb) < SAME_RESET
+
+
 def refilled(a: dict, b: dict, window: str) -> bool:
     """The window dropped while its reset time stayed put: a limit reset was redeemed (or
     Anthropic reset everyone's limits). Within a window the utilisation otherwise only rises."""
-    return a[f"{window}_reset"] == b[f"{window}_reset"] and b[window] < a[window]
+    return same_window(a, b, window) and b[window] < a[window]
 
 
 def resets(log: list[dict]) -> dict[str, dict]:
@@ -324,14 +335,14 @@ def learn(log: list[dict]) -> dict:
     baseline: dict[str, float] = {}
     moved = {"week": 0.0, "five": 0.0}  # points each window rose where neither reset
     for a, b in zip(snaps, snaps[1:]):
-        if (a["five_reset"] == b["five_reset"] and a["week_reset"] == b["week_reset"]
+        if (same_window(a, b, "five") and same_window(a, b, "week")
                 and not refilled(a, b, "five") and not refilled(a, b, "week")):
             for w in moved:
                 moved[w] += max(0.0, b[w] - a[w])
     for window in ("week", "five"):
         rows, ys = [], []
         for a, b in zip(snaps, snaps[1:]):
-            if a[f"{window}_reset"] != b[f"{window}_reset"] or b["t"] <= a["t"] or refilled(a, b, window):
+            if not same_window(a, b, window) or b["t"] <= a["t"] or refilled(a, b, window):
                 continue  # the window reset (or was refilled) in between: the delta means nothing
             row = [0.0] * (len(MODELS) + 1)
             for ag in ended:
@@ -407,7 +418,7 @@ def burn(s: dict, m: dict) -> tuple[float, str]:
     started hasn't shown in the readings yet)."""
     recent = [started(e) for e in entries()
               if e["kind"] == "snap" and 0 <= s["t"] - e["t"] <= BURN_SPAN]
-    recent = [e for e in recent if abs(e["five_reset"] - s["five_reset"]) < 300]  # this window only
+    recent = [e for e in recent if same_window(e, s, "five")]  # this window only
     seen = None
     if recent and s["t"] - recent[0]["t"] >= 300:
         seen = max(0.0, s["five"] - recent[0]["five"]) / ((s["t"] - recent[0]["t"]) / 3600)
