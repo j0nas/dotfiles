@@ -60,6 +60,7 @@
 | `Ctrl+Shift+V` | Split pane vertically |
 | `Ctrl+Shift+W` | Close current pane |
 | `Ctrl+Shift+←/→/↑/↓` | Focus pane in direction |
+| `Ctrl+Shift+O` | Pop a pane out to its own window (pick by letter) |
 
 ### Tabs
 

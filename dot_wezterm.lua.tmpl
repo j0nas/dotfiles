@@ -41,6 +41,8 @@ config.keys = {
   { key = "RightArrow", mods = "CTRL|SHIFT", action = act.ActivatePaneDirection("Right") },
   { key = "UpArrow", mods = "CTRL|SHIFT", action = act.ActivatePaneDirection("Up") },
   { key = "DownArrow", mods = "CTRL|SHIFT", action = act.ActivatePaneDirection("Down") },
+  -- The new window takes focus, so Cmd+Alt+Shift+N (AeroSpace) can fling it straight to a workspace.
+  { key = "o", mods = "CTRL|SHIFT", action = act.PaneSelect({ mode = "MoveToNewWindow" }) },  -- sc: Ctrl+Shift+O | Pop a pane out to its own window (pick by letter) | Panes
 }
 
 -- Windows/WSL: ConPTY strips Shift+Enter, so send the CSI u sequence explicitly
