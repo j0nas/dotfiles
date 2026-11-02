@@ -37,6 +37,8 @@ const usage = `llm-log: Claude Code's per-project session log (llm-sessions/).
                                its INDEX.md line, delete the draft
   llm-log drafts               list drafts other sessions left unfinished here
   llm-log path                 print this project's llm-sessions folder
+  llm-log project <folder>     log this session in <folder>'s project instead of
+                               the launch folder's; moves its draft and entry
   llm-log hook session-start   the SessionStart hook: remember the folder the
                                session was launched in, report leftover drafts
 
@@ -95,6 +97,8 @@ func (a *app) run(args []string) int {
 		err = a.drafts()
 	case "path":
 		fmt.Fprintln(a.stdout, a.logDir())
+	case "project":
+		err = a.project(args[1:])
 	case "hook":
 		err = a.hook(args[1:])
 	case "help", "-h", "--help":
@@ -317,7 +321,13 @@ func (a *app) hook(args []string) error {
 	if err := os.MkdirAll(state, 0o755); err != nil {
 		return err
 	}
-	if err := os.WriteFile(filepath.Join(state, in.SessionID), []byte(in.Cwd+"\n"), 0o644); err != nil {
+	// An existing record wins: a resumed or compacted session keeps logging
+	// where it did, including a folder `llm-log project` pointed it at.
+	record := filepath.Join(state, in.SessionID)
+	if _, err := os.Stat(record); err == nil {
+		now := a.now()
+		os.Chtimes(record, now, now) // keeps pruneState off a session still in use
+	} else if err := os.WriteFile(record, []byte(in.Cwd+"\n"), 0o644); err != nil {
 		return err
 	}
 	pruneState(state, a.now())
@@ -338,6 +348,110 @@ func (a *app) hook(args []string) error {
 	}
 	fmt.Fprintf(a.stdout, "llm-sessions: %d unfinished session %s in this project: %s. Mention this to the user once; `/session-end <session id>` finishes one from its notes, unless that session is still running.\n",
 		len(ds), noun, strings.Join(parts, "; "))
+	return nil
+}
+
+// project points this session's log at another folder's project, for a session
+// launched in one folder (a catch-all such as ~/Desktop/projects) whose work
+// belongs to another. It moves the session's draft and entry along, then
+// rewrites the launch-folder record so later commands follow.
+func (a *app) project(args []string) error {
+	if len(args) != 1 {
+		return errors.New("usage: llm-log project <folder>")
+	}
+	target := args[0]
+	if !filepath.IsAbs(target) {
+		target = filepath.Join(a.cwd, target)
+	}
+	if st, err := os.Stat(target); err != nil || !st.IsDir() {
+		return fmt.Errorf("%s is not a folder", target)
+	}
+	id, err := a.sessionID("")
+	if err != nil {
+		return err
+	}
+	from, to := a.logDir(), filepath.Join(projectRoot(target), dirName)
+	if !sameFolder(filepath.Dir(from), filepath.Dir(to)) {
+		if err := moveSession(from, to, id); err != nil {
+			return err
+		}
+	}
+	state := a.stateDir()
+	if err := os.MkdirAll(state, 0o755); err != nil {
+		return err
+	}
+	if err := os.WriteFile(filepath.Join(state, id), []byte(target+"\n"), 0o644); err != nil {
+		return err
+	}
+	fmt.Fprintf(a.stdout, "this session now logs to %s\n", to)
+	return nil
+}
+
+// moveSession moves session id's draft and entry, with its INDEX.md line, from
+// one llm-sessions folder to another.
+func moveSession(from, to, id string) error {
+	_, draftErr := os.Stat(draftPath(from, id))
+	name, _, err := findEntry(from, id)
+	if err != nil {
+		return err
+	}
+	if draftErr != nil && name == "" {
+		return nil // nothing logged yet
+	}
+	// Lock both folders, in path order so two moves can't deadlock.
+	first, second := from, to
+	if second < first {
+		first, second = second, first
+	}
+	for _, dir := range []string{first, second} {
+		unlock, err := lock(dir)
+		if err != nil {
+			return err
+		}
+		defer unlock()
+	}
+	if name != "" {
+		if b, err := os.ReadFile(filepath.Join(to, name)); err == nil {
+			return fmt.Errorf("%s already exists in %s (session %q)", name, to, frontmatter(b)["session"])
+		}
+	}
+
+	if b, err := os.ReadFile(draftPath(from, id)); err == nil {
+		dst := draftPath(to, id)
+		if existing, err := os.ReadFile(dst); err == nil {
+			b = append(existing, afterFrontmatter(b)...)
+		}
+		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
+			return err
+		}
+		if err := writeAtomic(dst, b); err != nil {
+			return err
+		}
+		if err := os.Remove(draftPath(from, id)); err != nil {
+			return err
+		}
+	}
+	if name != "" {
+		b, err := os.ReadFile(filepath.Join(from, name))
+		if err != nil {
+			return err
+		}
+		if err := writeAtomic(filepath.Join(to, name), b); err != nil {
+			return err
+		}
+		if line := indexLine(from, name); line != "" {
+			if err := updateIndex(to, "", name, line); err != nil {
+				return err
+			}
+		}
+		if err := removeIndexLine(from, name); err != nil {
+			return err
+		}
+		if err := os.Remove(filepath.Join(from, name)); err != nil {
+			return err
+		}
+	}
+	tidy(from)
 	return nil
 }
 
@@ -503,6 +617,80 @@ func updateIndex(dir, oldName, name, line string) error {
 		lines = slices.Insert(lines, at, line)
 	}
 	return writeAtomic(path, []byte(strings.Join(lines, "\n")+"\n"))
+}
+
+func indexLine(dir, name string) string {
+	b, err := os.ReadFile(filepath.Join(dir, indexName))
+	if err != nil {
+		return ""
+	}
+	for _, l := range strings.Split(string(b), "\n") {
+		if strings.HasPrefix(l, "- ") && strings.Contains(l, "]("+name+")") {
+			return l
+		}
+	}
+	return ""
+}
+
+// removeIndexLine drops name's line from dir's INDEX.md, and the file itself
+// once no entries are left.
+func removeIndexLine(dir, name string) error {
+	path := filepath.Join(dir, indexName)
+	b, err := os.ReadFile(path)
+	if errors.Is(err, fs.ErrNotExist) {
+		return nil
+	}
+	if err != nil {
+		return err
+	}
+	var kept []string
+	entries := 0
+	for _, l := range strings.Split(strings.TrimRight(string(b), "\n"), "\n") {
+		if strings.HasPrefix(l, "- ") {
+			if strings.Contains(l, "]("+name+")") {
+				continue
+			}
+			entries++
+		}
+		kept = append(kept, l)
+	}
+	if entries == 0 {
+		return os.Remove(path)
+	}
+	return writeAtomic(path, []byte(strings.Join(kept, "\n")+"\n"))
+}
+
+// tidy removes an llm-sessions folder that a move left empty.
+func tidy(dir string) {
+	os.Remove(filepath.Join(dir, ".drafts")) // fails, harmlessly, unless empty
+	entries, err := os.ReadDir(dir)
+	if err == nil && len(entries) == 1 && entries[0].Name() == ".lock" {
+		os.Remove(filepath.Join(dir, ".lock"))
+		os.Remove(dir)
+	}
+}
+
+// sameFolder compares two folders after resolving symlinks (/tmp and
+// /private/tmp on macOS), so a move never deletes a file it just wrote.
+func sameFolder(x, y string) bool {
+	if rx, err := filepath.EvalSymlinks(x); err == nil {
+		x = rx
+	}
+	if ry, err := filepath.EvalSymlinks(y); err == nil {
+		y = ry
+	}
+	return x == y
+}
+
+func afterFrontmatter(b []byte) []byte {
+	rest, ok := strings.CutPrefix(string(b), "---\n")
+	if !ok {
+		return b
+	}
+	if end := strings.Index(rest, "\n---\n"); end >= 0 {
+		return []byte(rest[end+len("\n---\n"):])
+	}
+	return b
 }
 
 type draft struct {
