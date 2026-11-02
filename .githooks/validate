@@ -19,6 +19,7 @@
 #      commands have usable frontmatter, and every stub into the repo resolves
 #   9. SHORTCUTS.md matches its `# sc:` tags
 #  10. the Go tools in tools/ are gofmt-clean, pass go vet and their tests
+#  11. the Python tests in .githooks/tests/ pass (repo-only, never applied)
 #
 # Renders for the CURRENT OS — OS-gated branches are only checked on their own
 # platform, which is why CI runs a macOS + Linux matrix. Scripts gated behind a
@@ -299,6 +300,19 @@ if ! (cd tools && gofmt -l . >"$err" 2>&1 && [ ! -s "$err" ]); then fail "gofmt:
 if ! (cd tools && GOTOOLCHAIN=local go vet ./... >"$err" 2>&1); then fail "go vet tools/"; show_err; go_ok=0; fi
 if ! (cd tools && GOTOOLCHAIN=local go test ./... >"$err" 2>&1); then fail "go test tools/"; show_err; go_ok=0; fi
 [ "$go_ok" -eq 1 ] && ok "Go tools gofmt-clean, vetted, tests pass"
+
+# 11. Python tests ----------------------------------------------------------
+# .githooks/tests/ holds regression tests for the scripts under dot_config/ whose
+# hyphenated, executable_-prefixed names can't be imported; each test loads its
+# script by path. Dotted dirs are repo-only, so chezmoi never applies them (the
+# dry-run in step 2 would fail on a stray target otherwise). -B: no __pycache__
+# written into the repo.
+py_test_ok=1
+for t in .githooks/tests/test_*.py; do
+  [ -e "$t" ] || continue
+  if ! python3 -B "$t" >"$err" 2>&1; then fail "python test: $t"; show_err; py_test_ok=0; fi
+done
+[ "$py_test_ok" -eq 1 ] && ok "Python tests pass"
 
 [ "$status" -ne 0 ] && printf '\n\033[31mvalidation failed.\033[0m\n' >&2
 exit "$status"
