@@ -35,6 +35,7 @@
   },
   "skipDangerousModePermissionPrompt": true,
   "theme": "custom:violet",
+  "outputStyle": "Concise",
   "agentPushNotifEnabled": true,
   "voiceEnabled": true,
   "feedbackDrafts": "off",
