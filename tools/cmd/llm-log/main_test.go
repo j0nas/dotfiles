@@ -322,3 +322,66 @@ func TestConcurrentFinishesKeepEveryLine(t *testing.T) {
 		t.Errorf("index has %d entries after %d parallel finishes", got, n)
 	}
 }
+
+func TestProjectMovesTheDraftAndLaterNotes(t *testing.T) {
+	h, launch, target := newHarness(t), t.TempDir(), t.TempDir()
+	h.mustRun(launch, s1, hookJSON(s1, launch, "startup"), "hook", "session-start")
+	h.mustRun(launch, s1, "", "note", "decision", "before the move")
+	out := h.mustRun(launch, s1, "", "project", target)
+	if !strings.Contains(out, filepath.Join(target, "llm-sessions")) {
+		t.Errorf("project output: %q", out)
+	}
+	h.mustRun(launch, s1, "", "note", "learning", "after the move")
+
+	draft := read(t, filepath.Join(target, "llm-sessions", ".drafts", s1+".md"))
+	if !strings.Contains(draft, "decision: before the move") || !strings.Contains(draft, "learning: after the move") {
+		t.Errorf("target draft lacks a note:\n%s", draft)
+	}
+	if _, err := os.Stat(filepath.Join(launch, "llm-sessions")); err == nil {
+		t.Error("the emptied launch-folder log was left behind")
+	}
+	// Compaction (and a resume) rerun the hook from the launch folder; the
+	// session must keep logging to the project it was pointed at.
+	h.mustRun(launch, s1, hookJSON(s1, launch, "compact"), "hook", "session-start")
+	if got := strings.TrimSpace(h.mustRun(launch, s1, "", "path")); got != filepath.Join(target, "llm-sessions") {
+		t.Errorf("path after compaction = %s, want %s", got, filepath.Join(target, "llm-sessions"))
+	}
+}
+
+func TestProjectMovesAFinishedEntry(t *testing.T) {
+	h, launch, target := newHarness(t), t.TempDir(), t.TempDir()
+	finish(h, launch, s1, "moving", "Moving", "Moves.")
+	finish(h, launch, s2, "staying", "Staying", "Stays.")
+	h.mustRun(launch, s1, "", "project", target)
+
+	if !strings.Contains(read(t, filepath.Join(target, "llm-sessions", "2026-11-03-moving.md")), "session: "+s1) {
+		t.Error("entry not moved")
+	}
+	if got := entryLines(read(t, filepath.Join(target, "llm-sessions", "INDEX.md"))); len(got) != 1 || !strings.Contains(got[0], "](2026-11-03-moving.md)") {
+		t.Errorf("target index entries: %v", got)
+	}
+	if _, err := os.Stat(filepath.Join(launch, "llm-sessions", "2026-11-03-moving.md")); err == nil {
+		t.Error("entry left in the launch folder")
+	}
+	if got := entryLines(read(t, filepath.Join(launch, "llm-sessions", "INDEX.md"))); len(got) != 1 || !strings.Contains(got[0], "](2026-11-03-staying.md)") {
+		t.Errorf("launch index entries: %v", got)
+	}
+}
+
+func TestProjectRefusesAClashAndMovesNothing(t *testing.T) {
+	h, launch, target := newHarness(t), t.TempDir(), t.TempDir()
+	finish(h, target, s2, "same", "Theirs", "Theirs.")
+	finish(h, launch, s1, "same", "Mine", "Mine.")
+	if _, errOut, code := h.run(launch, s1, "", "project", target); code == 0 || !strings.Contains(errOut, "already exists") {
+		t.Fatalf("want a clash error, got exit %d: %s", code, errOut)
+	}
+	if !strings.Contains(read(t, filepath.Join(launch, "llm-sessions", "2026-11-03-same.md")), "session: "+s1) {
+		t.Error("the refused move touched the launch folder's entry")
+	}
+	if got := strings.TrimSpace(h.mustRun(launch, s1, "", "path")); got != filepath.Join(launch, "llm-sessions") {
+		t.Errorf("a refused move still repointed the session: %s", got)
+	}
+	if _, _, code := h.run(launch, s1, "", "project", filepath.Join(launch, "missing")); code == 0 {
+		t.Error("project to a missing folder: want an error")
+	}
+}

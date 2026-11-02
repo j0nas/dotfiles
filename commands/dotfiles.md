@@ -8,7 +8,7 @@ You are working in the user's chezmoi dotfiles repo at `~/.local/share/chezmoi`.
 
 ## Step 0 — Sync first (always)
 
-Before reading or editing anything, sync the source dir with its remote so your commit doesn't diverge: `git -C ~/.local/share/chezmoi pull --rebase --autostash`. chezmoi's autoPush means another `chezmoi edit` (here or on another machine) can leave the remote ahead; pulling first avoids the rebase-conflict dance at push time. `--autostash` keeps any in-progress working-tree edits (catch-up mode) safe. If the rebase surfaces a conflict, resolve it before starting the requested change.
+Before reading or editing anything, sync the source dir with its remote so your commit doesn't diverge: `git -C ~/.local/share/chezmoi pull --rebase --autostash`. chezmoi's autoPush means another `chezmoi edit` (here or on another machine) can leave the remote ahead; pulling first avoids the rebase-conflict dance at push time. `--autostash` keeps any in-progress working-tree edits (catch-up mode) safe. If the rebase surfaces a conflict, resolve it before starting the requested change. Then run `llm-log project ~/.local/share/chezmoi`, so this session's log lands in the dotfiles repo whatever folder it was launched from.
 
 ## Two modes
 
