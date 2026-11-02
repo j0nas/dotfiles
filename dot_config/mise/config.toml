@@ -58,6 +58,10 @@ pnpm = "latest"
 # glow: terminal markdown reader (charmbracelet). `glow -p` pages rendered
 # markdown, replacing `less` for .md files — see the `md` and `keys` aliases.
 glow = "latest"
+# go: builds the repo's own CLI tools (tools/, e.g. llm-log) into ~/.local/bin
+# on apply, and runs their vet + tests in .githooks/validate. Go is the default
+# for new tools here: fast static binaries, no runtime to install per machine.
+go = "latest"
 # chezmoi: the tool that applies this very repo. Declared here so the weekly
 # upgrade rolls it forward — otherwise nothing would. setup.sh installs
 # it once via get.chezmoi.io into ~/.local/bin (that copy has to exist before

@@ -1,0 +1,29 @@
+#!/bin/bash
+set -euo pipefail
+
+# Build the repo's own Go tools (tools/cmd/*, e.g. llm-log) into ~/.local/bin
+# whenever their source changes.
+#
+# Ordering matters twice. _after_ runs this once the files are in place, and the
+# name sorts after install-mise-tools, which is what installs Go on a fresh
+# machine (dot_config/mise/config.toml); both run in the same apply.
+#
+# GOTOOLCHAIN=local: go.mod's `go` line is a floor, and under the default (auto)
+# a module asking for a newer Go than mise installed makes `go build` download
+# that toolchain itself, outside mise and its 7-day cooldown.
+#
+# tools source: {{ $src := "" }}{{ range concat (glob (joinPath .chezmoi.sourceDir "tools/go.mod")) (glob (joinPath .chezmoi.sourceDir "tools/**/*.go")) }}{{ $src = print $src (trimPrefix $.chezmoi.sourceDir .) (include .) }}{{ end }}{{ $src | sha256sum }}
+
+export GOTOOLCHAIN=local
+cd "{{ .chezmoi.sourceDir }}/tools"
+bin="${HOME}/.local/bin"
+mkdir -p "$bin"
+echo "==> Building repo tools into ${bin}..."
+for dir in cmd/*/; do
+  name="$(basename "$dir")"
+  # Build beside the target and rename, so a hook firing mid-apply never runs a
+  # half-written binary.
+  mise exec -- go build -trimpath -o "${bin}/.${name}.new" "./${dir}"
+  mv -f "${bin}/.${name}.new" "${bin}/${name}"
+  echo "    ${name}"
+done
