@@ -18,6 +18,7 @@
 #   8. every Claude skill/command/rule has its ~/.claude symlink stub, skills and
 #      commands have usable frontmatter, and every stub into the repo resolves
 #   9. SHORTCUTS.md matches its `# sc:` tags
+#  10. the Go tools in tools/ are gofmt-clean, pass go vet and their tests
 #
 # Renders for the CURRENT OS — OS-gated branches are only checked on their own
 # platform, which is why CI runs a macOS + Linux matrix. Scripts gated behind a
@@ -27,7 +28,7 @@ set -uo pipefail
 repo="$(git rev-parse --show-toplevel)" && cd "$repo" || exit 1
 schemas="$repo/.githooks/schemas"
 export PATH="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
-for t in chezmoi jq taplo check-jsonschema shellcheck zsh python3 stylua jactionlint; do
+for t in chezmoi jq taplo check-jsonschema shellcheck zsh python3 stylua jactionlint go gofmt; do
   command -v "$t" >/dev/null 2>&1 || { echo "validate: '$t' not on PATH — run 'chezmoi apply' (local) or check the CI tool install"; exit 1; }
 done
 
@@ -287,6 +288,17 @@ if [ -f SHORTCUTS.md ] && diff <("$repo/.githooks/generate-shortcuts") SHORTCUTS
 else
   fail "SHORTCUTS.md stale — run: .githooks/generate-shortcuts > SHORTCUTS.md"
 fi
+
+# 10. Go tools --------------------------------------------------------------
+# tools/ is one Go module; run_onchange_after_install-repo-tools builds its
+# commands into ~/.local/bin on apply, so a tool that fails here would otherwise
+# land broken on every machine. GOTOOLCHAIN=local: the same toolchain the build
+# uses, never a downloaded one.
+go_ok=1
+if ! (cd tools && gofmt -l . >"$err" 2>&1 && [ ! -s "$err" ]); then fail "gofmt: tools/ needs formatting (gofmt -w tools)"; show_err; go_ok=0; fi
+if ! (cd tools && GOTOOLCHAIN=local go vet ./... >"$err" 2>&1); then fail "go vet tools/"; show_err; go_ok=0; fi
+if ! (cd tools && GOTOOLCHAIN=local go test ./... >"$err" 2>&1); then fail "go test tools/"; show_err; go_ok=0; fi
+[ "$go_ok" -eq 1 ] && ok "Go tools gofmt-clean, vetted, tests pass"
 
 [ "$status" -ne 0 ] && printf '\n\033[31mvalidation failed.\033[0m\n' >&2
 exit "$status"

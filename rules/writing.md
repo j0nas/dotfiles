@@ -3,6 +3,7 @@ Writing prose people will read (PR/MR descriptions, commit bodies, messages, doc
 - No reflexive three-part lists. Two or four items are fine.
 - State what is, not what isn't. Cut opening negatives ("Feeding never force-pushes", "No config needed") and "not X, but Y" / "Y rather than X", unless the reader actually expects the opposite.
 - Write for the eventual reader. Leave out anything they never saw, like earlier drafts or the conversation that produced the text.
+- Name what the text relies on well enough for a reader new to the project: "Y brings back bug Z" only works if the text says what Z is (which bug, file, device or setting).
 - Prose over bold-header bullets, unless it's a reference list someone will scan.
 - No emoji or `---` as decoration.
 - Plain verbs (is, has, used, wrote). "Very" and "probably" are fine.

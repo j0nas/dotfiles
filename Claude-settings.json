@@ -4,9 +4,23 @@
   },
   "permissions": {
     "allow": [
-      "WebSearch"
+      "WebSearch",
+      "Bash(llm-log *)"
     ],
     "defaultMode": "bypassPermissions"
+  },
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "\"$HOME/.local/bin/llm-log\" hook session-start",
+            "timeout": 10
+          }
+        ]
+      }
+    ]
   },
   "skillOverrides": {
     "verify": "user-invocable-only"

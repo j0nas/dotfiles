@@ -6,6 +6,10 @@ SHORTCUTS.md
 skills
 commands
 rules
+{{/* Go source for the repo's own tools; .chezmoiscripts builds them into ~/.local/bin */}}
+tools
+{{/* Claude Code's session log for sessions run in this repo (llm-log); local only */}}
+llm-sessions
 .githooks
 .taplo.toml
 {{ if ne .chezmoi.os "darwin" -}}

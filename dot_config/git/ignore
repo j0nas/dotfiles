@@ -1,0 +1,5 @@
+# Claude Code adds this itself; kept so the managed copy doesn't drop it.
+**/.claude/settings.local.json
+# Claude Code session logs (llm-log, ~/.claude/rules/llm-sessions.md) stay on
+# the machine that wrote them, also in a repo that later turns public.
+llm-sessions/
