@@ -25,6 +25,9 @@ shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook +
 # the WezTerm config to /dev/null fails only on a syntax error, never on style.
 jactionlint = "latest"
 stylua = "latest"
+# java: only runs Android's sdkmanager and avdmanager (run_onchange_after_setup-android-emulator).
+# They want an LTS, so it's pinned to one rather than "latest".
+java = "temurin-21"
 # node: managed directly by mise (no separate fnm layer). mise's shell-activation
 # hook auto-switches Node per project on cd; idiomatic_version_file_enable_tools
 # (see [settings] below) makes it honour .node-version / .nvmrc / package.json
