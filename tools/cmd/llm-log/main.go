@@ -1,9 +1,11 @@
 // Command llm-log keeps Claude Code's per-project session log. Each project
 // gets an llm-sessions/ folder at its root with one Markdown file per session
-// and INDEX.md, one line per session, newest first. While a session runs,
-// `note` appends one-line notes to a draft; /session-end turns the draft into
-// the session's file with `finish`. ~/.claude/rules/llm-sessions.md tells
-// Claude when to call it. The folder is gitignored globally, so it stays local.
+// and INDEX.md, one line per session, newest first. Every command acts on the
+// project of the folder it's run in, so a session that changes three projects
+// leaves its notes and an entry in each. While a session runs, `note` appends
+// one-line notes to that project's draft; /session-end turns each draft into the
+// project's entry with `finish`. ~/.claude/rules/llm-sessions.md tells Claude
+// when to call it. The folder is gitignored globally, so it stays local.
 package main
 
 import (
@@ -27,20 +29,23 @@ import (
 
 const usage = `llm-log: Claude Code's per-project session log (llm-sessions/).
 
-  llm-log note <kind> [text]   append a note to this session's draft; reads the
-                               text from stdin when it isn't given.
+Every command acts on the project of the current folder: its git repo (a worktree
+counts as its main checkout), or else the nearest folder up with an llm-sessions/.
+Anywhere else is an error, so cd to the project a note is about.
+
+  llm-log note <kind> [text]   append a note to this session's draft here; reads
+                               the text from stdin when it isn't given.
                                kinds: decision, learning, dead-end, open
-  llm-log show                 print this session's draft and, for a resumed
-                               session, the entry it already has
+  llm-log show                 print this session's drafts and entries, in every
+                               project it has logged in
   llm-log finish --slug S --title T --summary X
-                               write the entry (body on stdin), add or update
-                               its INDEX.md line, delete the draft
+                               write this project's entry (body on stdin), add or
+                               update its INDEX.md line, delete its draft, and name
+                               any other project still holding this session's notes
   llm-log drafts               list drafts other sessions left unfinished here
   llm-log path                 print this project's llm-sessions folder
-  llm-log project <folder>     log this session in <folder>'s project instead of
-                               the launch folder's; moves its draft and entry
-  llm-log hook session-start   the SessionStart hook: remember the folder the
-                               session was launched in, report leftover drafts
+  llm-log init [folder]        make a folder that isn't a git repo a project
+  llm-log hook session-start   the SessionStart hook: report leftover drafts
 
 show and finish take --session ID to work on another session's draft.
 The session id comes from $CLAUDE_CODE_SESSION_ID.
@@ -96,9 +101,12 @@ func (a *app) run(args []string) int {
 	case "drafts":
 		err = a.drafts()
 	case "path":
-		fmt.Fprintln(a.stdout, a.logDir())
-	case "project":
-		err = a.project(args[1:])
+		var dir string
+		if dir, err = a.logDir(); err == nil {
+			fmt.Fprintln(a.stdout, dir)
+		}
+	case "init":
+		err = a.initProject(args[1:])
 	case "hook":
 		err = a.hook(args[1:])
 	case "help", "-h", "--help":
@@ -137,12 +145,18 @@ func (a *app) note(args []string) error {
 	if err != nil {
 		return err
 	}
-	dir := a.logDir()
+	dir, err := a.logDir()
+	if err != nil {
+		return err
+	}
 	unlock, err := lock(dir)
 	if err != nil {
 		return err
 	}
 	defer unlock()
+	if err := a.remember(id, dir); err != nil {
+		return err
+	}
 
 	path := draftPath(dir, id)
 	if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -175,26 +189,28 @@ func (a *app) show(args []string) error {
 	if err != nil {
 		return err
 	}
-	dir := a.logDir()
+	dirs := a.sessionDirs(id)
 	found := false
-	if b, err := os.ReadFile(draftPath(dir, id)); err == nil {
-		fmt.Fprintf(a.stdout, "== draft %s\n%s", draftPath(dir, id), withNewline(b))
-		found = true
-	}
-	name, _, err := findEntry(dir, id)
-	if err != nil {
-		return err
-	}
-	if name != "" {
-		b, err := os.ReadFile(filepath.Join(dir, name))
+	for _, dir := range dirs {
+		if b, err := os.ReadFile(draftPath(dir, id)); err == nil {
+			fmt.Fprintf(a.stdout, "== draft %s\n%s", draftPath(dir, id), withNewline(b))
+			found = true
+		}
+		name, _, err := findEntry(dir, id)
 		if err != nil {
 			return err
 		}
-		fmt.Fprintf(a.stdout, "== entry %s\n%s", filepath.Join(dir, name), withNewline(b))
-		found = true
+		if name != "" {
+			b, err := os.ReadFile(filepath.Join(dir, name))
+			if err != nil {
+				return err
+			}
+			fmt.Fprintf(a.stdout, "== entry %s\n%s", filepath.Join(dir, name), withNewline(b))
+			found = true
+		}
 	}
 	if !found {
-		fmt.Fprintf(a.stdout, "no notes or entry yet for session %s in %s\n", id, dir)
+		fmt.Fprintf(a.stdout, "no notes or entry yet for session %s in %s\n", id, strings.Join(dirs, ", "))
 	}
 	return nil
 }
@@ -235,12 +251,18 @@ func (a *app) finish(args []string) error {
 		return errors.New("empty entry: pipe the entry's body to stdin")
 	}
 
-	dir := a.logDir()
+	dir, err := a.logDir()
+	if err != nil {
+		return err
+	}
 	unlock, err := lock(dir)
 	if err != nil {
 		return err
 	}
 	defer unlock()
+	if err := a.remember(id, dir); err != nil {
+		return err
+	}
 
 	oldName, oldFM, err := findEntry(dir, id)
 	if err != nil {
@@ -282,11 +304,20 @@ func (a *app) finish(args []string) error {
 		return err
 	}
 	fmt.Fprintf(a.stdout, "wrote %s\nindex: %s\n", filepath.Join(dir, name), line)
+	for _, other := range a.sessionDirs(id) {
+		if _, err := os.Stat(draftPath(other, id)); err == nil && other != dir {
+			fmt.Fprintf(a.stdout, "this session still has notes in %s: finish there too\n", filepath.Dir(other))
+		}
+	}
 	return nil
 }
 
 func (a *app) drafts() error {
-	ds, err := listDrafts(a.logDir(), a.getenv("CLAUDE_CODE_SESSION_ID"))
+	dir, err := a.logDir()
+	if err != nil {
+		return err
+	}
+	ds, err := listDrafts(dir, a.getenv("CLAUDE_CODE_SESSION_ID"))
 	if err != nil {
 		return err
 	}
@@ -302,10 +333,9 @@ type hookInput struct {
 	Source    string `json:"source"`
 }
 
-// hook runs as Claude Code's SessionStart hook. It records the folder the
-// session was launched in (logDir reads it back) and, when other sessions left
-// drafts in this project, prints one line, which Claude Code adds to the
-// session's context. That line is the only thing the log ever puts there.
+// hook runs as Claude Code's SessionStart hook. When other sessions left drafts
+// in this project it prints one line, which Claude Code adds to the session's
+// context. That line is the only thing the log ever puts there.
 func (a *app) hook(args []string) error {
 	if len(args) != 1 || args[0] != "session-start" {
 		return errors.New("usage: llm-log hook session-start (hook JSON on stdin)")
@@ -318,23 +348,19 @@ func (a *app) hook(args []string) error {
 		return errors.New("hook input lacks a session_id or cwd")
 	}
 	state := a.stateDir()
-	if err := os.MkdirAll(state, 0o755); err != nil {
-		return err
-	}
-	// An existing record wins: a resumed or compacted session keeps logging
-	// where it did, including a folder `llm-log project` pointed it at.
-	record := filepath.Join(state, in.SessionID)
-	if _, err := os.Stat(record); err == nil {
+	if record := filepath.Join(state, in.SessionID); fileExists(record) {
 		now := a.now()
 		os.Chtimes(record, now, now) // keeps pruneState off a session still in use
-	} else if err := os.WriteFile(record, []byte(in.Cwd+"\n"), 0o644); err != nil {
-		return err
 	}
 	pruneState(state, a.now())
 	if in.Source == "compact" {
 		return nil // the same session continuing; it was told at startup
 	}
-	ds, err := listDrafts(filepath.Join(projectRoot(in.Cwd), dirName), in.SessionID)
+	root, ok := findProject(in.Cwd)
+	if !ok {
+		return nil
+	}
+	ds, err := listDrafts(filepath.Join(root, dirName), in.SessionID)
 	if err != nil || len(ds) == 0 {
 		return err
 	}
@@ -351,107 +377,37 @@ func (a *app) hook(args []string) error {
 	return nil
 }
 
-// project points this session's log at another folder's project, for a session
-// launched in one folder (a catch-all such as ~/Desktop/projects) whose work
-// belongs to another. It moves the session's draft and entry along, then
-// rewrites the launch-folder record so later commands follow.
-func (a *app) project(args []string) error {
-	if len(args) != 1 {
-		return errors.New("usage: llm-log project <folder>")
+// initProject makes a folder a project, for one that isn't in a git repo; a repo
+// is one already. Safe to run again.
+func (a *app) initProject(args []string) error {
+	if len(args) > 1 {
+		return errors.New("usage: llm-log init [folder]")
 	}
-	target := args[0]
-	if !filepath.IsAbs(target) {
-		target = filepath.Join(a.cwd, target)
+	folder := a.cwd
+	if len(args) == 1 {
+		folder = args[0]
+		if !filepath.IsAbs(folder) {
+			folder = filepath.Join(a.cwd, folder)
+		}
 	}
-	if st, err := os.Stat(target); err != nil || !st.IsDir() {
-		return fmt.Errorf("%s is not a folder", target)
+	if st, err := os.Stat(folder); err != nil || !st.IsDir() {
+		return fmt.Errorf("%s is not a folder", folder)
 	}
-	id, err := a.sessionID("")
-	if err != nil {
+	root, ok := gitRoot(folder)
+	if !ok {
+		root = folder
+	}
+	dir := filepath.Join(root, dirName)
+	if err := os.MkdirAll(dir, 0o755); err != nil {
 		return err
 	}
-	from, to := a.logDir(), filepath.Join(projectRoot(target), dirName)
-	if !sameFolder(filepath.Dir(from), filepath.Dir(to)) {
-		if err := moveSession(from, to, id); err != nil {
+	index := filepath.Join(dir, indexName)
+	if !fileExists(index) {
+		if err := writeAtomic(index, []byte(indexHeader)); err != nil {
 			return err
 		}
 	}
-	state := a.stateDir()
-	if err := os.MkdirAll(state, 0o755); err != nil {
-		return err
-	}
-	if err := os.WriteFile(filepath.Join(state, id), []byte(target+"\n"), 0o644); err != nil {
-		return err
-	}
-	fmt.Fprintf(a.stdout, "this session now logs to %s\n", to)
-	return nil
-}
-
-// moveSession moves session id's draft and entry, with its INDEX.md line, from
-// one llm-sessions folder to another.
-func moveSession(from, to, id string) error {
-	_, draftErr := os.Stat(draftPath(from, id))
-	name, _, err := findEntry(from, id)
-	if err != nil {
-		return err
-	}
-	if draftErr != nil && name == "" {
-		return nil // nothing logged yet
-	}
-	// Lock both folders, in path order so two moves can't deadlock.
-	first, second := from, to
-	if second < first {
-		first, second = second, first
-	}
-	for _, dir := range []string{first, second} {
-		unlock, err := lock(dir)
-		if err != nil {
-			return err
-		}
-		defer unlock()
-	}
-	if name != "" {
-		if b, err := os.ReadFile(filepath.Join(to, name)); err == nil {
-			return fmt.Errorf("%s already exists in %s (session %q)", name, to, frontmatter(b)["session"])
-		}
-	}
-
-	if b, err := os.ReadFile(draftPath(from, id)); err == nil {
-		dst := draftPath(to, id)
-		if existing, err := os.ReadFile(dst); err == nil {
-			b = append(existing, afterFrontmatter(b)...)
-		}
-		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
-			return err
-		}
-		if err := writeAtomic(dst, b); err != nil {
-			return err
-		}
-		if err := os.Remove(draftPath(from, id)); err != nil {
-			return err
-		}
-	}
-	if name != "" {
-		b, err := os.ReadFile(filepath.Join(from, name))
-		if err != nil {
-			return err
-		}
-		if err := writeAtomic(filepath.Join(to, name), b); err != nil {
-			return err
-		}
-		if line := indexLine(from, name); line != "" {
-			if err := updateIndex(to, "", name, line); err != nil {
-				return err
-			}
-		}
-		if err := removeIndexLine(from, name); err != nil {
-			return err
-		}
-		if err := os.Remove(filepath.Join(from, name)); err != nil {
-			return err
-		}
-	}
-	tidy(from)
+	fmt.Fprintf(a.stdout, "logging in %s\n", dir)
 	return nil
 }
 
@@ -476,30 +432,39 @@ func (a *app) stateDir() string {
 	return filepath.Join(a.getenv("HOME"), ".local", "state", "llm-log", "sessions")
 }
 
-// logDir is the llm-sessions folder of the folder this session was launched
-// in. The SessionStart hook records that folder, so a cd during the session
-// doesn't move the log; without a record (the hook didn't run) it is the
-// current folder.
-func (a *app) logDir() string {
-	dir := a.cwd
-	if id := a.getenv("CLAUDE_CODE_SESSION_ID"); idRe.MatchString(id) {
-		if b, err := os.ReadFile(filepath.Join(a.stateDir(), id)); err == nil {
-			if d := strings.TrimSpace(string(b)); d != "" {
-				dir = d
-			}
-		}
+// logDir is the llm-sessions folder of the project the current folder is in.
+func (a *app) logDir() (string, error) {
+	root, ok := findProject(a.cwd)
+	if !ok {
+		return "", fmt.Errorf("%s isn't in a project: cd to the project this is about, or run `llm-log init` to make this folder one", a.cwd)
 	}
-	return filepath.Join(projectRoot(dir), dirName)
+	return filepath.Join(root, dirName), nil
 }
 
-// projectRoot lifts a folder inside a git repo to the main checkout's root, so
-// a session launched in a subfolder or a linked worktree logs with the rest of
-// the repo. An uncommitted log inside a worktree would be deleted along with
-// the worktree. Outside a repo the folder is its own root.
-func projectRoot(dir string) string {
+// findProject finds the project a folder is in: its git repo, or else the nearest
+// folder at or above it that already has an llm-sessions/ folder.
+func findProject(dir string) (string, bool) {
+	if root, ok := gitRoot(dir); ok {
+		return root, true
+	}
+	for d := dir; ; d = filepath.Dir(d) {
+		if st, err := os.Stat(filepath.Join(d, dirName)); err == nil && st.IsDir() {
+			return d, true
+		}
+		if d == filepath.Dir(d) {
+			return "", false
+		}
+	}
+}
+
+// gitRoot lifts a folder inside a git repo to the main checkout's root, so a
+// session working in a subfolder or a linked worktree logs with the rest of the
+// repo. An uncommitted log inside a worktree would be deleted along with the
+// worktree.
+func gitRoot(dir string) (string, bool) {
 	out, err := gitCmd(dir, "worktree", "list", "--porcelain").Output()
 	if err != nil {
-		return dir
+		return "", false
 	}
 	// The first entry is always the main worktree. A bare main repo has no
 	// checkout to log into, so fall back to this worktree's own root.
@@ -515,12 +480,73 @@ func projectRoot(dir string) string {
 		}
 	}
 	if main != "" {
-		return main
+		return main, true
 	}
 	if top, err := gitCmd(dir, "rev-parse", "--show-toplevel").Output(); err == nil {
-		return strings.TrimSpace(string(top))
+		return strings.TrimSpace(string(top)), true
 	}
-	return dir
+	return "", false
+}
+
+// remember records that session id has something in the project of log folder
+// dir, so show and finish can find all of a session's projects from any of them.
+func (a *app) remember(id, dir string) error {
+	root := filepath.Dir(dir)
+	if slices.Contains(a.recorded(id), root) {
+		return nil
+	}
+	state := a.stateDir()
+	if err := os.MkdirAll(state, 0o755); err != nil {
+		return err
+	}
+	f, err := os.OpenFile(filepath.Join(state, id), os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		return err
+	}
+	if _, err := f.WriteString(root + "\n"); err != nil {
+		f.Close()
+		return err
+	}
+	return f.Close()
+}
+
+func (a *app) recorded(id string) []string {
+	b, err := os.ReadFile(filepath.Join(a.stateDir(), id))
+	if err != nil {
+		return nil
+	}
+	var roots []string
+	for _, l := range strings.Split(string(b), "\n") {
+		if l = strings.TrimSpace(l); l != "" {
+			roots = append(roots, l)
+		}
+	}
+	return roots
+}
+
+// sessionDirs lists the log folders to look in for a session: the current
+// project's, then those of the projects it has logged in.
+func (a *app) sessionDirs(id string) []string {
+	var dirs []string
+	if dir, err := a.logDir(); err == nil {
+		dirs = append(dirs, dir)
+	}
+	for _, root := range a.recorded(id) {
+		// A session from before notes followed the current folder recorded the
+		// folder it was launched in, which may be a subfolder.
+		if r, ok := findProject(root); ok {
+			root = r
+		}
+		if dir := filepath.Join(root, dirName); !slices.Contains(dirs, dir) {
+			dirs = append(dirs, dir)
+		}
+	}
+	return dirs
+}
+
+func fileExists(path string) bool {
+	_, err := os.Stat(path)
+	return err == nil
 }
 
 // gitCmd runs git in dir with every GIT_* variable removed. Inside a git hook
@@ -619,80 +645,6 @@ func updateIndex(dir, oldName, name, line string) error {
 	return writeAtomic(path, []byte(strings.Join(lines, "\n")+"\n"))
 }
 
-func indexLine(dir, name string) string {
-	b, err := os.ReadFile(filepath.Join(dir, indexName))
-	if err != nil {
-		return ""
-	}
-	for _, l := range strings.Split(string(b), "\n") {
-		if strings.HasPrefix(l, "- ") && strings.Contains(l, "]("+name+")") {
-			return l
-		}
-	}
-	return ""
-}
-
-// removeIndexLine drops name's line from dir's INDEX.md, and the file itself
-// once no entries are left.
-func removeIndexLine(dir, name string) error {
-	path := filepath.Join(dir, indexName)
-	b, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		return nil
-	}
-	if err != nil {
-		return err
-	}
-	var kept []string
-	entries := 0
-	for _, l := range strings.Split(strings.TrimRight(string(b), "\n"), "\n") {
-		if strings.HasPrefix(l, "- ") {
-			if strings.Contains(l, "]("+name+")") {
-				continue
-			}
-			entries++
-		}
-		kept = append(kept, l)
-	}
-	if entries == 0 {
-		return os.Remove(path)
-	}
-	return writeAtomic(path, []byte(strings.Join(kept, "\n")+"\n"))
-}
-
-// tidy removes an llm-sessions folder that a move left empty.
-func tidy(dir string) {
-	os.Remove(filepath.Join(dir, ".drafts")) // fails, harmlessly, unless empty
-	entries, err := os.ReadDir(dir)
-	if err == nil && len(entries) == 1 && entries[0].Name() == ".lock" {
-		os.Remove(filepath.Join(dir, ".lock"))
-		os.Remove(dir)
-	}
-}
-
-// sameFolder compares two folders after resolving symlinks (/tmp and
-// /private/tmp on macOS), so a move never deletes a file it just wrote.
-func sameFolder(x, y string) bool {
-	if rx, err := filepath.EvalSymlinks(x); err == nil {
-		x = rx
-	}
-	if ry, err := filepath.EvalSymlinks(y); err == nil {
-		y = ry
-	}
-	return x == y
-}
-
-func afterFrontmatter(b []byte) []byte {
-	rest, ok := strings.CutPrefix(string(b), "---\n")
-	if !ok {
-		return b
-	}
-	if end := strings.Index(rest, "\n---\n"); end >= 0 {
-		return []byte(rest[end+len("\n---\n"):])
-	}
-	return b
-}
-
 type draft struct {
 	id, started string
 	notes       int
@@ -743,7 +695,7 @@ func listDrafts(dir, exclude string) ([]draft, error) {
 	return out, nil
 }
 
-// pruneState drops launch-folder records older than stateMaxAge; Claude Code
+// pruneState drops sessions' project records older than stateMaxAge; Claude Code
 // deletes transcripts after 30 days, so such a session can't be resumed.
 func pruneState(dir string, now time.Time) {
 	entries, err := os.ReadDir(dir)
