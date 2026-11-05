@@ -1,0 +1,28 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+set -e
+
+# The Android emulator Touchup's `pnpm devices` checks the widget on, in real Chrome.
+# Command-line tools only: nothing here or in the tests needs Android Studio.
+#
+# _after_: Java comes from the mise converge, which sorts before this; the cask
+# comes from install-packages, which runs before any target is written.
+#
+# The SDK lives in the android-commandlinetools cask's share dir, so a cask that
+# gets removed and reinstalled takes it along. sdkmanager is a no-op when all is
+# in place, so the Unix-week counter (same trick as the mise converge) re-checks
+# on the first apply of each week.
+# check cadence: week {{ div (now | unixEpoch) 604800 }}
+
+ANDROID_SDK_ROOT="$(brew --prefix)/share/android-commandlinetools"
+export ANDROID_SDK_ROOT
+image='system-images;android-35;google_apis;{{ if eq .chezmoi.arch "arm64" }}arm64-v8a{{ else }}x86_64{{ end }}'
+
+yes | mise exec -- sdkmanager --licenses > /dev/null
+mise exec -- sdkmanager platform-tools emulator 'platforms;android-35' "$image" > /dev/null
+
+if ! mise exec -- avdmanager list avd -c 2> /dev/null | grep -qx touchup-phone; then
+  echo "==> Creating the touchup-phone emulator"
+  echo no | mise exec -- avdmanager create avd -n touchup-phone -k "$image" -d pixel_7
+fi
+{{ end -}}
