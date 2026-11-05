@@ -268,11 +268,13 @@ func (a *app) finish(args []string) error {
 	if err != nil {
 		return err
 	}
-	// The entry keeps the date the session started: the draft's, or the date
-	// an earlier /session-end of this (resumed) session gave it.
+	// The entry keeps the date the session started: that of a draft, here or in
+	// another of its projects, or the date an earlier /session-end gave it.
 	date := ""
-	if b, err := os.ReadFile(draftPath(dir, id)); err == nil {
-		date = frontmatter(b)["started"]
+	for _, d := range a.sessionDirs(id) {
+		if b, err := os.ReadFile(draftPath(d, id)); err == nil && date == "" {
+			date = frontmatter(b)["started"]
+		}
 	}
 	if date == "" {
 		date = oldFM["date"]
