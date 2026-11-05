@@ -240,6 +240,29 @@ func TestFinishLeftoverDraftKeepsItsStartDate(t *testing.T) {
 	}
 }
 
+func TestFinishInAnotherProjectKeepsTheDraftsStartDate(t *testing.T) {
+	h := newHarness(t)
+	here, there := h.project(), h.project()
+	drafts := filepath.Join(there, "llm-sessions", ".drafts")
+	if err := os.MkdirAll(drafts, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(drafts, s2+".md"), []byte("---\nsession: "+s2+"\nstarted: 2026-10-30\n---\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	state := filepath.Join(h.state, "llm-log", "sessions")
+	if err := os.MkdirAll(state, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(state, s2), []byte(there+"\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	h.mustRun(here, s1, "body", "finish", "--session", s2, "--slug", "elsewhere", "--title", "T", "--summary", "S.")
+	if _, err := os.Stat(filepath.Join(here, "llm-sessions", "2026-10-30-elsewhere.md")); err != nil {
+		t.Errorf("entry not dated by the draft in the other project: %v", err)
+	}
+}
+
 func git(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	base := []string{"-c", "user.name=test", "-c", "user.email=test@example.com", "-c", "init.defaultBranch=main"}
