@@ -39,30 +39,31 @@ on-focused-monitor-changed = ['move-mouse monitor-lazy-center']
 # ~/.config/swiftbar/plugins/aerospace.sh.
 exec-on-workspace-change = ['/usr/bin/open', '-g', 'swiftbar://refreshplugin?name=aerospace']
 
-# Tabs dragged out of Brave into their own window get floated: the new window
-# appears with its fullscreen button still disabled, which AeroSpace reads as a
-# dialog (it exempts Chrome from that check, not Brave). The script waits for
-# the drag to settle and tiles the window if AeroSpace no longer thinks it's a
-# dialog. The `if` keeps real tiled windows from spawning it at all.
+# AeroSpace picks tile vs float only when a window appears, and floats anything
+# that looks like a dialog at that moment, which a normal window can: a tab
+# dragged out of Brave has its fullscreen button disabled until the drag settles
+# (AeroSpace exempts Chrome from that check, not Brave), and Fusion's main window
+# floats from its launch. The script waits for the window to settle and tiles it
+# if AeroSpace no longer thinks it's a dialog. The `if` keeps real tiled windows
+# from spawning it at all.
 on-window-detected = [
-  { if = 'test %{app-bundle-id} = com.brave.Browser && test %{window-layout} = floating', check-further-callbacks = true, run = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-torn-off-tab.sh' },
+  { if = 'test %{window-layout} = floating', check-further-callbacks = true, run = 'exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-floating-window.sh' },
 ]
 
-# Detection is the only point where AeroSpace picks tile vs float, and the
-# script above gives up after two seconds, so a Brave window that still looked
-# like a dialog by then (e.g. one caught during AeroSpace's own startup at
-# login) floats for good, and moving it to another workspace keeps it floating.
-# Re-run the same check whenever a floating Brave window takes focus, which
+# The script above gives up after two seconds, so a window that still looked like
+# a dialog by then (a slow launch, or one caught during AeroSpace's own startup
+# at login) floats for good, and moving it to another workspace keeps it
+# floating. Re-run the same check whenever a floating window takes focus, which
 # includes flinging it with cmd-alt-shift-N. Nothing here floats a window on
 # purpose, so there is no deliberate float for this to undo.
 #
 # AeroSpace only accepts exec-and-forget as a whole callback string, so the
 # `test` guard above can't go in front of it here; the script checks for a
-# floating Brave window itself and exits otherwise. `run-callback` would keep
-# the guard in-process, but every command except exec-and-forget and the
-# focus/list family wipes the closed-windows cache that restores the layout
-# when windows vanish and come back, and this fires on every focus change.
-on-focus-changed = ['exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-torn-off-tab.sh']
+# floating window itself and exits otherwise. `run-callback` would keep the guard
+# in-process, but every command except exec-and-forget and the focus/list family
+# wipes the closed-windows cache that restores the layout when windows vanish and
+# come back, and this fires on every focus change.
+on-focus-changed = ['exec-and-forget {{ .chezmoi.homeDir }}/.config/aerospace/retile-floating-window.sh']
 
 [gaps]
 inner.horizontal = 6
