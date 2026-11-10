@@ -17,8 +17,6 @@ llm-sessions
 .aerospace.toml
 .config/aerospace
 .config/swiftbar
-{{/* CUPS printer instances for the ET-8550 (mtg-proxy "4x2 Glossy" preset); the queue only exists on the Mac */}}
-.cups
 {{/* Tinycast launcher (replaces Spotlight); its settings.json symlink */}}
 .config/tinycast
 {{ end -}}
