@@ -1,0 +1,7 @@
+schema_version: "1.1"
+name: peers-blind-baseline
+expected_outcome: |
+  Run from a folder outside the repos (so their CLAUDE.md never loads). Produces a report that two blind
+  judges prefer over the hand-made atlas (scratchpad peers-atlas.html at the time) on the reader's rubric:
+  a re-measurable scoreboard, a plan tied to its metrics, no unexplained internal labels, at most 2 wrong
+  claims in a 20-claim spot check, and a newcomer breakdown as good as the atlas's.

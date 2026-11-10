@@ -16,7 +16,7 @@ The order is fixed, because orientation has to come before the verdict: the risk
 3. **Baseline scoreboard.**
    - One row per metric: value, delta against the first snapshot, trend, how it was measured (the command), and the date.
    - Headline metrics come first, then the rest grouped as feedback loops, code, security, delivery and production.
-4. **How it works.**
+4. **How it works.** Open with a stack table: language and framework versions, hosting, data stores, auth, main third parties. Then a catalogue of entry points (routes or pages, APIs, jobs, CLIs), so a newcomer can find where things start.
    - Stack, then the repo map (treemap coloured by churn), then key flows (sequence diagrams of the 2–4 flows wave 1 traced), data, and auth.
    - End with getting started: the commands that worked in the run export, plus what was needed (dummy variables, services).
 5. **Quality and factory readiness.** See `factory-readiness.md`.
@@ -49,16 +49,23 @@ Everything below the summary is collapsed by default.
   - When a term is unavoidable (the codebase's own vocabulary, an acronym outside the common list), define it in the glossary and mark its first use with a superscript reference (`report-components.md`).
   - Give a person's role at their first mention: "the founder (Lars)".
   - Never refer to this session, the agents, "the plan", "earlier" or anything else the reader didn't see.
+  - Keep how the report was made out of the body: no scans, scanners, waves, reviewers, "a second AI reviewer", snapshot field paths or tool names.
+    - Say "checked against the code" for verified findings.
+    - Say "measured" for numbers, with the reproducible command in the scoreboard's how column.
+    - The method gets one line in the sources and gaps section.
   - Give the repo's docs by path, and only in the docs part of sources and gaps.
 - **Plain verbs:** is, has, runs, writes.
   - No reflexive three-item lists.
   - State what is, rather than what isn't. Skip "not X but Y" constructions unless the reader would expect X.
   - No hedging boilerplate. A caveat stays only if it changes what the reader does.
-- **Evidence.** Every finding gives file:line (relative to the repo root), and every number says where it came from. Critical and high findings went through verification: refuted ones are gone, and "unsure" ones carry that label. Medium and low findings were never verified, so they carry an "unverified" label. A metric counted by a model (no `recount` pattern) is labelled model-counted.
+- **Evidence.** Every finding gives file:line (relative to the repo root), and every number says where it came from.
+  - Say which kind of count a size is: "1,558 code lines" (excluding blanks and comments, as scc counts) or "1,948 lines".
+  - Don't attribute a repo total to one file.
+  - Shares say their base: "97% of non-merge commits". Critical and high findings went through verification: refuted ones are gone, and "unsure" ones carry that label. Medium and low findings were never verified, so they carry an "unverified" label. A metric counted by a model (no `recount` pattern) is labelled model-counted.
 
 ## "My take"
 
-Opinions are welcome and valued, clearly marked as such, in `.op` callouts:
+Opinions are welcome and valued, clearly marked as such, in `.op` callouts. Aim for one after most sections, wherever you have a view worth stating:
 - They are short.
 - They state the reasoning.
 - They are specific to this codebase. A take that would fit any project is filler.

@@ -27,7 +27,7 @@ A lens is one scanner's topic. Pick the lenses that apply, size them to the budg
 **quality**
 - What the tests cover and what they don't: unit, integration or end-to-end; which layers.
 - Type-safety holes (`any`, casts, unchecked inputs), dead code, duplication, unused dependencies.
-- Error handling: swallowed errors, catch-all handlers, observability calls in code.
+- Error handling, in every language present, not only the main one: swallowed errors, catch-all handlers, observability calls in code.
 - Lint config strictness.
 - Cross-reference the loop results; don't re-run them.
 
