@@ -391,6 +391,9 @@ func checkReport(src string, allow map[string]bool, h *harvested, strict bool) r
 		if !strict && counts[key] > 1 {
 			msg = fmt.Sprintf("%s %q has no definition at first use (%d bare occurrences in all)", p.kind, p.occ.Text, counts[key])
 		}
+		if p.check == "identifier-like term left undefined" {
+			msg += "; if any engineer knows it, add it to an --allow file instead"
+		}
 		res.Failures = append(res.Failures, reportFailure{Check: p.check, Line: p.occ.Line, Token: p.occ.Text, Message: msg, Snippet: p.occ.Snippet})
 	}
 

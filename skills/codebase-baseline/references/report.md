@@ -46,7 +46,8 @@ Everything below the summary is collapsed by default.
   - Captions state what the figure shows.
 - **No context the reader doesn't have.** This is the most common failure in LLM-written reports.
   - Describe a thing instead of using an internal label for it: "the third step of the schema migration", not "R3.3b".
-  - When a term is unavoidable (the codebase's own vocabulary, an acronym outside the common list), define it in the glossary and mark its first use with a superscript reference (`report-components.md`).
+  - Gloss only what the reader couldn't know without having worked on this codebase: its own vocabulary (domain terms, the names it gives its modules, services, roles and processes) and the report's own scales (autonomy and harness level). Define each in the glossary and mark its first use with a superscript reference (`report-components.md`).
+  - Leave general engineering vocabulary bare, however technical: XSS, SSRF, JWT, HMAC, bus factor, churn, dual write, and the documented concepts of a public framework or service (a Next.js server action, an S3 presigned URL). The reader is an experienced engineer, and each needless reference makes the codebase's own terms harder to find. When `check-report` flags such a term, add it to the allow file (SKILL.md, step 7) instead of glossing it.
   - Give a person's role at their first mention: "the founder (Lars)".
   - Never refer to this session, the agents, "the plan", "earlier" or anything else the reader didn't see.
   - Keep how the report was made out of the body: no scans, scanners, waves, reviewers, "a second AI reviewer", snapshot field paths or tool names.

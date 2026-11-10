@@ -58,7 +58,7 @@ Write your result to the output path in your prompt (`<ws>/findings/<lens>.json`
     {"kind": "sequence|flowchart|er", "title": "Login flow", "mermaid": "sequenceDiagram ..."}
   ],
   "glossary": [
-    {"term": "the term as the code uses it", "definition": "plain-words definition for an outsider"}
+    {"term": "a term specific to this codebase, as the code uses it (never general vocabulary such as XSS or JWT)", "definition": "plain-words definition for an outsider"}
   ],
   "external_systems": [
     {"name": "Stripe", "evidence": ["billing/stripe.go:12", "env STRIPE_SECRET_KEY"], "used_for": "...", "access_would_show": "..."}
