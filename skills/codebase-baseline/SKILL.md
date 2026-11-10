@@ -229,6 +229,7 @@ Systems found in code without access get a "found in code" row saying what acces
   - Rerun `scoreboard`, update the summary's facts, rerun `check-report`, and redeliver. From now on they lead.
 - Ask the user to flag any number that contradicts their gut feeling. For each one, re-check the measurement by hand and record the outcome in `log.md`: a measurement bug, or a real surprise.
 - Set `run.json` `status: done`, and add a `log.md` entry plus a report changelog line.
+- Stop any background watchers you started (`claude-quota watch`, monitors). A headless session can't exit while they run.
 
 ### add-source <system>
 
