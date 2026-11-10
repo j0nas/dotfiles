@@ -7,7 +7,7 @@ The reader is an experienced engineer who just cloned an unfamiliar codebase, po
 - Goal 2: "a breakdown of the highest-impact changes we could do and areas we could focus on ... with focus on improving an established baseline."
 - Focus: "the technical side of things", domain "only when it makes sense".
 - Terse and visual: "use rich media instead of text (svg, mermaid, what have you) ... as effectively and skimmable as possible." "I should be able to scan it on a bad day and not feel a great sense of overwhelm."
-- No borrowed context: "the Claudeism ... of assuming the reader will somehow magically be able to share the context that the current session has ... e.g. the sudden references to 'R3'/'R3.3b' that don't explain what that refers to."
+- No borrowed context: "the Claudeism ... of assuming the reader will somehow magically be able to share the context that the current session has ... e.g. the sudden references to 'R3'/'R3.3b' that don't explain what that refers to." Explain "things specific to the codebase that might be referenced", not "ubiquitous concepts such as XSS".
 - Opinions: "The 'My take' addendums are valuable. The takes where you see the potential to _systematically_ fix/improve on recurring issues that e.g. have been fixed on an ad-hoc basis are doubly so."
 - Docs: rate them on accuracy and unique value, not volume; drift is a risk.
 - Measurement is a guiding principle, not dogma: obvious fixes needn't wait for metrics.
@@ -22,6 +22,7 @@ Score each report 1-5 on each criterion, with one line of justification citing t
 Also count, per report:
 - claims_checked / claims_wrong: spot-check at least 15 concrete claims per report (numbers, file paths, line refs, findings) against the repo, read-only. List every wrong one with the quoted claim and what the repo shows.
 - undefined_terms: terms, labels, codenames, ticket ids or names a newcomer couldn't define from the page. List with quotes.
+- needless_glosses: glossary references or inline definitions for general engineering vocabulary an experienced engineer knows (XSS, JWT, bus factor). List with quotes.
 - session_leaks: text referring to a conversation, plan or context the reader never saw. List with quotes.
 - fabricated_or_unsupported: findings with no basis in the code you can find.
 - reproducible_metrics: number of metrics that state how to re-measure them.

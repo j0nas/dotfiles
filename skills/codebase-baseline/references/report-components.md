@@ -48,11 +48,11 @@ Rule of thumb: fill the JSON blocks at the top of `<body>` first, then the prose
 
 **sources.** Access register: one row per system. Status chip is `granted`, `requested`, `found` (label it "found-in-code") or `unknown`. Method is a read-only recipe, never a credential or token. Last pulled is a date or `never`. Then "Not covered" (what and why) and questions, each addressed to a role.
 
-**glossary.** `<dt id="g-slug">Term</dt><dd>Definition</dd>`. Definitions live only here: the tooltips read them.
+**glossary.** `<dt id="g-slug">Term</dt><dd>Definition</dd>`. Definitions live only here: the tooltips read them. Entries are this codebase's own terms and the report's scales; a dozen is a lot.
 
 ## Components
 
-- **Glossary reference:** `<sup class="g"><a href="#g-slug">?</a></sup>` right after the term. Write any text in the link; JS numbers references 1, 2, 3 by first appearance in the page and shows the definition in the tooltip on hover or focus. Define terms a new reader would not know (bus factor, churn, harness level); skip ones everyone knows.
+- **Glossary reference:** `<sup class="g"><a href="#g-slug">?</a></sup>` right after the term. Write any text in the link; JS numbers references 1, 2, 3 by first appearance in the page and shows the definition in the tooltip on hover or focus. Use it for terms specific to this codebase or report (the repo's own name for a module, role or process; harness level), never for general engineering vocabulary (XSS, JWT, bus factor, churn). `report.md` has the rule.
 - **Chips:** `<span class="sev X">label</span>`. Severity: `crit`, `high`, `med`, `good`, `low`. Status: `granted`, `requested`, `found`, `unknown`. Neutral: `n`. Accent: `sys`. Use words in the label; the symbol is added.
 - **Tooltip:** any element with `data-tip="text"` (`\n` for a new line). Charts set their own.
 - **Bars:** `<div class="bars" id="x"></div>` plus `bars-data.x = {unit, pre, rows}`. Rows are `{l, v, c, note}` or `{group: "Heading"}`. `c`: empty (blue), `b2` orange, `b3` grey, `b4` green, `high`, `crit`. `pre` prefixes values (`"$"`). Use grey for context rows, red or orange only for the thing to look at. Each id must be unique; the JSON key is the id.

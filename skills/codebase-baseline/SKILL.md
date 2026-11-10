@@ -216,7 +216,7 @@ Systems found in code without access get a "found in code" row saying what acces
 - **Escaping.** Text quoting the repo goes into the data blocks HTML-escaped. Write each JSON block with `</` escaped as `<\/`. The template strips any other markup, but don't rely on that.
 
 **7. Check the report before calling it done.**
-1. Run `codebase-baseline check-report <ws>/report/index.html --repo <repo>` and fix everything it lists.
+1. Run `codebase-baseline check-report <ws>/report/index.html --repo <repo>` and fix everything it lists. A flagged term that is general engineering vocabulary (JWKS, XXE) goes in `<ws>/allow.txt`, one per line, passed as `--allow <ws>/allow.txt` on every later run; glossing it is the wrong fix (`references/report.md`).
 2. Spawn a cold reader with `agents/cold-reader.md`. It sees only the HTML file, so give it the path and nothing else about the project.
 3. Fix what it lists. Rerun `check-report` after each round, and repeat while the cold reader still finds something, for two rounds at most. Whatever is left goes in `log.md`.
 4. If you can render the page (the `/agent-browser` skill, in its own browser), look at it at 1280 and 375 px, in light and dark.

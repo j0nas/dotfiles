@@ -424,9 +424,9 @@ ul.log time { font: 500 11.5px var(--f-mono); color: var(--muted); }
 <!-- 1 ============================== what -->
 <section id="what" data-asof="2026-11-10">
 <details open><summary><h2>What this is</h2></summary><div class="body">
-  <!-- PLACEHOLDER: one paragraph. What it does, for whom, who owns it, how big, how old. Plain words, no jargon without a glossary sup. -->
+  <!-- PLACEHOLDER: one paragraph. What it does, for whom, who owns it, how big, how old. Plain words; the codebase's own terms get a glossary sup, general engineering vocabulary doesn't. -->
   <!-- DUMMY: replace -->
-  <p>Example Project is a web service that does one thing for one group of users. Written in one language on one framework, about three years old, maintained by two people. A bus factor<sup class="g"><a href="#g-bus-factor">?</a></sup> of one on the deploy path.</p>
+  <p>Example Project is a web service that does one thing for one group of users. Written in one language on one framework, about three years old, maintained by two people. Every new order passes through the intake queue<sup class="g"><a href="#g-intake-queue">?</a></sup>, and one person can deploy.</p>
   <figure>
     <!-- PLACEHOLDER: hand-written inline SVG system map (viewBox ~960 wide). Use the .d-* classes: d-box, d-t, d-s, d-m, d-l, d-line (+acc, dash), markers m1/m1a. Show clients, the app, data stores, third parties; label every arrow. Keep it under ~15 boxes. Give the svg role="img" and an aria-label that states the flow in words. -->
     <!-- DUMMY: replace -->
@@ -486,7 +486,7 @@ ul.log time { font: 500 11.5px var(--f-mono); color: var(--muted); }
     <div class="crumbs" id="tm-crumbs"></div>
     <div class="tm" id="treemap" aria-label="Treemap of the repository"></div>
     <div class="ramp" id="tm-ramp"></div>
-    <figcaption><b>Area is lines of code, colour is churn</b><sup class="g"><a href="#g-churn">?</a></sup>. Click a directory to zoom in. One line on what stands out (biggest hot spot, dead weight).</figcaption>
+    <figcaption><b>Area is lines of code, colour is churn</b>. Click a directory to zoom in. One line on what stands out (biggest hot spot, dead weight).</figcaption>
   </figure>
   <!-- PLACEHOLDER: optional bars figure, e.g. size by area: <div class="bars" id="loc"></div> with data under "loc" in #bars-data. -->
   <!-- DUMMY: replace -->
@@ -594,7 +594,7 @@ pnpm dev                <span class="c"># needs DATABASE_URL; failed without it,
     <h3>Who committed</h3>
     <!-- PLACEHOLDER: share bar from "authors" in #bars-data -->
     <div id="authors"></div>
-    <figcaption>Bus factor<sup class="g"><a href="#g-bus-factor">?</a></sup>: how many people hold the knowledge, the merge rights and the credentials.</figcaption>
+    <figcaption>Bus factor: how many people hold the knowledge, the merge rights and the credentials.</figcaption>
   </figure>
   <figure>
     <h3>File ownership</h3>
@@ -680,11 +680,10 @@ pnpm dev                <span class="c"># needs DATABASE_URL; failed without it,
 <!-- 10 ============================== glossary -->
 <section id="glossary" data-asof="2026-11-10">
 <details><summary><h2>Glossary</h2></summary><div class="body">
-  <!-- PLACEHOLDER: one dt/dd per term. dt id = g-<slug>. The dd text is the tooltip shown for every <sup class="g"><a href="#g-slug">n</a></sup>; 1-2 plain sentences. Numbers are assigned by JS in order of first use. -->
+  <!-- PLACEHOLDER: one dt/dd per term. dt id = g-<slug>. The dd text is the tooltip shown for every <sup class="g"><a href="#g-slug">n</a></sup>; 1-2 plain sentences. Numbers are assigned by JS in order of first use. Only this codebase's own terms and the report's scales; general engineering vocabulary (XSS, JWT, bus factor, churn) stays out. -->
   <!-- DUMMY: replace -->
   <dl class="gl">
-    <dt id="g-bus-factor">Bus factor</dt><dd>The number of people who would have to leave before nobody can maintain or deploy the system.</dd>
-    <dt id="g-churn">Churn</dt><dd>How often a file changes in the measured window. High churn in a large, complex file marks a likely source of bugs.</dd>
+    <dt id="g-intake-queue">Intake queue</dt><dd>The project's name for the job table every new order passes through before a person sees it (<code>jobs/intake/</code>).</dd>
     <dt id="g-autonomy-level">Autonomy level</dt><dd>How much agents may do without a person: 0 is none, 5 is unattended and self-healing.</dd>
     <dt id="g-harness-level">Harness level</dt><dd>How well automated checks, review and rollback catch an agent's mistakes: 1 is rules in prose, 5 is sandboxed with auto-rollback.</dd>
   </dl>
