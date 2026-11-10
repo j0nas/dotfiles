@@ -63,10 +63,11 @@ mise uninstall --all actionlint 2>/dev/null || true
 mise uninstall --all npm:vite-plus 2>/dev/null || true
 
 # Third-party Claude Code skills (~/.agents/skills, via the skills CLI, symlinked
-# into ~/.claude/skills): the agent-browser stub, refreshed on the same weekly
-# beat as the tools. `add` (re)registers the agent-browser stub (skills 1.7+
-# overwrites idempotently, and it repairs a stub the lock file lost track of, as
-# WSL's had); `update -g` refreshes the rest. `remove` retires find-skills, whose
+# into ~/.claude/skills): the agent-browser stub and Matt Pocock's grill-me
+# (/grill-me, a user-only wrapper that hands off to `grilling`, so both are
+# needed), refreshed on the same weekly beat as the tools. `add` (re)registers
+# each (skills 1.7+ overwrites idempotently, and it repairs a stub the lock file
+# lost track of, as WSL's had); `update -g` refreshes the rest. `remove` retires find-skills, whose
 # "how do I do X" trigger fired on unrelated requests; it exits 0 once the skill
 # is gone. Not worth failing the converge over a network blip, hence the `|| echo`.
 #
@@ -82,6 +83,7 @@ quietly() {
 }
 echo "==> Refreshing third-party Claude Code skills..."
 { quietly skills add vercel-labs/agent-browser -g -y &&
+  quietly skills add mattpocock/skills --skill grill-me --skill grilling -g -y &&
   quietly skills remove find-skills -g -y &&
   skills update -g; } || echo "==> skills refresh failed; continuing"
 
