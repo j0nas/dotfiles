@@ -1,0 +1,1033 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Codebase Baseline</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap">
+<style>
+/* Layout: sticky section index on the left, one reading column on the right; figures span the column. */
+:root {
+  --bg:#f4f5f8; --surface:#ffffff; --sunk:#eceef3; --fg:#151821; --muted:#596173; --faint:#6f7787;
+  --line:#dde1e8; --line-strong:#b6bdca; --accent:#2457d6; --accent-soft:#e6ecfb; --accent-ink:#1b409e;
+  --crit:#b8262b; --crit-bg:#fbe8e8; --high:#b94f17; --high-bg:#fdeee5; --med:#8a5b00; --med-bg:#fbf1d9; --good:#17781c; --good-bg:#e4f3e5;
+  --s1:#2a78d6; --s2:#eb6834; --s3:#1baf7a; --s-muted:#b6bdca;
+  /* treemap churn ramp: one hue, light to dark; same in both themes */
+  --t0:#e3ebfb; --t1:#c1d3f6; --t2:#93b3ee; --t3:#5f8ae0; --t4:#3a63c4; --t5:#24449a; --t6:#172f6e;
+  --f-display:"Bricolage Grotesque", "IBM Plex Sans", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg:#0e1116; --surface:#161a21; --sunk:#1c212a; --fg:#e7eaf0; --muted:#a3abb9; --faint:#8a92a1;
+  --line:#272d37; --line-strong:#3c4452; --accent:#7ea5ff; --accent-soft:#1a2542; --accent-ink:#b0c6ff;
+  --crit:#ff8a8a; --crit-bg:#3a1a1d; --high:#f7a072; --high-bg:#3a2317; --med:#f0c45a; --med-bg:#342a12; --good:#6bd474; --good-bg:#15301b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s-muted:#3c4452; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg:#0e1116; --surface:#161a21; --sunk:#1c212a; --fg:#e7eaf0; --muted:#a3abb9; --faint:#8a92a1;
+  --line:#272d37; --line-strong:#3c4452; --accent:#7ea5ff; --accent-soft:#1a2542; --accent-ink:#b0c6ff;
+  --crit:#ff8a8a; --crit-bg:#3a1a1d; --high:#f7a072; --high-bg:#3a2317; --med:#f0c45a; --med-bg:#342a12; --good:#6bd474; --good-bg:#15301b;
+  --s1:#3987e5; --s2:#d95926; --s3:#199e70; --s-muted:#3c4452; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; background: var(--bg); }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.55 var(--f-body); -webkit-font-smoothing: antialiased; }
+.wrap { max-width: 1240px; margin: 0 auto; padding-block: 28px 80px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 40px; }
+@media (max-width: 960px) { .wrap { grid-template-columns: minmax(0, 1fr); gap: 20px; } }
+
+/* index */
+nav.toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 20px); align-self: start; max-height: calc(100vh - 40px); overflow: auto; font-size: 13px; }
+nav.toc .brand { font: 700 15px/1.2 var(--f-display); margin-bottom: 14px; letter-spacing: -0.01em; }
+nav.toc ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 1px; counter-reset: s; }
+nav.toc a { display: flex; gap: 8px; padding: 4px 8px; border-radius: 6px; color: var(--muted); text-decoration: none; }
+nav.toc a::before { counter-increment: s; content: counter(s, decimal-leading-zero); font: 500 11px/1.9 var(--f-mono); color: var(--faint); }
+nav.toc a:hover { background: var(--sunk); color: var(--fg); }
+nav.toc a.on { background: var(--accent-soft); color: var(--accent-ink); }
+nav.toc a:focus-visible, a:focus-visible, summary:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+#theme { margin-top: 12px; font: 500 11px var(--f-mono); color: var(--muted); background: transparent; border: 1px solid var(--line-strong); border-radius: 999px; padding: 3px 10px; cursor: pointer; }
+#theme:hover { color: var(--fg); background: var(--sunk); }
+@media (max-width: 960px) {
+  nav.toc { position: static; max-height: none; }
+  nav.toc ol { display: flex; flex-wrap: wrap; gap: 4px; }
+  nav.toc a { border: 1px solid var(--line); padding: 2px 8px; }
+  nav.toc a::before { display: none; }
+  nav.toc .brand { display: inline-block; margin: 0 12px 8px 0; }
+  #theme { margin: 0 0 8px; }
+}
+
+main { min-width: 0; }
+header.top { margin-bottom: 8px; }
+.eyebrow { font: 500 12px/1.4 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); overflow-wrap: anywhere; }
+h1 { font: 700 clamp(30px, 4.4vw, 46px)/1.05 var(--f-display); letter-spacing: -0.025em; margin: 8px 0 10px; text-wrap: balance; }
+section { padding-top: 22px; margin-top: 22px; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+h2 { font: 700 26px/1.15 var(--f-display); letter-spacing: -0.015em; margin: 0; text-wrap: balance; }
+.sub { color: var(--muted); margin: 0 0 16px; max-width: 75ch; }
+h3 { font: 600 15px/1.3 var(--f-body); margin: 22px 0 8px; }
+p { margin: 0 0 10px; max-width: 78ch; }
+ul.t { margin: 0 0 12px; padding-left: 18px; max-width: 82ch; }
+ul.t li { margin: 3px 0; }
+ul.t li::marker { color: var(--faint); }
+code, .mono { font-family: var(--f-mono); font-size: 0.88em; }
+code { background: var(--sunk); padding: 1px 5px; border-radius: 4px; word-break: break-word; }
+a { color: var(--accent); }
+b { font-weight: 600; }
+.faint { color: var(--faint); }
+.op { border-left: 3px solid var(--accent); background: var(--accent-soft); padding: 10px 14px; border-radius: 0 8px 8px 0; margin: 14px 0; max-width: 82ch; }
+.op::before { content: "My take"; display: block; font: 500 11px var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent-ink); margin-bottom: 4px; }
+.op p:last-child, .op ul:last-child { margin-bottom: 0; }
+
+/* collapsible sections: <section><details><summary><h2>..</h2></summary><div class="body">..</div></details></section> */
+section > details > summary { list-style: none; cursor: pointer; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; border-radius: 6px; }
+section > details > summary::-webkit-details-marker { display: none; }
+section > details > summary::before { content: "\25B8"; font-size: 14px; color: var(--faint); width: 14px; flex: none; }
+section > details[open] > summary::before { content: "\25BE"; }
+section > details > summary:hover h2 { color: var(--accent-ink); }
+.asof { margin-left: auto; font: 500 11px var(--f-mono); color: var(--faint); border: 1px solid var(--line); border-radius: 999px; padding: 2px 8px; white-space: nowrap; }
+.body { padding-top: 14px; }
+.body > :first-child { margin-top: 0; }
+
+/* facts strip */
+.facts { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; margin: 14px 0; }
+.facts div { background: var(--surface); padding: 10px 12px; min-width: 0; }
+.facts b { display: block; font: 700 22px/1.1 var(--f-display); letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.facts span { font-size: 12.5px; color: var(--muted); display: block; line-height: 1.35; }
+@media (max-width: 760px) { .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); } .facts div:last-child:nth-child(odd) { grid-column: 1 / -1; } }
+
+/* chips: severity and status share one component */
+.sev { display: inline-flex; align-items: center; gap: 5px; font: 500 11px/1 var(--f-mono); letter-spacing: 0.03em; padding: 4px 7px; border-radius: 999px; white-space: nowrap; vertical-align: 1px; }
+.sev::before { font-size: 9px; }
+.sev.crit { color: var(--crit); background: var(--crit-bg); } .sev.crit::before { content: "\25B2"; }
+.sev.high { color: var(--high); background: var(--high-bg); } .sev.high::before { content: "\25C6"; }
+.sev.med, .sev.requested { color: var(--med); background: var(--med-bg); } .sev.med::before { content: "\25CF"; }
+.sev.good, .sev.granted { color: var(--good); background: var(--good-bg); } .sev.good::before, .sev.granted::before { content: "\2714"; }
+.sev.requested::before { content: "\25D4"; }
+.sev.found, .sev.sys { color: var(--accent-ink); background: var(--accent-soft); } .sev.found::before { content: "\25C7"; } .sev.sys::before { content: "\2726"; }
+.sev.low, .sev.n { color: var(--muted); background: var(--sunk); } .sev.low::before { content: "\25CB"; }
+.sev.unknown { color: var(--muted); background: transparent; border: 1px dashed var(--line-strong); padding: 3px 6px; } .sev.unknown::before { content: "?"; font-size: 10px; }
+
+/* summary */
+.verdict-line { font: 500 clamp(17px, 2vw, 20px)/1.4 var(--f-display); max-width: 70ch; margin: 0 0 4px; text-wrap: pretty; }
+.sumgrid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: 22px; align-items: start; }
+@media (max-width: 960px) { .sumgrid { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+.sumgrid h3 { margin: 4px 0 8px; font: 500 11px var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.risks { list-style: none; padding: 0; margin: 0; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); overflow: hidden; }
+.risks li { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 10px; padding: 8px 12px; border-top: 1px solid var(--line); align-items: baseline; font-size: 14px; line-height: 1.4; }
+.risks li:first-child { border-top: 0; }
+.risks .sev { justify-self: start; }
+@media (max-width: 520px) { .risks li { grid-template-columns: minmax(0, 1fr); gap: 4px; } }
+ol.steps { margin: 0 0 12px; padding-left: 22px; max-width: 82ch; }
+ol.steps li { margin: 3px 0; }
+ol.steps li::marker { font: 500 12px var(--f-mono); color: var(--faint); }
+.sumgrid ol.steps { font-size: 14px; line-height: 1.4; }
+.sumgrid ol.steps li { margin: 0 0 8px; }
+
+/* tables */
+.tw { overflow-x: auto; margin: 10px 0 14px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 13.5px; }
+th, td { text-align: left; padding: 8px 12px; border-top: 1px solid var(--line); vertical-align: top; }
+thead th { border-top: 0; font: 500 11px var(--f-mono); letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); background: var(--sunk); white-space: nowrap; }
+td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+td .mono, td code { white-space: nowrap; }
+td.mono { white-space: nowrap; }
+td.cmd code { white-space: normal; word-break: break-all; font-size: 12px; }
+td.cmd { min-width: 260px; }
+td.spark-c { padding-block: 4px; vertical-align: middle; }
+table.wide { min-width: 760px; }
+table.rank { counter-reset: r; min-width: 760px; }
+table.rank tbody td:first-child::before { counter-increment: r; content: counter(r) "."; font: 500 12px var(--f-mono); color: var(--faint); margin-right: 6px; }
+.dg { color: var(--good); } .db { color: var(--high); }
+.spark { display: block; stroke: currentColor; color: var(--muted); fill: none; stroke-width: 1.5; stroke-linejoin: round; stroke-linecap: round; overflow: visible; }
+.spark circle { fill: currentColor; stroke: var(--surface); stroke-width: 1.5; }
+.spark.good { color: var(--good); } .spark.bad { color: var(--high); }
+
+/* figures */
+figure { margin: 16px 0 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; }
+figure h3:first-child { margin-top: 0; }
+figure .scroll { overflow-x: auto; }
+figure svg { display: block; width: 100%; height: auto; color: var(--fg); }
+figure .scroll svg { min-width: 680px; }
+figcaption { font-size: 13px; color: var(--muted); margin-top: 10px; max-width: 85ch; }
+figcaption b { color: var(--fg); }
+pre.mermaid { background: transparent; margin: 0; }
+pre.mermaid:not([data-processed]) { font: 12px/1.5 var(--f-mono); color: var(--muted); overflow-x: auto; white-space: pre; }
+pre.mermaid[data-processed] { overflow-x: auto; font-family: var(--f-body); }
+pre.mermaid svg { max-width: none; height: auto; }
+
+/* svg diagram classes */
+.d-box { fill: var(--surface); stroke: var(--line-strong); stroke-width: 1.2; }
+.d-box.sunk { fill: var(--sunk); stroke: var(--line); }
+.d-box.acc { stroke: var(--accent); stroke-width: 1.8; }
+.d-box.accfill { fill: var(--accent-soft); stroke: var(--accent); }
+.d-box.dash { stroke-dasharray: 5 4; }
+.d-box.ghost { fill: transparent; stroke-dasharray: 3 4; }
+.d-t { fill: var(--fg); font: 600 13px var(--f-body); }
+.d-s { fill: var(--muted); font: 400 11.5px var(--f-body); }
+.d-m { fill: var(--muted); font: 400 11px var(--f-mono); }
+.d-h { fill: var(--fg); font: 700 14px var(--f-display); }
+.d-l { fill: var(--muted); font: 500 11px var(--f-mono); }
+.d-l.acc, .d-t.acc { fill: var(--accent-ink); }
+.d-ghost { fill: var(--faint); font: 400 11.5px var(--f-body); }
+.d-line { stroke: var(--muted); stroke-width: 1.4; fill: none; }
+.d-line.acc { stroke: var(--accent); stroke-width: 1.8; }
+.d-line.dash { stroke-dasharray: 5 4; }
+.d-axis { stroke: var(--line-strong); stroke-width: 1.2; }
+.d-grid { stroke: var(--line); stroke-width: 1; }
+.d-band { fill: var(--accent-soft); stroke: var(--accent); stroke-width: 1; }
+.d-band.ev { fill: var(--high-bg); stroke: var(--high); }
+.d-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+.d-dot.done { fill: var(--fg); }
+.d-head { fill: var(--muted); } .d-head.acc { fill: var(--accent); }
+.d-zone { fill: var(--crit-bg); opacity: .75; }
+.d-gap { stroke: var(--crit); stroke-width: 3; stroke-linecap: round; }
+.d-gaplab { fill: var(--crit); font: 600 12px var(--f-mono); }
+.d-ring { fill: none; stroke: var(--accent); stroke-width: 2; stroke-dasharray: 3 3; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 12.5px; color: var(--muted); margin: 0 0 8px; }
+.legend i { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -2px; margin-right: 6px; }
+.legend i.line { height: 0; border-top: 2px solid var(--muted); border-radius: 0; width: 20px; vertical-align: 3px; }
+.legend i.line.dash { border-top-style: dashed; }
+.legend i.line.acc { border-color: var(--accent); }
+
+/* bar charts (html) and share bars: colour classes shared (default s1, b2 s2, b3 muted, b4 s3, high, crit) */
+.bars { display: grid; grid-template-columns: max-content minmax(0, 1fr) max-content; gap: 6px 12px; align-items: center; font-size: 13px; }
+.bars .lab { font-family: var(--f-mono); font-size: 12px; color: var(--fg); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 46vw; }
+.bars .grp { grid-column: 1 / -1; font: 500 11px var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase; color: var(--faint); margin-top: 8px; }
+.bars .track { height: 12px; position: relative; }
+.bars .bar { position: absolute; inset: 0 auto 0 0; border-radius: 0 4px 4px 0; min-width: 2px; }
+.bars .val { font-variant-numeric: tabular-nums; color: var(--muted); font-size: 12.5px; text-align: right; }
+.bars .val em { font-style: normal; color: var(--faint); margin-left: 6px; }
+.bar, .seg { background: var(--s1); }
+.bar.b2, .seg.b2 { background: var(--s2); } .bar.b3, .seg.b3 { background: var(--s-muted); } .bar.b4, .seg.b4 { background: var(--s3); }
+.bar.high, .seg.high { background: var(--high); } .bar.crit, .seg.crit { background: var(--crit); }
+.share { display: flex; height: 26px; border-radius: 6px; overflow: hidden; gap: 2px; margin: 8px 0 6px; }
+.share .seg { display: flex; align-items: center; padding: 0 8px; color: #fff; font: 500 12px var(--f-mono); white-space: nowrap; overflow: hidden; min-width: 3px; }
+.share .seg.b2, .share .seg.b4 { color: #0e1116; } .share .seg.b3 { background: var(--faint); }
+.legend i.seg.b3 { background: var(--faint); }
+
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 14px; }
+.grid2 > * { min-width: 0; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; }
+.card h3 { margin-top: 0; }
+.card ul.t:last-child { margin-bottom: 0; }
+.signals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; margin: 10px 0 14px; }
+.signals div { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; }
+.signals b { display: block; font: 600 20px/1.2 var(--f-body); font-variant-numeric: tabular-nums; }
+.signals span { font-size: 12.5px; color: var(--muted); }
+pre.tree { font: 12.5px/1.6 var(--f-mono); background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; overflow-x: auto; margin: 10px 0 14px; }
+pre.cmd { font: 12.5px/1.65 var(--f-mono); background: var(--sunk); border-radius: 8px; padding: 12px 14px; overflow-x: auto; margin: 8px 0 12px; }
+pre.cmd .c, pre.tree .c { color: var(--faint); }
+
+/* treemap */
+.crumbs { display: flex; flex-wrap: wrap; gap: 2px 4px; align-items: center; font: 500 12px var(--f-mono); color: var(--muted); margin-bottom: 8px; }
+.crumbs button { font: inherit; color: var(--accent-ink); background: none; border: 0; padding: 2px 4px; border-radius: 4px; cursor: pointer; }
+.crumbs button:hover { background: var(--accent-soft); }
+.crumbs button[disabled] { color: var(--fg); cursor: default; background: none; }
+.tm { position: relative; height: clamp(300px, 46vw, 480px); background: var(--bg); border-radius: 8px; overflow: hidden; }
+.tm > * { position: absolute; overflow: hidden; border: 0; border-radius: 3px; padding: 4px 6px; margin: 0; text-align: left; font: 500 11.5px/1.3 var(--f-mono); color: #11151c; background: var(--t0); outline: 1px solid var(--bg); outline-offset: -1px; }
+.tm > button { cursor: zoom-in; display: flex; flex-direction: column; justify-content: flex-start; align-items: flex-start; }
+.tm > .fr { background: var(--sunk); color: var(--fg); outline: 1px solid var(--line-strong); outline-offset: -1px; border-radius: 4px; }
+.tm > button:hover, .tm > div:hover { filter: brightness(1.08); }
+.tm > .dk { color: #fff; }
+.tm > .fr { flex-direction: row; align-items: flex-start; gap: 8px; white-space: nowrap; }
+.tm > .fr i { display: inline; }
+.tm i { display: block; font-style: normal; opacity: .75; font-size: 10.5px; }
+.tm .t0 { background: var(--t0); } .tm .t1 { background: var(--t1); } .tm .t2 { background: var(--t2); } .tm .t3 { background: var(--t3); }
+.tm .t4 { background: var(--t4); } .tm .t5 { background: var(--t5); } .tm .t6 { background: var(--t6); }
+.ramp { display: flex; align-items: center; gap: 8px; font: 500 11px var(--f-mono); color: var(--muted); margin-top: 8px; flex-wrap: wrap; }
+.ramp span.sw { display: inline-flex; }
+.ramp span.sw i { width: 22px; height: 12px; }
+.ramp span.sw i:first-child { border-radius: 3px 0 0 3px; } .ramp span.sw i:last-child { border-radius: 0 3px 3px 0; }
+
+/* quality: two-axis figure */
+.axes { display: grid; grid-template-columns: minmax(0, 420px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 760px) { .axes { grid-template-columns: minmax(0, 1fr); } }
+.lvls { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 14px; font-size: 13px; }
+.lvls h4 { margin: 0 0 6px; font: 500 11px var(--f-mono); letter-spacing: .06em; text-transform: uppercase; color: var(--muted); }
+.lvls ol { margin: 0; padding-left: 22px; color: var(--muted); }
+.lvls li { margin: 2px 0; } .lvls li::marker { font: 500 11px var(--f-mono); color: var(--faint); }
+.lvls li.on { color: var(--fg); font-weight: 600; }
+
+/* glossary */
+dl.gl { display: grid; grid-template-columns: minmax(120px, 220px) minmax(0, 1fr); gap: 0 20px; max-width: 900px; margin: 0; }
+dl.gl dt { font-weight: 600; padding: 8px 0; border-top: 1px solid var(--line); scroll-margin-top: 12px; }
+dl.gl dd { margin: 0; padding: 8px 0; border-top: 1px solid var(--line); color: var(--muted); }
+dl.gl dt:first-of-type, dl.gl dt:first-of-type + dd { border-top: 0; }
+dl.gl dt:target { background: var(--accent-soft); }
+@media (max-width: 560px) { dl.gl { grid-template-columns: minmax(0, 1fr); } dl.gl dt { padding-bottom: 0; } dl.gl dd { border-top: 0; padding-top: 2px; } }
+.gn { font: 500 10px var(--f-mono); color: var(--accent-ink); background: var(--accent-soft); border-radius: 999px; padding: 1px 6px; margin-left: 6px; vertical-align: 1px; }
+sup.g { font: 500 10px/1 var(--f-mono); margin-left: 1px; }
+sup.g a { text-decoration: none; padding: 0 2px; border-radius: 3px; background: var(--accent-soft); color: var(--accent-ink); }
+sup.g a:hover { background: var(--accent); color: var(--bg); }
+
+#tip { position: fixed; z-index: 50; pointer-events: none; background: var(--fg); color: var(--bg); font: 500 12px/1.4 var(--f-body); padding: 6px 9px; border-radius: 6px; max-width: 300px; white-space: pre-line; overflow-wrap: anywhere; }
+.pending, .stub { border: 1px dashed var(--line-strong); border-radius: 10px; padding: 14px; color: var(--muted); }
+footer { margin-top: 48px; font-size: 12.5px; color: var(--faint); }
+footer h3 { font: 500 11px var(--f-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); margin: 0 0 6px; }
+ul.log { list-style: none; margin: 0 0 14px; padding: 0; max-width: 90ch; }
+ul.log li { display: grid; grid-template-columns: 90px minmax(0, 1fr); gap: 10px; padding: 3px 0; }
+ul.log time { font: 500 11.5px var(--f-mono); color: var(--muted); }
+@media print { nav.toc, #theme { display: none; } .wrap { display: block; } }
+</style>
+</head>
+<body>
+<div id="tip" role="tooltip" hidden></div>
+
+<!-- ===== DATA BLOCKS. The compiling agent edits these, not the markup. Shapes: references/report-components.md ===== -->
+
+<!-- DUMMY: replace -->
+<script type="application/json" id="meta-data">
+{ "project": "Example Project", "repo": "org/example", "ref": "main @ 1a2b3c4", "surveyed": "2026-11-10", "asOf": "2026-11-10" }
+</script>
+
+<!-- DUMMY: replace. verdict <= 2 sentences; exactly 5 facts; exactly 5 risks (sev: crit|high|med|good); exactly 3 actions. Text fields accept inline HTML (code, b, a, sup.g). -->
+<script type="application/json" id="summary-data">
+{
+  "verdict": "One or two sentences on what breaks first on a bad day and who can fix it. Name the single biggest exposure.",
+  "facts": [
+    { "v": "48k", "l": "lines of code in <code>src/</code>" },
+    { "v": "1", "l": "people who can merge and deploy" },
+    { "v": "0", "l": "CI workflows" },
+    { "v": "312", "l": "tests, all passing" },
+    { "v": "$100", "l": "per month hosting" }
+  ],
+  "risks": [
+    { "sev": "crit", "t": "<b>Risk title.</b> One line on what happens and why it matters." },
+    { "sev": "high", "t": "<b>Risk title.</b> One line." },
+    { "sev": "high", "t": "<b>Risk title.</b> One line." },
+    { "sev": "med", "t": "<b>Risk title.</b> One line." },
+    { "sev": "med", "t": "<b>Risk title.</b> One line." }
+  ],
+  "actions": [
+    "<b>Do this first.</b> Verb-led, one line, links to <a href=\"#plan\">the plan</a>.",
+    "<b>Then this.</b> One line.",
+    "<b>Then this.</b> One line."
+  ]
+}
+</script>
+
+<!-- DUMMY: replace. value: number or string. first: value at the first snapshot (null = this is the first). better: up|down|none. trend: array, last point = current. -->
+<script type="application/json" id="scoreboard-data">
+{ "rows": [
+  { "metric": "Source lines (non-test)", "value": 48200, "first": 41000, "better": "none", "trend": [41000, 43500, 45100, 48200], "how": "tokei src -o json | jq .Total.code", "asOf": "2026-11-10" },
+  { "metric": "Tests", "value": 312, "first": 240, "better": "up", "trend": [240, 262, 290, 312], "how": "pnpm test --reporter=json | jq .numTotalTests", "asOf": "2026-11-10" },
+  { "metric": "Type errors", "value": 14, "first": 31, "better": "down", "trend": [31, 27, 20, 14], "how": "tsc --noEmit | grep -c 'error TS'", "asOf": "2026-11-10" },
+  { "metric": "Lint warnings", "value": 540, "first": 540, "better": "down", "trend": [540, 540, 540], "how": "pnpm lint 2>&1 | grep -c warning", "asOf": "2026-11-10" },
+  { "metric": "Dependencies with advisories", "value": 11, "first": 9, "better": "down", "trend": [9, 9, 10, 11], "how": "pnpm audit --json | jq .metadata.vulnerabilities", "asOf": "2026-11-10" },
+  { "metric": "Production build", "value": "passes", "first": null, "better": "none", "trend": [], "how": "pnpm build; echo $?", "asOf": "2026-11-10" }
+] }
+</script>
+
+<!-- DUMMY: replace. Root {name, churnLabel?, children}; directories {name, children}; leaves {name, path, loc, churn, complexity, lang}. -->
+<script type="application/json" id="treemap-data">
+{ "name": "example-repo", "churnLabel": "commits touching the file, last 12 months", "children": [
+  { "name": "src", "children": [
+    { "name": "api", "children": [
+      { "name": "routes.ts", "path": "src/api/routes.ts", "loc": 2400, "churn": 88, "complexity": 31, "lang": "ts" },
+      { "name": "orders.ts", "path": "src/api/orders.ts", "loc": 1800, "churn": 120, "complexity": 38, "lang": "ts" },
+      { "name": "users.ts", "path": "src/api/users.ts", "loc": 1100, "churn": 40, "complexity": 14, "lang": "ts" },
+      { "name": "auth.ts", "path": "src/api/auth.ts", "loc": 900, "churn": 22, "complexity": 9, "lang": "ts" },
+      { "name": "middleware.ts", "path": "src/api/middleware.ts", "loc": 300, "churn": 5, "complexity": 3, "lang": "ts" } ] },
+    { "name": "ui", "children": [
+      { "name": "Dashboard.tsx", "path": "src/ui/Dashboard.tsx", "loc": 3200, "churn": 150, "complexity": 45, "lang": "tsx" },
+      { "name": "Form.tsx", "path": "src/ui/Form.tsx", "loc": 2100, "churn": 95, "complexity": 33, "lang": "tsx" },
+      { "name": "Table.tsx", "path": "src/ui/Table.tsx", "loc": 1500, "churn": 60, "complexity": 20, "lang": "tsx" },
+      { "name": "Chart.tsx", "path": "src/ui/Chart.tsx", "loc": 900, "churn": 30, "complexity": 12, "lang": "tsx" },
+      { "name": "icons.tsx", "path": "src/ui/icons.tsx", "loc": 600, "churn": 3, "complexity": 2, "lang": "tsx" },
+      { "name": "hooks", "children": [
+        { "name": "useData.ts", "path": "src/ui/hooks/useData.ts", "loc": 400, "churn": 25, "complexity": 8, "lang": "ts" },
+        { "name": "useAuth.ts", "path": "src/ui/hooks/useAuth.ts", "loc": 250, "churn": 18, "complexity": 6, "lang": "ts" } ] } ] },
+    { "name": "lib", "children": [
+      { "name": "db.ts", "path": "src/lib/db.ts", "loc": 1300, "churn": 70, "complexity": 22, "lang": "ts" },
+      { "name": "queue.ts", "path": "src/lib/queue.ts", "loc": 800, "churn": 35, "complexity": 15, "lang": "ts" },
+      { "name": "cache.ts", "path": "src/lib/cache.ts", "loc": 500, "churn": 12, "complexity": 7, "lang": "ts" },
+      { "name": "util.ts", "path": "src/lib/util.ts", "loc": 450, "churn": 9, "complexity": 4, "lang": "ts" } ] } ] },
+  { "name": "tests", "children": [
+    { "name": "api.test.ts", "path": "tests/api.test.ts", "loc": 1600, "churn": 30, "complexity": 5, "lang": "ts" },
+    { "name": "ui.test.ts", "path": "tests/ui.test.ts", "loc": 700, "churn": 12, "complexity": 3, "lang": "ts" } ] },
+  { "name": "scripts", "children": [
+    { "name": "seed.ts", "path": "scripts/seed.ts", "loc": 900, "churn": 2, "complexity": 5, "lang": "ts" },
+    { "name": "deploy.sh", "path": "scripts/deploy.sh", "loc": 200, "churn": 14, "complexity": 6, "lang": "sh" } ] },
+  { "name": "docs", "children": [
+    { "name": "README.md", "path": "docs/README.md", "loc": 300, "churn": 4, "complexity": 0, "lang": "md" } ] }
+] }
+</script>
+
+<!-- DUMMY: replace. One object per chart on the page. series: 1-4 entries, stacked bottom-up; c = s1|s2|s3|muted (default by order). partial: {"YYYY-MM": "note"} marks an incomplete month. -->
+<script type="application/json" id="commits-data">
+{ "id": "commits", "unit": "commits",
+  "months": ["2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11"],
+  "series": [
+    { "name": "Human only", "values": [40, 52, 61, 48, 55, 60, 22, 35, 44, 38, 12] },
+    { "name": "Agent co-authored", "values": [0, 0, 0, 2, 5, 9, 4, 30, 71, 140, 35], "c": "s2" } ],
+  "partial": { "2026-11": "10 days" } }
+</script>
+
+<!-- DUMMY: replace. Keyed by the id of the container element. kind "bars" (default): rows {l, v, c, note} or {group}. kind "share": rows {l, v, c, note} drawn as one split bar. c: "" s1 | b2 | b3 muted | b4 | high | crit. -->
+<script type="application/json" id="bars-data">
+{
+  "loc": { "unit": "lines", "rows": [
+    { "group": "Application" },
+    { "l": "src/ui", "v": 22100, "note": "46% of src" },
+    { "l": "src/api", "v": 9400 },
+    { "l": "src/lib", "v": 6100 },
+    { "group": "Other" },
+    { "l": "tests", "v": 2300, "c": "b3" },
+    { "l": "scripts", "v": 1100, "c": "b3" } ] },
+  "authors": { "kind": "share", "unit": "commits", "rows": [
+    { "l": "Author A", "v": 1740, "note": "last commit today" },
+    { "l": "Author B", "v": 95, "c": "b2", "note": "last commit 5 months ago" },
+    { "l": "Author C", "v": 22, "c": "b4" } ] },
+  "owners": { "unit": "files", "rows": [
+    { "l": "files with one author", "v": 610, "c": "high" },
+    { "l": "files with two authors", "v": 180 },
+    { "l": "files with three or more", "v": 60, "c": "b4" } ] }
+}
+</script>
+
+<!-- DUMMY: replace. level 0-5 autonomy (what agents may do unattended), level 1-5 harness (checks that make that safe). Level names are lists shown beside the plot. target optional. -->
+<script type="application/json" id="quality-data">
+{ "autonomy": { "level": 3, "names": ["No AI", "Autocomplete", "Supervised agent", "Agent opens PRs", "Agent merges behind gates", "Unattended, self-healing"] },
+  "harness":  { "level": 1, "names": ["Rules in prose only", "Local checks agents can run", "CI gates every PR", "Review automation and branch protection", "Sandboxed runs, observability, auto-rollback"] },
+  "target": { "autonomy": 3, "harness": 3 } }
+</script>
+
+<div class="wrap">
+<nav class="toc" aria-label="Sections">
+  <div class="brand" id="brand">Baseline</div>
+  <ol>
+    <li><a href="#what">What this is</a></li>
+    <li><a href="#summary">Summary</a></li>
+    <li><a href="#scoreboard">Scoreboard</a></li>
+    <li><a href="#how">How it works</a></li>
+    <li><a href="#quality">Quality &amp; readiness</a></li>
+    <li><a href="#delivery">Delivery &amp; team</a></li>
+    <li><a href="#production">Production</a></li>
+    <li><a href="#plan">Plan</a></li>
+    <li><a href="#sources">Sources &amp; gaps</a></li>
+    <li><a href="#glossary">Glossary</a></li>
+  </ol>
+  <button id="theme" type="button" aria-label="Colour theme">theme: auto</button>
+</nav>
+
+<main>
+<header class="top">
+  <div class="eyebrow" id="eyebrow"></div>
+  <h1 id="h1">Codebase Baseline</h1>
+</header>
+
+<!-- 1 ============================== what -->
+<section id="what" data-asof="2026-11-10">
+<details open><summary><h2>What this is</h2></summary><div class="body">
+  <!-- PLACEHOLDER: one paragraph. What it does, for whom, who owns it, how big, how old. Plain words, no jargon without a glossary sup. -->
+  <!-- DUMMY: replace -->
+  <p>Example Project is a web service that does one thing for one group of users. Written in one language on one framework, about three years old, maintained by two people. A bus factor<sup class="g"><a href="#g-bus-factor">?</a></sup> of one on the deploy path.</p>
+  <figure>
+    <!-- PLACEHOLDER: hand-written inline SVG system map (viewBox ~960 wide). Use the .d-* classes: d-box, d-t, d-s, d-m, d-l, d-line (+acc, dash), markers m1/m1a. Show clients, the app, data stores, third parties; label every arrow. Keep it under ~15 boxes. Give the svg role="img" and an aria-label that states the flow in words. -->
+    <!-- DUMMY: replace -->
+    <div class="legend"><span><i class="line"></i>request / write</span><span><i class="line dash acc"></i>live loop</span></div>
+    <div class="scroll">
+    <svg viewBox="0 0 960 200" role="img" aria-label="System map: browsers call the app server over HTTPS; the app server reads and writes a database and publishes jobs to a queue that a worker consumes.">
+      <defs>
+        <marker id="m1" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head"/></marker>
+        <marker id="m1a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="d-head acc"/></marker>
+      </defs>
+      <rect class="d-box acc" x="20" y="60" width="170" height="70" rx="8"/>
+      <text class="d-t" x="34" y="88">Browsers</text><text class="d-s" x="34" y="106">users, no install</text>
+      <rect class="d-box sunk" x="290" y="30" width="300" height="130" rx="12"/>
+      <text class="d-h" x="306" y="54">App server</text>
+      <rect class="d-box" x="306" y="68" width="268" height="34" rx="6"/><text class="d-s" x="318" y="89">HTTP routes · 30 handlers</text>
+      <rect class="d-box" x="306" y="110" width="268" height="34" rx="6"/><text class="d-s" x="318" y="131">domain logic · <tspan class="d-m">src/lib</tspan></text>
+      <rect class="d-box" x="690" y="30" width="250" height="60" rx="8"/>
+      <text class="d-t" x="704" y="56">Database</text><text class="d-s" x="704" y="74">Postgres · the source of truth</text>
+      <rect class="d-box dash" x="690" y="110" width="250" height="60" rx="8"/>
+      <text class="d-t" x="704" y="136">Queue + worker</text><text class="d-s" x="704" y="154">email, exports · best effort</text>
+      <line class="d-line acc" x1="190" y1="95" x2="288" y2="95" marker-end="url(#m1a)"/><text class="d-l" x="212" y="88">HTTPS</text>
+      <line class="d-line" x1="590" y1="60" x2="688" y2="60" marker-end="url(#m1)"/><text class="d-l" x="604" y="53">SQL</text>
+      <line class="d-line dash" x1="590" y1="140" x2="688" y2="140" marker-end="url(#m1)"/><text class="d-l" x="604" y="133">enqueue</text>
+    </svg>
+    </div>
+    <figcaption><b>Accent = the path users take.</b> One sentence on what the reader should notice.</figcaption>
+  </figure>
+</div></details>
+</section>
+
+<!-- 2 ============================== summary -->
+<section id="summary" data-asof="2026-11-10">
+<details open><summary><h2>Summary: a bad day</h2></summary><div class="body">
+  <!-- PLACEHOLDER: filled from #summary-data. Do not add markup here; the section must fit one laptop screen. -->
+  <div id="summary-body"></div>
+</div></details>
+</section>
+
+<!-- 3 ============================== scoreboard -->
+<section id="scoreboard" data-asof="2026-11-10">
+<details><summary><h2>Baseline scoreboard</h2></summary><div class="body">
+  <p class="sub"><!-- PLACEHOLDER: one line: snapshot number, what "first" refers to (date + ref), how to re-run (script path). --><span id="sb-note">Snapshot 1 of N. Delta is against the first snapshot.</span></p>
+  <!-- PLACEHOLDER: rows come from #scoreboard-data; do not edit the tbody. -->
+  <div class="tw"><table class="wide">
+    <thead><tr><th>Metric</th><th class="n">Value</th><th class="n">Delta vs first</th><th>Trend</th><th>How measured</th><th>As of</th></tr></thead>
+    <tbody id="scoreboard-body"></tbody>
+  </table></div>
+</div></details>
+</section>
+
+<!-- 4 ============================== how -->
+<section id="how" data-asof="2026-11-10">
+<details><summary><h2>How it works</h2></summary><div class="body">
+  <h3 id="how-repo">Repo map</h3>
+  <figure>
+    <!-- PLACEHOLDER: treemap filled from #treemap-data (area = lines, colour = churn). Edit only the caption. -->
+    <div class="crumbs" id="tm-crumbs"></div>
+    <div class="tm" id="treemap" aria-label="Treemap of the repository"></div>
+    <div class="ramp" id="tm-ramp"></div>
+    <figcaption><b>Area is lines of code, colour is churn</b><sup class="g"><a href="#g-churn">?</a></sup>. Click a directory to zoom in. One line on what stands out (biggest hot spot, dead weight).</figcaption>
+  </figure>
+  <!-- PLACEHOLDER: optional bars figure, e.g. size by area: <div class="bars" id="loc"></div> with data under "loc" in #bars-data. -->
+  <!-- DUMMY: replace -->
+  <figure>
+    <h3>Lines by area</h3>
+    <div class="bars" id="loc"></div>
+    <figcaption>What the proportions say about where the work lives.</figcaption>
+  </figure>
+
+  <h3 id="how-flows">Key flows</h3>
+  <!-- PLACEHOLDER: 2-4 mermaid sequence diagrams of the flows that matter (the money path, the write path, a background job). One figure each, caption states the failure mode. Escape < as &lt; inside the pre. -->
+  <!-- DUMMY: replace -->
+  <figure>
+<pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant A as App server
+  participant D as Database
+  participant Q as Queue
+  U->>A: POST /orders
+  A->>D: insert order (one transaction)
+  A->>Q: enqueue confirmation email
+  A-->>U: 201 Created
+  Q-->>U: email, best effort
+</pre>
+    <figcaption><b>Placing an order.</b> The database write is the commit point; the email can fail without losing the order.</figcaption>
+  </figure>
+
+  <h3 id="how-data">Data</h3>
+  <!-- PLACEHOLDER: stores, size, the 5-10 entities that matter (mermaid erDiagram), migrations approach, where the schema is the truth. -->
+  <!-- DUMMY: replace -->
+  <figure>
+<pre class="mermaid">
+erDiagram
+  customers ||--o{ orders : places
+  orders ||--|{ order_items : contains
+  products ||--o{ order_items : "sold as"
+</pre>
+    <figcaption>Core entities only. Source of truth: <code>prisma/schema.prisma</code>.</figcaption>
+  </figure>
+
+  <h3 id="how-auth">Auth</h3>
+  <!-- PLACEHOLDER: who can do what, where identity is checked, what is public. Use sev chips for the weak spots. -->
+  <!-- DUMMY: replace -->
+  <ul class="t">
+    <li>Sessions are signed cookies; identity is read in each handler, not in middleware.</li>
+    <li><span class="sev high">high</span> No rate limit on the login route.</li>
+    <li><span class="sev good">good</span> Passwords hashed with a modern algorithm.</li>
+  </ul>
+
+  <h3 id="how-start">Getting started</h3>
+  <!-- PLACEHOLDER: only commands that actually ran, in order, with the result. Mark what failed and the fix. -->
+  <!-- DUMMY: replace -->
+  <pre class="cmd">pnpm install            <span class="c"># 41 s, worked</span>
+pnpm exec tsc --noEmit  <span class="c"># 14 errors, same as CI-less baseline</span>
+pnpm test               <span class="c"># 312 passed in 9 s</span>
+pnpm dev                <span class="c"># needs DATABASE_URL; failed without it, worked with a local container</span></pre>
+</div></details>
+</section>
+
+<!-- 5 ============================== quality -->
+<section id="quality" data-asof="2026-11-10">
+<details><summary><h2>Quality &amp; factory readiness</h2></summary><div class="body">
+  <p class="sub"><!-- PLACEHOLDER: one line: how autonomy and harness levels were judged. -->Autonomy<sup class="g"><a href="#g-autonomy-level">?</a></sup> is what agents may do unattended; harness<sup class="g"><a href="#g-harness-level">?</a></sup> is what catches their mistakes.</p>
+  <figure>
+    <!-- PLACEHOLDER: filled from #quality-data. Edit only the caption. -->
+    <div class="axes" id="axes"></div>
+    <figcaption><b>The red gap is the exposure.</b> One sentence: what closes it (see plan).</figcaption>
+  </figure>
+  <h3>Per-pillar checklist</h3>
+  <!-- PLACEHOLDER: one row per pillar; status chip good|med|high|crit; evidence = file, command or number; gap = what is missing. -->
+  <!-- DUMMY: replace -->
+  <div class="tw"><table class="wide">
+    <thead><tr><th>Pillar</th><th>Status</th><th>Evidence</th><th>Gap to next level</th></tr></thead>
+    <tbody>
+      <tr><td>Build and run from clean checkout</td><td><span class="sev good">good</span></td><td><code>pnpm install &amp;&amp; pnpm build</code> passes</td><td>Node version not pinned</td></tr>
+      <tr><td>Tests an agent can run</td><td><span class="sev med">medium</span></td><td>312 unit tests, no integration tests</td><td>Add one end-to-end path</td></tr>
+      <tr><td>CI gates</td><td><span class="sev crit">critical</span></td><td>No workflow files</td><td>Typecheck, lint, test on every PR</td></tr>
+      <tr><td>Review and branch protection</td><td><span class="sev high">high</span></td><td>Direct pushes to main allowed</td><td>Require one review, block force-push</td></tr>
+      <tr><td>Secrets and environments</td><td><span class="sev med">medium</span></td><td>Preview shares production keys</td><td>Scope keys per environment</td></tr>
+      <tr><td>Observability</td><td><span class="sev high">high</span></td><td>Errors logged, no alerts</td><td>Alert on error rate</td></tr>
+      <tr><td>Agent-facing docs</td><td><span class="sev good">good</span></td><td><code>AGENTS.md</code> with commands and rules</td><td>Rules not enforced by tooling</td></tr>
+    </tbody>
+  </table></div>
+</div></details>
+</section>
+
+<!-- 6 ============================== delivery -->
+<section id="delivery" data-asof="2026-11-10">
+<details><summary><h2>Delivery &amp; team</h2></summary><div class="body">
+  <!-- PLACEHOLDER: facts strip of delivery signals (commits, active authors in 90 days, release cadence, lead time). 3-5 tiles. -->
+  <!-- DUMMY: replace -->
+  <div class="signals">
+    <div><b>1,860</b><span>commits since first commit</span></div>
+    <div><b>1</b><span>bus factor</span></div>
+    <div><b>2</b><span>authors in the last 90 days</span></div>
+    <div><b>3.2 / day</b><span>deploys to production, 30-day mean</span></div>
+  </div>
+  <figure>
+    <!-- PLACEHOLDER: stacked monthly chart from #commits-data. Edit only the caption. -->
+    <div id="commits"></div>
+    <figcaption><b>Commits per month.</b> Say what the series are and what changed when. Mark partial months.</figcaption>
+  </figure>
+  <figure>
+    <h3>Who committed</h3>
+    <!-- PLACEHOLDER: share bar from "authors" in #bars-data -->
+    <div id="authors"></div>
+    <figcaption>Bus factor<sup class="g"><a href="#g-bus-factor">?</a></sup>: how many people hold the knowledge, the merge rights and the credentials.</figcaption>
+  </figure>
+  <figure>
+    <h3>File ownership</h3>
+    <div class="bars" id="owners"></div>
+  </figure>
+</div></details>
+</section>
+
+<!-- 7 ============================== production -->
+<section id="production" data-asof="2026-11-10">
+<details><summary><h2>How production behaves</h2></summary><div class="body">
+  <!-- PLACEHOLDER: only with read access to hosting, analytics, error tracking or logs. Otherwise replace this whole body with:
+       <p class="stub">No production access yet. See <a href="#sources">Sources &amp; gaps</a>.</p> -->
+  <!-- DUMMY: replace -->
+  <p class="sub">Read from the hosting dashboard on 2026-11-10; error tracking not covered.</p>
+  <div class="signals">
+    <div><b>90k</b><span>visitors in 12 months</span></div>
+    <div><b>2.7k</b><span>visitors on the peak day</span></div>
+    <div><b>97%</b><span>mobile</span></div>
+    <div><b>0</b><span>failed production deploys in 30 days</span></div>
+  </div>
+  <div class="tw"><table>
+    <thead><tr><th>Severity</th><th>Finding</th></tr></thead>
+    <tbody>
+      <tr><td><span class="sev high">high</span></td><td><b>Previews share production secrets.</b> Evidence in one line.</td></tr>
+      <tr><td><span class="sev med">medium</span></td><td>Alerting is off; the last 24 h of logs are all there is.</td></tr>
+      <tr><td><span class="sev good">good</span></td><td>Deploys are fast and have not failed in 30 days.</td></tr>
+    </tbody>
+  </table></div>
+  <div class="op"><p>Calibration: what the real load says about which risks matter now and which can wait.</p></div>
+</div></details>
+</section>
+
+<!-- 8 ============================== plan -->
+<section id="plan" data-asof="2026-11-10">
+<details><summary><h2>Plan, ranked by impact</h2></summary><div class="body">
+  <!-- PLACEHOLDER: one row per action, best first. Metric = a scoreboard row with its current value. impact/confidence/effort: <span class="sev n">high|med|low</span> (effort: S|M|L is fine). systemic? = <span class="sev sys">systemic</span> (changes the system so a class of problem stops) or <span class="sev n">one-off</span>. -->
+  <!-- DUMMY: replace -->
+  <div class="tw"><table class="rank">
+    <thead><tr><th>Action</th><th>Metric it moves (now)</th><th>Impact</th><th>Confidence</th><th>Effort</th><th>Systemic?</th></tr></thead>
+    <tbody>
+      <tr><td><b>Add CI</b> running typecheck, lint and tests on every PR.</td><td>CI workflows (0)</td><td><span class="sev n">high</span></td><td><span class="sev n">high</span></td><td><span class="sev n">S</span></td><td><span class="sev sys">systemic</span></td></tr>
+      <tr><td><b>Scope secrets per environment.</b></td><td>Shared secrets (9)</td><td><span class="sev n">high</span></td><td><span class="sev n">med</span></td><td><span class="sev n">S</span></td><td><span class="sev sys">systemic</span></td></tr>
+      <tr><td><b>Fix the 14 type errors.</b></td><td>Type errors (14)</td><td><span class="sev n">med</span></td><td><span class="sev n">high</span></td><td><span class="sev n">M</span></td><td><span class="sev n">one-off</span></td></tr>
+    </tbody>
+  </table></div>
+  <!-- PLACEHOLDER: 1-3 "My take" callouts: opinions, marked as such. Facts belong above. -->
+  <!-- DUMMY: replace -->
+  <div class="op"><p>The ranking puts the cheap systemic change first because every later fix is safer behind it.</p></div>
+</div></details>
+</section>
+
+<!-- 9 ============================== sources -->
+<section id="sources" data-asof="2026-11-10">
+<details><summary><h2>Sources &amp; gaps</h2></summary><div class="body">
+  <h3>Access register</h3>
+  <!-- PLACEHOLDER: one row per system. status: <span class="sev granted|requested|found|unknown">…</span>. Method = read-only recipe (command or dashboard path), never a credential. Last pulled = ISO date or "never". -->
+  <!-- DUMMY: replace -->
+  <div class="tw"><table class="wide">
+    <thead><tr><th>System</th><th>Status</th><th>Method (read-only)</th><th>Last pulled</th><th>What it yields</th></tr></thead>
+    <tbody>
+      <tr><td>Git repository</td><td><span class="sev granted">granted</span></td><td class="cmd"><code>git log --numstat --since=1.year</code></td><td>2026-11-10</td><td>History, authorship, churn</td></tr>
+      <tr><td>Hosting dashboard</td><td><span class="sev requested">requested</span></td><td class="cmd">Viewer seat, Analytics and Deployments tabs</td><td>never</td><td>Traffic, deploys, env scoping</td></tr>
+      <tr><td>Error tracking</td><td><span class="sev found">found-in-code</span></td><td class="cmd"><code>grep -rn Sentry src</code></td><td>2026-11-10</td><td>Only that it exists</td></tr>
+      <tr><td>Production database</td><td><span class="sev unknown">unknown</span></td><td class="cmd">Ask who holds credentials</td><td>never</td><td>Real data volume, slow queries</td></tr>
+    </tbody>
+  </table></div>
+  <h3>Not covered</h3>
+  <!-- PLACEHOLDER: what this baseline did not look at and why. One line each. -->
+  <ul class="t">
+    <li>Load behaviour under real traffic: no production metrics access.</li>
+    <li>Sibling repositories referenced by the code.</li>
+  </ul>
+  <h3>Questions for the people who know</h3>
+  <!-- PLACEHOLDER: concrete questions, each addressed to a role. A question whose answer would change the plan goes first. -->
+  <ol class="steps">
+    <li><b>Owner:</b> Was the signing secret rotated after the logging incident?</li>
+    <li><b>Ops:</b> Who else can deploy to production?</li>
+  </ol>
+</div></details>
+</section>
+
+<!-- 10 ============================== glossary -->
+<section id="glossary" data-asof="2026-11-10">
+<details><summary><h2>Glossary</h2></summary><div class="body">
+  <!-- PLACEHOLDER: one dt/dd per term. dt id = g-<slug>. The dd text is the tooltip shown for every <sup class="g"><a href="#g-slug">n</a></sup>; 1-2 plain sentences. Numbers are assigned by JS in order of first use. -->
+  <!-- DUMMY: replace -->
+  <dl class="gl">
+    <dt id="g-bus-factor">Bus factor</dt><dd>The number of people who would have to leave before nobody can maintain or deploy the system.</dd>
+    <dt id="g-churn">Churn</dt><dd>How often a file changes in the measured window. High churn in a large, complex file marks a likely source of bugs.</dd>
+    <dt id="g-autonomy-level">Autonomy level</dt><dd>How much agents may do without a person: 0 is none, 5 is unattended and self-healing.</dd>
+    <dt id="g-harness-level">Harness level</dt><dd>How well automated checks, review and rollback catch an agent's mistakes: 1 is rules in prose, 5 is sandboxed with auto-rollback.</dd>
+  </dl>
+</div></details>
+</section>
+
+<footer>
+  <h3>Changelog</h3>
+  <!-- PLACEHOLDER: newest first. One line per update: date and what changed (sections touched, snapshot number). -->
+  <!-- DUMMY: replace -->
+  <ul class="log">
+    <li><time datetime="2026-11-10">2026-11-10</time><span>First baseline. Scoreboard snapshot 1.</span></li>
+  </ul>
+  <p>Method and limits in one line: what was read, what was run, what was not touched.</p>
+</footer>
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js" integrity="sha384-rbtjAdnIQE/aQJGEgXrVUlMibdfTSa4PQju4HDhN3sR2PmaKFzhEafuePsl9H/9I" crossorigin="anonymous" defer></script>
+<script>
+(function () {
+  'use strict';
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var $$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
+  // Text in the data blocks may quote repo content (code, findings), so every string
+  // that contains markup is reduced to a small allowlist before it reaches innerHTML.
+  var OK_TAGS = { B: 1, I: 1, EM: 1, STRONG: 1, CODE: 1, A: 1, SUP: 1, SUB: 1, SPAN: 1, BR: 1, SMALL: 1, ABBR: 1, DFN: 1 };
+  function clean(node) {
+    Array.prototype.slice.call(node.childNodes).forEach(function (c) {
+      if (c.nodeType === 3) return;
+      if (c.nodeType !== 1 || !OK_TAGS[c.tagName]) { node.replaceChild(document.createTextNode(c.textContent), c); return; }
+      Array.prototype.slice.call(c.attributes).forEach(function (a) {
+        var n = a.name, v = a.value, keep = (n === 'class') || (n === 'title' && c.tagName === 'ABBR') ||
+          (n === 'href' && c.tagName === 'A' && /^(#|https:\/\/)/.test(v));
+        if (!keep) c.removeAttribute(n);
+      });
+      clean(c);
+    });
+  }
+  function safe(v) {
+    if (typeof v === 'string') {
+      if (v.indexOf('<') < 0) return v;
+      var d = new DOMParser().parseFromString('<body>' + v + '</body>', 'text/html').body;
+      clean(d); return d.innerHTML;
+    }
+    if (Array.isArray(v)) return v.map(safe);
+    if (v && typeof v === 'object') { Object.keys(v).forEach(function (k) { v[k] = safe(v[k]); }); return v; }
+    return v;
+  }
+  function J(id) { var e = document.getElementById(id); if (!e) return null; try { return safe(JSON.parse(e.textContent)); } catch (err) { console.error('Bad JSON in #' + id, err); return null; } }
+  function esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
+  function fmt(n) { return typeof n === 'number' ? n.toLocaleString('en-US', { maximumFractionDigits: 2 }) : String(n); }
+  var SEV = { crit: 'critical', high: 'high', med: 'medium', good: 'good', low: 'low' };
+  var MON = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
+  /* ---------- shared tooltip: any element with data-tip (multi-line with \n) ---------- */
+  var tip = $('#tip');
+  function showTip(text, x, y) {
+    tip.textContent = text; tip.hidden = false;
+    var r = tip.getBoundingClientRect();
+    if (x + r.width > innerWidth - 8) x = Math.max(8, x - r.width - 28);
+    if (y + r.height > innerHeight - 8) y = Math.max(8, y - r.height - 28);
+    tip.style.left = x + 'px'; tip.style.top = y + 'px';
+  }
+  function tipMove(e) {
+    var t = e.target.closest && e.target.closest('[data-tip]');
+    if (!t) { tip.hidden = true; return; }
+    showTip(t.getAttribute('data-tip'), e.clientX + 14, e.clientY + 14);
+  }
+  document.addEventListener('pointermove', tipMove);
+  document.addEventListener('pointerdown', tipMove);
+  document.addEventListener('pointerleave', function () { tip.hidden = true; });
+  document.addEventListener('scroll', function () { tip.hidden = true; }, true);
+  document.addEventListener('focusin', function (e) {
+    var t = e.target.closest && e.target.closest('[data-tip]'); if (!t) return;
+    var r = t.getBoundingClientRect(); showTip(t.getAttribute('data-tip'), r.left, r.bottom + 6);
+  });
+  document.addEventListener('focusout', function () { tip.hidden = true; });
+
+  /* ---------- bars(id, rows, unit, pre): rows {l, v, c, note} | {group} ---------- */
+  function bars(id, rows, unit, pre) {
+    pre = pre || '';
+    var el = document.getElementById(id); if (!el) return;
+    var max = Math.max.apply(null, rows.filter(function (r) { return !r.group; }).map(function (r) { return r.v; })) || 1;
+    var html = '';
+    rows.forEach(function (r) {
+      if (r.group) { html += '<div class="grp">' + esc(r.group) + '</div>'; return; }
+      var w = r.v === 0 ? 0 : Math.max(0.4, r.v / max * 100);
+      var tipText = r.l + ': ' + pre + fmt(r.v) + (unit ? ' ' + unit : '') + (r.note ? ' (' + r.note + ')' : '');
+      html += '<div class="lab" title="' + esc(r.l) + '">' + esc(r.l) + '</div>' +
+        '<div class="track" data-tip="' + esc(tipText) + '">' + (r.v ? '<div class="bar ' + esc(r.c || '') + '" style="width:' + w + '%"></div>' : '') + '</div>' +
+        '<div class="val">' + pre + fmt(r.v) + (r.note ? '<em>' + esc(r.note) + '</em>' : '') + '</div>';
+    });
+    el.innerHTML = html;
+  }
+  /* shareBar(id, rows, unit, pre): one split bar plus legend, rows {l, v, c, note} */
+  function shareBar(id, rows, unit, pre) {
+    pre = pre || '';
+    var el = document.getElementById(id); if (!el) return;
+    rows = rows.filter(function (r) { return r.v > 0; });
+    var tot = rows.reduce(function (s, r) { return s + r.v; }, 0) || 1;
+    var seg = rows.map(function (r) {
+      var p = r.v / tot * 100;
+      var t = r.l + ': ' + pre + fmt(r.v) + (unit ? ' ' + unit : '') + ' (' + p.toFixed(1) + '%)' + (r.note ? ', ' + r.note : '');
+      return '<div class="seg ' + esc(r.c || '') + '" style="flex:' + r.v + '" data-tip="' + esc(t) + '">' + (p >= 12 ? Math.round(p) + '%' : '') + '</div>';
+    }).join('');
+    var leg = rows.map(function (r) { return '<span><i class="seg ' + esc(r.c || '') + '"></i>' + esc(r.l) + ' ' + pre + fmt(r.v) + (r.note ? ' (' + esc(r.note) + ')' : '') + '</span>'; }).join('');
+    el.innerHTML = '<div class="share">' + seg + '</div><div class="legend">' + leg + '</div>';
+  }
+
+  /* ---------- stackedMonthly(id, months, series, opts): months 'YYYY-MM'; series [{name, values, c}] stacked bottom-up ---------- */
+  function stackedMonthly(id, months, series, opts) {
+    opts = opts || {};
+    var el = document.getElementById(id); if (!el) return;
+    var unit = opts.unit || '', partial = opts.partial || {};
+    var tot = months.map(function (m, i) { return series.reduce(function (s, x) { return s + (x.values[i] || 0); }, 0); });
+    var mx = Math.max.apply(null, tot) || 1, raw = mx / 4, e = Math.pow(10, Math.floor(Math.log10(raw))), f = raw / e;
+    var step = (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * e, top = Math.ceil(mx / step) * step;
+    var W = 960, H = 290, L = 40, R = 10, T = 30, B = 46, pw = W - L - R, ph = H - T - B, base = T + ph;
+    var slot = pw / months.length, bw = Math.min(26, slot * 0.6);
+    function col(x, i) { var c = x.c || 's' + (i + 1); return c === 'muted' ? 'var(--s-muted)' : 'var(--' + c + ')'; }
+    var leg = '<div class="legend">' + series.map(function (x, i) { return '<span><i style="background:' + col(x, i) + '"></i>' + esc(x.name) + '</span>'; }).join('') + '</div>';
+    var svg = '<div class="scroll"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc((opts.label || 'Stacked monthly chart') + ': ' + months[0] + ' to ' + months[months.length - 1] + '; peak ' + mx) + '">';
+    for (var g = 0; g <= top; g += step) {
+      var y = base - g / top * ph;
+      svg += '<line class="d-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text class="d-l" x="' + (L - 6) + '" y="' + (y + 4) + '" text-anchor="end">' + fmt(g) + '</text>';
+    }
+    function roundTop(x, y, w, h, r) { r = Math.min(r, h, w / 2); return 'M' + x + ',' + (y + h) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + w - r) + 'Q' + (x + w) + ',' + y + ' ' + (x + w) + ',' + (y + r) + 'V' + (y + h) + 'Z'; }
+    months.forEach(function (m, i) {
+      var x = L + i * slot + (slot - bw) / 2, acc = 0, last = -1, mo = +m.slice(5) - 1, label = MON[mo] + ' ' + m.slice(0, 4);
+      series.forEach(function (s, k) { if ((s.values[i] || 0) > 0) last = k; });
+      series.forEach(function (s, k) {
+        var v = s.values[i] || 0; if (v <= 0) return;
+        var h = v / top * ph, y0 = base - acc - h; acc += h;
+        svg += k === last ? '<path d="' + roundTop(x, y0, bw, h, 4) + '" fill="' + col(s, k) + '"/>' : '<rect x="' + x + '" y="' + y0 + '" width="' + bw + '" height="' + Math.max(0, h - 1.5) + '" fill="' + col(s, k) + '"/>';
+      });
+      var tipText = label + ': ' + fmt(tot[i]) + ' ' + unit + (partial[m] ? ' (' + partial[m] + ')' : '') + series.map(function (s) { return '\n' + s.name + ': ' + fmt(s.values[i] || 0); }).join('');
+      svg += '<rect x="' + (L + i * slot) + '" y="' + T + '" width="' + slot + '" height="' + ph + '" fill="transparent" data-tip="' + esc(tipText) + '"/>';
+      svg += '<text class="d-l" x="' + (x + bw / 2) + '" y="' + (base + 16) + '" text-anchor="middle">' + MON[mo].charAt(0) + '</text>';
+      if (mo === 0 || i === 0) svg += '<text class="d-l" x="' + (L + i * slot + 2) + '" y="' + (base + 34) + '">' + m.slice(0, 4) + '</text>';
+      if (tot[i] === mx || i === months.length - 1) svg += '<text class="d-s" x="' + (x + bw / 2) + '" y="' + (base - acc - 8) + '" text-anchor="middle">' + fmt(tot[i]) + (partial[m] ? ' · ' + esc(partial[m]) : '') + '</text>';
+    });
+    el.innerHTML = leg + svg + '</svg></div>';
+  }
+
+  /* ---------- summary, meta, scoreboard ---------- */
+  var meta = J('meta-data') || {};
+  if (meta.project) { document.title = meta.project + ' Baseline'; $('#h1').textContent = meta.project + ' baseline'; $('#brand').textContent = meta.project; }
+  $('#eyebrow').textContent = [meta.repo, meta.ref, meta.surveyed ? 'surveyed ' + meta.surveyed : ''].filter(Boolean).join(' · ');
+
+  var sm = J('summary-data');
+  if (sm) {
+    if (!sm.facts || sm.facts.length !== 5) console.warn('summary-data: facts must have exactly 5 entries');
+    if (!sm.risks || sm.risks.length !== 5) console.warn('summary-data: risks must have exactly 5 entries');
+    if (!sm.actions || sm.actions.length !== 3) console.warn('summary-data: actions must have exactly 3 entries');
+    $('#summary-body').innerHTML = '<p class="verdict-line">' + sm.verdict + '</p>' +
+      '<div class="facts">' + (sm.facts || []).map(function (f) { return '<div><b>' + esc(f.v) + '</b><span>' + f.l + '</span></div>'; }).join('') + '</div>' +
+      '<div class="sumgrid"><div><h3>Top risks</h3><ol class="risks" style="list-style:none">' +
+      (sm.risks || []).map(function (r) { return '<li><span class="sev ' + esc(r.sev) + '">' + esc(r.label || SEV[r.sev] || r.sev) + '</span><span>' + r.t + '</span></li>'; }).join('') +
+      '</ol></div><div><h3>Do next</h3><ol class="steps">' + (sm.actions || []).map(function (a) { return '<li>' + a + '</li>'; }).join('') + '</ol></div></div>';
+  }
+
+  function spark(a, better) {
+    if (!a || !a.length) return '';
+    var W = 96, H = 24, p = 3, mn = Math.min.apply(null, a), mx = Math.max.apply(null, a), rg = mx - mn || 1;
+    var pts = a.map(function (v, i) { return [p + (a.length > 1 ? i * (W - 2 * p) / (a.length - 1) : (W - 2 * p) / 2), H - p - (v - mn) / rg * (H - 2 * p)]; });
+    var up = a[a.length - 1] > a[0], dn = a[a.length - 1] < a[0];
+    var cls = better === 'none' || (!up && !dn) ? '' : ((up && better === 'up') || (dn && better === 'down') ? 'good' : 'bad');
+    var lp = pts[pts.length - 1];
+    return '<svg class="spark ' + cls + '" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + '" height="' + H + '" role="img" aria-label="trend: ' + esc(a.join(', ')) + '" data-tip="' + esc(a.map(fmt).join(' → ')) + '">' +
+      (a.length > 1 ? '<polyline points="' + pts.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join(' ') + '"/>' : '') +
+      '<circle cx="' + lp[0].toFixed(1) + '" cy="' + lp[1].toFixed(1) + '" r="2.6"/></svg>';
+  }
+  function delta(r) {
+    if (r.delta != null) return esc(r.delta);
+    if (typeof r.value !== 'number' || typeof r.first !== 'number') return '<span class="faint">baseline</span>';
+    var d = r.value - r.first; if (!d) return '<span class="faint">no change</span>';
+    var good = (r.better === 'down' && d < 0) || (r.better === 'up' && d > 0), bad = (r.better === 'down' && d > 0) || (r.better === 'up' && d < 0);
+    return '<span class="' + (good ? 'dg' : bad ? 'db' : '') + '">' + (d > 0 ? '▲ +' : '▼ ') + fmt(d) + (r.first ? ' (' + (d > 0 ? '+' : '') + (d / r.first * 100).toFixed(1) + '%)' : '') + '</span>';
+  }
+  var sb = J('scoreboard-data');
+  if (sb) {
+    if (sb.note) $('#sb-note').textContent = sb.note;
+    $('#scoreboard-body').innerHTML = sb.rows.map(function (r) {
+      return '<tr><td>' + r.metric + '</td><td class="n"><b>' + (typeof r.value === 'number' ? fmt(r.value) : esc(r.value)) + '</b>' + (r.unit ? ' <span class="faint">' + esc(r.unit) + '</span>' : '') + '</td>' +
+        '<td class="n">' + delta(r) + '</td><td class="spark-c">' + spark(r.trend, r.better) + '</td>' +
+        '<td class="cmd"><code>' + esc(r.how) + '</code></td><td class="mono faint">' + esc(r.asOf || meta.asOf || '') + '</td></tr>';
+    }).join('');
+  }
+
+  /* ---------- charts from JSON ---------- */
+  var bd = J('bars-data') || {};
+  Object.keys(bd).forEach(function (id) { (bd[id].kind === 'share' ? shareBar : bars)(id, bd[id].rows, bd[id].unit, bd[id].pre); });
+  [J('commits-data')].forEach(function (c) { if (c) stackedMonthly(c.id, c.months, c.series, { unit: c.unit, partial: c.partial, label: c.label }); });
+
+  /* ---------- two-axis figure: autonomy 0-5 (y) against harness 1-5 (x) ---------- */
+  (function () {
+    var d = J('quality-data'), el = $('#axes'); if (!d || !el) return;
+    var W = 420, H = 340, L = 52, R = 16, T = 16, B = 48, pw = W - L - R, ph = H - T - B;
+    var X = function (h) { return L + (h - 1) / 4 * pw; }, Y = function (a) { return T + ph - a / 5 * ph; };
+    var a = d.autonomy.level, h = d.harness.level, gap = a - h;
+    var s = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + esc('Autonomy level ' + a + ' of 5 against harness level ' + h + ' of 5; ' + (gap > 0 ? 'autonomy is ' + gap + ' levels ahead of the harness' : gap < 0 ? 'harness is ' + (-gap) + ' levels ahead' : 'in balance')) + '">';
+    s += '<path class="d-zone" d="M' + X(1) + ',' + Y(1) + ' L' + X(5) + ',' + Y(5) + ' L' + X(1) + ',' + Y(5) + ' Z"/>';
+    for (var i = 0; i <= 5; i++) s += '<line class="d-grid" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(i) + '" y2="' + Y(i) + '"/><text class="d-l" x="' + (L - 8) + '" y="' + (Y(i) + 4) + '" text-anchor="end">' + i + '</text>';
+    for (i = 1; i <= 5; i++) s += '<line class="d-grid" x1="' + X(i) + '" x2="' + X(i) + '" y1="' + T + '" y2="' + (T + ph) + '"/><text class="d-l" x="' + X(i) + '" y="' + (T + ph + 16) + '" text-anchor="middle">' + i + '</text>';
+    s += '<line class="d-axis" x1="' + L + '" x2="' + L + '" y1="' + T + '" y2="' + (T + ph) + '"/><line class="d-axis" x1="' + L + '" x2="' + (W - R) + '" y1="' + (T + ph) + '" y2="' + (T + ph) + '"/>';
+    s += '<line class="d-line dash" x1="' + X(1) + '" y1="' + Y(1) + '" x2="' + X(5) + '" y2="' + Y(5) + '"/>';
+    s += '<text class="d-l" x="' + (L + 8) + '" y="' + (T + 16) + '">autonomy outruns harness</text>';
+    s += '<text class="d-l" x="' + (L + pw / 2) + '" y="' + (H - 8) + '" text-anchor="middle">Harness level →</text>';
+    s += '<text class="d-l" transform="translate(12,' + (T + ph / 2) + ') rotate(-90)" text-anchor="middle">Autonomy level →</text>';
+    if (gap > 0) s += '<line class="d-gap" x1="' + X(h) + '" y1="' + (Y(a) + 8) + '" x2="' + X(h) + '" y2="' + (Y(h) - 2) + '"/><text class="d-gaplab" x="' + (X(h) + 10) + '" y="' + ((Y(a) + Y(h)) / 2 + 4) + '">gap +' + gap + '</text>';
+    else if (gap < 0 && a >= 1) s += '<line class="d-gap" x1="' + (X(h) - 8) + '" y1="' + Y(a) + '" x2="' + (X(a) + 2) + '" y2="' + Y(a) + '" style="stroke:var(--good)"/>';
+    if (d.target) s += '<circle class="d-ring" cx="' + X(d.target.harness) + '" cy="' + Y(d.target.autonomy) + '" r="9"/><text class="d-l acc" x="' + (X(d.target.harness) + 13) + '" y="' + (Y(d.target.autonomy) + 4) + '">target</text>';
+    s += '<circle class="d-dot" cx="' + X(h) + '" cy="' + Y(a) + '" r="7" data-tip="' + esc('Now: autonomy ' + a + ', harness ' + h) + '"/><text class="d-t acc" x="' + (X(h) + 12) + '" y="' + (Y(a) - 8) + '">now</text></svg>';
+    function list(t, names, start, cur) { return '<div><h4>' + t + '</h4><ol start="' + start + '">' + names.map(function (n, k) { return '<li' + (k + start === cur ? ' class="on"' : '') + '>' + esc(n) + '</li>'; }).join('') + '</ol></div>'; }
+    el.innerHTML = '<div>' + s + '</div><div class="lvls">' + list('Autonomy', d.autonomy.names, 0, a) + list('Harness', d.harness.names, 1, h) + '</div>';
+  })();
+
+  /* ---------- squarified treemap: area = loc, colour = churn, click a directory to zoom ---------- */
+  (function () {
+    var root = J('treemap-data'), el = $('#treemap'); if (!root || !el) return;
+    var path = [], lastW = 0, lo = Infinity, hi = -Infinity;
+    (function agg(n) {
+      if (!n.children) { n.loc = n.loc || 0; lo = Math.min(lo, n.churn || 0); hi = Math.max(hi, n.churn || 0); return; }
+      var c = 0, x = 0; n.loc = 0; n.files = 0;
+      n.children.forEach(function (k) { agg(k); n.loc += k.loc; c += (k.churn || 0) * k.loc; x += (k.complexity || 0) * k.loc; n.files += k.files || 1; });
+      n.churn = n.loc ? c / n.loc : 0; n.complexity = n.loc ? x / n.loc : 0;
+    })(root);
+    function bucket(c) { return Math.min(6, Math.max(0, Math.floor((c - lo) / ((hi - lo) || 1) * 7))); }
+    function squarify(items, x, y, w, h) {
+      var out = [], row = [], rest = items.slice();
+      function worst(r, side) { var s = 0, mx = 0, mn = Infinity; r.forEach(function (i) { s += i.a; mx = Math.max(mx, i.a); mn = Math.min(mn, i.a); }); return Math.max(side * side * mx / (s * s), s * s / (side * side * mn)); }
+      function place() {
+        var s = row.reduce(function (t, i) { return t + i.a; }, 0), k;
+        if (w >= h) { var cw = s / h, yy = y; row.forEach(function (i) { k = i.a / cw; out.push({ n: i.n, x: x, y: yy, w: cw, h: k }); yy += k; }); x += cw; w -= cw; }
+        else { var rh = s / w, xx = x; row.forEach(function (i) { k = i.a / rh; out.push({ n: i.n, x: xx, y: y, w: k, h: rh }); xx += k; }); y += rh; h -= rh; }
+        row = [];
+      }
+      while (rest.length) { var side = Math.min(w, h), it = rest[0]; if (!row.length || worst(row.concat(it), side) <= worst(row, side)) { row.push(it); rest.shift(); } else place(); }
+      if (row.length) place();
+      return out;
+    }
+    function lay(list, x, y, w, h) {
+      var kids = list.filter(function (k) { return k.loc > 0; }).sort(function (a, b) { return b.loc - a.loc; });
+      var total = kids.reduce(function (s, k) { return s + k.loc; }, 0) || 1;
+      return squarify(kids.map(function (k) { return { n: k, a: k.loc / total * w * h }; }), x, y, w, h);
+    }
+    function cell(k, r, rp, frame) {
+      var dir = !!k.children, b = bucket(k.churn || 0), tag = dir ? 'button' : 'div';
+      var t = (k.path || path.concat(rp).join('/')) + '\n' + fmt(k.loc) + ' lines' + (dir ? ' \u00B7 ' + fmt(k.files) + ' files \u00B7 click to open' : ' \u00B7 ' + (k.lang || '')) + '\nchurn ' + fmt(Math.round((k.churn || 0) * 10) / 10) + ' \u00B7 complexity ' + fmt(Math.round((k.complexity || 0) * 10) / 10);
+      var lab = frame || (r.w > 64 && r.h > 34) ? esc(k.name) + (dir ? ' \u25B8' : '') + '<i>' + fmt(k.loc) + '</i>' : r.w > 36 && r.h > 18 ? esc(k.name) : '';
+      return '<' + tag + (dir ? ' type="button" data-p="' + esc(JSON.stringify(rp)) + '"' : '') + ' class="' + (frame ? 'fr' : 't' + b + (b >= 4 ? ' dk' : '')) + '" style="left:' + r.x + 'px;top:' + r.y + 'px;width:' + r.w + 'px;height:' + r.h + 'px" data-tip="' + esc(t) + '">' + lab + '</' + tag + '>';
+    }
+    function render() {
+      var node = root, trail = [];
+      path.forEach(function (p) { node = node.children.filter(function (k) { return k.name === p; })[0] || node; trail.push(node.name); });
+      var W = el.clientWidth, H = el.clientHeight; if (!W) return; lastW = W;
+      el.innerHTML = lay(node.children, 0, 0, W, H).map(function (r) {
+        var k = r.n, fr = k.children && r.w > 70 && r.h > 56, out = cell(k, r, [k.name], fr);
+        if (fr) out += lay(k.children, r.x + 3, r.y + 24, r.w - 6, r.h - 27).map(function (q) { return cell(q.n, q, [k.name, q.n.name], false); }).join('');
+        return out;
+      }).join('');
+      $('#tm-crumbs').innerHTML = [root.name].concat(trail).map(function (n, i, a) { return (i ? '<span>/</span>' : '') + '<button type="button" data-i="' + i + '"' + (i === a.length - 1 ? ' disabled' : '') + '>' + esc(n) + '</button>'; }).join('');
+    }
+    $('#tm-ramp').innerHTML = '<span>churn: ' + fmt(lo) + '</span><span class="sw">' + [0, 1, 2, 3, 4, 5, 6].map(function (i) { return '<i style="background:var(--t' + i + ')"></i>'; }).join('') + '</span><span>' + fmt(hi) + ' (' + esc(root.churnLabel || 'per file') + ')</span>';
+    el.addEventListener('click', function (e) { var b = e.target.closest('button[data-p]'); if (b) { path = path.concat(JSON.parse(b.getAttribute('data-p'))); render(); } });
+    $('#tm-crumbs').addEventListener('click', function (e) { var b = e.target.closest('button[data-i]'); if (b) { path = path.slice(0, +b.getAttribute('data-i')); render(); } });
+    if (window.ResizeObserver) new ResizeObserver(function () { if (el.clientWidth && el.clientWidth !== lastW) render(); }).observe(el); else render();
+  })();
+
+  /* ---------- glossary: numbers by first appearance, definition lives only in the dd ---------- */
+  var order = {}, gn = 0;
+  $$('sup.g a').forEach(function (a) {
+    var slug = (a.getAttribute('href') || '').replace(/^#g-/, ''), dt = document.getElementById('g-' + slug);
+    if (!dt) { console.warn('glossary entry missing: g-' + slug); return; }
+    if (!order[slug]) { order[slug] = ++gn; var b = document.createElement('span'); b.className = 'gn'; b.textContent = gn; dt.appendChild(b); }
+    a.textContent = order[slug];
+    var dd = dt.nextElementSibling, term = dt.firstChild.textContent;
+    a.parentNode.setAttribute('data-tip', term + ': ' + (dd ? dd.textContent.trim() : ''));
+    a.setAttribute('aria-label', 'Glossary: ' + term);
+  });
+
+  /* ---------- as-of badges ---------- */
+  $$('main > section').forEach(function (sec) {
+    var s = $('summary', sec), v = sec.getAttribute('data-asof') || meta.asOf; if (!s || !v) return;
+    var b = document.createElement('span'); b.className = 'asof'; b.textContent = 'as of ' + v; s.appendChild(b);
+  });
+
+  /* ---------- collapsible sections: anchors open what they point at ---------- */
+  function openFor(el) {
+    var d = el.matches('section') ? $('details', el) : null; if (d) d.open = true;
+    for (d = el.closest('details'); d; d = d.parentElement && d.parentElement.closest('details')) d.open = true;
+  }
+  document.addEventListener('click', function (e) {
+    var a = e.target.closest && e.target.closest('a[href^="#"]'); if (!a || a.getAttribute('href').length < 2) return;
+    var t = document.getElementById(decodeURIComponent(a.getAttribute('href').slice(1))); if (t) openFor(t);
+  });
+  function fromHash() { var t = location.hash.length > 1 && document.getElementById(decodeURIComponent(location.hash.slice(1))); if (t) { openFor(t); t.scrollIntoView(); } }
+  window.addEventListener('hashchange', fromHash);
+  window.addEventListener('beforeprint', function () { $$('details').forEach(function (d) { d.open = true; }); renderMermaid(false); });
+
+  /* ---------- mermaid: lazy (diagrams in closed sections have no size), themed from tokens, re-rendered on theme change ---------- */
+  function mmConfig() {
+    var cs = getComputedStyle(document.documentElement), g = function (n) { return cs.getPropertyValue(n).trim(); };
+    return { startOnLoad: false, theme: 'base', securityLevel: 'strict', fontFamily: g('--f-body'), themeVariables: {
+      background: g('--surface'), primaryColor: g('--surface'), primaryTextColor: g('--fg'), primaryBorderColor: g('--line-strong'), lineColor: g('--muted'),
+      secondaryColor: g('--sunk'), tertiaryColor: g('--sunk'), textColor: g('--fg'), noteBkgColor: g('--accent-soft'), noteTextColor: g('--fg'), noteBorderColor: g('--accent'),
+      actorBkg: g('--surface'), actorBorder: g('--line-strong'), actorTextColor: g('--fg'), actorLineColor: g('--line-strong'), signalColor: g('--muted'), signalTextColor: g('--fg'),
+      labelBoxBkgColor: g('--sunk'), labelBoxBorderColor: g('--line-strong'), labelTextColor: g('--fg'), loopTextColor: g('--fg'), activationBkgColor: g('--accent-soft'),
+      attributeBackgroundColorOdd: g('--surface'), attributeBackgroundColorEven: g('--sunk'), edgeLabelBackground: g('--surface') } };
+  }
+  function renderMermaid(force) {
+    if (typeof mermaid === 'undefined') return;
+    var els = $$('pre.mermaid').filter(function (e) { return e.offsetParent !== null && (force || !e.hasAttribute('data-processed')); });
+    if (!els.length) return;
+    els.forEach(function (e) { if (!e.dataset.src) e.dataset.src = e.textContent; e.textContent = e.dataset.src; e.removeAttribute('data-processed'); });
+    try { mermaid.initialize(mmConfig()); var p = mermaid.run({ nodes: els }); if (p && p.catch) p.catch(function (err) { console.warn('mermaid', err); }); } catch (err) { console.warn('mermaid', err); }
+  }
+  document.addEventListener('toggle', function (e) { if (e.target.tagName === 'DETAILS' && e.target.open) renderMermaid(false); }, true);
+  window.addEventListener('load', function () { fromHash(); renderMermaid(false); });
+
+  /* ---------- theme: auto | light | dark ---------- */
+  var root = document.documentElement, tb = $('#theme');
+  var mode = root.getAttribute('data-theme') || 'auto';
+  function paintBtn() { tb.textContent = 'theme: ' + mode; }
+  paintBtn();
+  tb.addEventListener('click', function () { mode = mode === 'auto' ? 'light' : mode === 'light' ? 'dark' : 'auto'; if (mode === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', mode); paintBtn(); });
+  function rethemed() { requestAnimationFrame(function () { renderMermaid(true); }); }
+  new MutationObserver(rethemed).observe(root, { attributes: true, attributeFilter: ['data-theme'] });
+  if (window.matchMedia) matchMedia('(prefers-color-scheme: dark)').addEventListener('change', rethemed);
+
+  /* ---------- index highlighting ---------- */
+  var links = $$('nav.toc a'), map = {};
+  links.forEach(function (a) { map[a.getAttribute('href').slice(1)] = a; });
+  if ('IntersectionObserver' in window) {
+    var io = new IntersectionObserver(function (es) {
+      es.forEach(function (e) { if (e.isIntersecting) { links.forEach(function (a) { a.classList.remove('on'); }); var a = map[e.target.id]; if (a) a.classList.add('on'); } });
+    }, { rootMargin: '-10% 0px -80% 0px' });
+    $$('main section[id]').forEach(function (s) { io.observe(s); });
+  }
+
+  window.stackedMonthly = stackedMonthly; window.bars = bars;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+stages: [test]
+variables:
+  FOO: bar
+before_script:
+  - pip install -r requirements.txt
+unit:
+  stage: test
+  services:
+    - redis:7
+  script:
+    - pytest -q
+    - |
+      ruff check .
+      mypy .
+lint-only:
+  script: ruff check .

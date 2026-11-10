@@ -1,0 +1,21 @@
+{
+  "name": "demo",
+  "private": true,
+  "packageManager": "pnpm@9.1.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "prebuild": "node gen.js",
+    "lint": "eslint . --max-warnings 0",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "db:migrate": "prisma migrate deploy",
+    "postinstall": "prisma generate"
+  },
+  "devDependencies": { "typescript": "^5.4.0", "vitest": "^1.6.0", "eslint": "^9.0.0" }
+}

@@ -1,0 +1,9 @@
+[package]
+name = "demo"
+
+[dependencies]
+serde = "1"
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+criterion = "0.5"

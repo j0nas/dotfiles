@@ -1,0 +1,7 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0">
+  <dependencyManagement><dependencies><dependency><artifactId>managed</artifactId></dependency></dependencies></dependencyManagement>
+  <dependencies>
+    <dependency><groupId>a</groupId><artifactId>b</artifactId></dependency>
+    <dependency><groupId>j</groupId><artifactId>junit</artifactId><scope>test</scope></dependency>
+  </dependencies>
+</project>
