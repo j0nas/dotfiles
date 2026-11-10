@@ -61,29 +61,6 @@ _mtg_proxy_dir() {
 {{- end }}
   return 1
 }
-# sc: make-proxies <deck> | Build MTG proxy PDF + cut file | Tools
-make-proxies() {
-  local dir; dir=$(_mtg_proxy_dir make-proxies) || return 1
-  "$dir/make-proxies.sh" "$@"
-}
-
-# Same repo: send the sheet's cut outlines to the Cameo 5 Alpha directly over
-# USB/BLE (inkscape-silhouette driver), skipping Silhouette Studio and its
-# firmware-1.05 registration-mark mis-detection.
-# sc: cut-proxies [opts] | Cut a proxy sheet on the Cameo, no Studio | Tools
-cut-proxies() {
-  local dir; dir=$(_mtg_proxy_dir cut-proxies) || return 1
-  "$dir/cut-proxies.sh" "$@"
-}
-
-# Same repo: print a PDF through the Windows PC's Epson queues (nothing prints from the Mac).
-# print-sheet <pdf> [--paper plain|glossy|premium] [--dry-run]
-# sc: print-sheet <pdf> | Print a sheet on the PC's Epson (plain/glossy/premium) | Tools
-print-sheet() {
-  local dir; dir=$(_mtg_proxy_dir print-sheet) || return 1
-  "$dir/print-sheet.sh" "$@"
-}
-
 # A printed paper deck box's cut, the formeriet workbench's own command (a subshell, so the
 # caller stays where it was): cut-box <deck> [--proof] [--passes N] [--dry-run]
 # sc: cut-box <deck> | Cut a printed deck box on the Cameo (formeriet workbench) | Tools
@@ -93,10 +70,10 @@ cut-box() {
   (cd "$dir" && pnpm -s cut "$@")
 }
 
-# The rest of the CLI (after a deck is cut): `mtg-proxy redo <card|p3.5|last>`
-# queues miscuts and skipped pages into BACKLOG.txt, `mtg-proxy backlog build`
-# prints the queue as one sheet. Also notes/doctor/cache/offset.
-# sc: mtg-proxy <cmd> | mtg-proxy CLI: redo, backlog, notes, doctor… | Tools
+# The one proxy command: bare, it is a wizard through making a deck's sheets,
+# printing them on the PC and cutting them on the Cameo (plus redo, backlog,
+# notes). `mtg-proxy make|print|cut|…` run the same steps directly.
+# sc: mtg-proxy [cmd] | MTG proxies: make, print on the PC, cut on the Cameo | Tools
 mtg-proxy() {
   local dir; dir=$(_mtg_proxy_dir mtg-proxy) || return 1
   "$dir/mtg-proxy.sh" "$@"
