@@ -57,6 +57,7 @@ So:
 <ws>/findings/<lens>.json              wave 1; lens keys are unique
 <ws>/verified/<lens>-<n>.json          verifier verdicts
 <ws>/docs/<chunk>.json                 wave 2
+<ws>/patterns.json                     recurring classes of problem across topics, with a guard each
 <ws>/sources/<system>.json             external system pulls
 <ws>/report/index.html
 ```
@@ -182,6 +183,7 @@ If the Workflow tool isn't available, run the same phases with the Agent tool, r
 1. Scanners in parallel.
 2. One verifier per batch of up to 8 critical or high findings, capped per lens.
 3. Docs readers, after all verdicts are in.
+4. One patterns agent (`agents/patterns.md`), after the docs readers.
 
 Pass each agent `model` and `effort` explicitly. Defaults:
 
@@ -191,6 +193,7 @@ Pass each agent `model` and `effort` explicitly. Defaults:
 | security and data lenses | Sonnet | xhigh |
 | verifiers | Sonnet | xhigh |
 | docs readers | Sonnet | high |
+| patterns | Sonnet (Opus if the user allows) | xhigh |
 | cold reader | Sonnet | medium |
 | mechanical fixes | Haiku | — |
 
@@ -204,7 +207,8 @@ Systems found in code without access get a "found in code" row saying what acces
 **6. Compile the report** yourself.
 - Read `references/report.md` (structure, writing rules, ranking) and `references/report-components.md` (how to fill the template). Start from `${CLAUDE_SKILL_DIR}/assets/report-template.html`.
 - Generate the scoreboard with `codebase-baseline scoreboard --run <ws>/run.json --snapshots <ws>/snapshots/<name> --out <ws>/scoreboard-<name>.json` and paste its rows into the scoreboard data block. Don't build that table by hand.
-- Where a finding's metric came with a `recount` pattern, add it to `run.json` `metrics`, so later runs recount it without a model.
+- Where a finding's metric came with a `recount` pattern, add it to `run.json` `metrics`, so later runs recount it without a model. Do the same for each class in `patterns.json`.
+- `patterns.json` is the main source for the plan's systemic rows and for the takes. Each class names a guard that stops the whole class, and often a helper the team already wrote that the instances bypass.
 - **Findings:**
   - Critical and high findings appear as verified. A refuted one is dropped; an "unsure" one is kept with that label.
   - Medium and low findings weren't verified and say so.
@@ -277,5 +281,5 @@ codebase-baseline diff <previous snapshot> <new snapshot> --format md [--author 
 | `references/read-only-recipes.md` | before touching any external system |
 | `references/measurement.md` | `codebase-baseline` subcommands, flags and outputs |
 | `agents/*.md` | briefs that subagents read themselves; you rarely need to |
-| `scripts/scan.workflow.js` | the wave 1, verification and wave 2 orchestration |
+| `scripts/scan.workflow.js` | the wave 1, verification, wave 2 and patterns orchestration |
 | `assets/report-template.html` | the report's starting point |

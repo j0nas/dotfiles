@@ -6,6 +6,7 @@ export const meta = {
     { title: 'Scan', detail: 'one scanner per lens, docs-stripped export only' },
     { title: 'Verify', detail: 'skeptics try to refute critical and high findings, batches of up to 8' },
     { title: 'Docs', detail: 'docs checked against verified facts; history the code cannot show' },
+    { title: 'Patterns', detail: 'recurring classes of problem across topics, history and incidents, with the guard for each' },
   ],
 }
 
@@ -16,7 +17,8 @@ export const meta = {
 //   repos: [{ name, path, sha, scan: "<ws>/scan/<name>", run: "<ws>/run/<name>" }],
 //   lenses: [{ key (unique), topic, paths?: ["<ws>/scan/<name>/sub"], history?: true, model?: "sonnet", effort?: "high" }],
 //   verify: { model?: "sonnet", effort?: "xhigh", batch?: 8, maxPerLens?: 16 },
-//   docs: { model?: "sonnet", effort?: "high", maxChunks?: 6, chunks: [{ label, paths: ["<ws>/run/<name>/docs/..."] }] }
+//   docs: { model?: "sonnet", effort?: "high", maxChunks?: 6, chunks: [{ label, paths: ["<ws>/run/<name>/docs/..."] }] },
+//   patterns: { model?: "sonnet", effort?: "xhigh" } | false
 // }
 // Scanners and verifiers only see the docs-stripped scan exports. A lens with
 // history: true (delivery) also gets the original repo path, for read-only git.
@@ -59,6 +61,15 @@ const VERDICTS = {
     confirmed: { type: 'integer' }, refuted: { type: 'integer' }, unsure: { type: 'integer' },
   },
   required: ['file', 'confirmed', 'refuted', 'unsure'],
+}
+const PATTERNS = {
+  type: 'object',
+  properties: {
+    file: { type: 'string' },
+    classes: { type: 'integer' },
+    instances: { type: 'integer' },
+  },
+  required: ['file', 'classes'],
 }
 const DOCS = {
   type: 'object',
@@ -119,6 +130,23 @@ Write your result to: ${ws}/docs/${c.label}.json
 Your final message is the summary object: chunk, file, claims checked, how many were false or stale, history items found. This overrides the brief's last section.`
 }
 
+function patternsPrompt(scanned, docsFiles) {
+  return `Read ${brief('patterns')} and follow it.
+
+Wave 1 findings: ${scanned.map(s => s.file).join(', ')}
+Verdicts: ${ws}/verified/
+Docs readers' files: ${docsFiles.length ? docsFiles.join(', ') : 'none (wave 2 skipped)'}
+Measurements: ${ws}/snapshots/<repo>/ (newest file per repo)
+
+Code to read:
+${scanRepos}
+For fix history you may run read-only git commands in:
+${historyRepos}
+
+Write your result to: ${ws}/patterns.json
+Your final message is the summary object: file, the number of classes, and the total number of instances. This overrides the brief's last section.`
+}
+
 const v = Object.assign({ model: 'sonnet', effort: 'xhigh', batch: 8, maxPerLens: 16 }, args.verify || {})
 
 const lensResults = await pipeline(
@@ -165,6 +193,18 @@ if (!chunks.length) {
     })))).filter(Boolean)
 }
 
+// Barrier on purpose: patterns look across ALL topics, verdicts and documented history.
+let patterns = null
+if (args.patterns === false || !scanned.length) {
+  log('patterns pass skipped')
+} else {
+  const p = Object.assign({ model: 'sonnet', effort: 'xhigh' }, args.patterns || {})
+  patterns = await agent(patternsPrompt(scanned, docsResults.map(x => x.file)), {
+    label: 'patterns', phase: 'Patterns', schema: PATTERNS, model: p.model, effort: p.effort,
+  })
+  if (!patterns) log('patterns agent returned nothing; the plan will lack cross-topic classes')
+}
+
 const tally = lensResults.filter(Boolean).reduce((t, r) => {
   r.verdicts.forEach(x => { t.confirmed += x.confirmed; t.refuted += x.refuted; t.unsure += x.unsure })
   return t
@@ -177,5 +217,6 @@ return {
   unverified: lensResults.filter(Boolean).map(r => ({ lens: r.lens, ids: r.unverified })).filter(x => x.ids.length),
   docs: docsResults,
   docs_not_read: allChunks.slice(d.maxChunks).map(c => c.label),
+  patterns,
   tally,
 }

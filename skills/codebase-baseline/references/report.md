@@ -70,7 +70,7 @@ Opinions are welcome and valued, clearly marked as such, in `.op` callouts. Aim 
 - They state the reasoning.
 - They are specific to this codebase. A take that would fit any project is filler.
 
-The most valuable take spots a systemic fix: the same class of problem fixed by hand several times, where one guard (a lint rule, a type, a shared helper, a test, a CI check) would stop the class. Put those first.
+The most valuable take spots a systemic fix: the same class of problem fixed by hand several times, where one guard (a lint rule, a type, a shared helper, a test, a CI check) would stop the class. Put those first. `patterns.json` is where these come from: lead with its classes, especially those whose instances bypass a helper that already exists.
 
 ## Ranking the plan
 
