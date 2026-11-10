@@ -25,6 +25,11 @@ shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook +
 # the WezTerm config to /dev/null fails only on a syntax error, never on style.
 jactionlint = "latest"
 stylua = "latest"
+# scc: counts code per file (JSON with complexity and generated/minified flags,
+# respects .gitignore) for the codebase-audit skill's baselines. Not a registry
+# short name, hence the aqua backend; tokei and cloc have no prebuilt macOS arm64
+# binary through mise.
+"aqua:boyter/scc" = "latest"
 # java: only runs Android's sdkmanager and avdmanager (run_onchange_after_setup-android-emulator).
 # They want an LTS, so it's pinned to one rather than "latest".
 java = "temurin-21"
