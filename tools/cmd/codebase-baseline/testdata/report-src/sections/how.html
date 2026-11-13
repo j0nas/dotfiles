@@ -1,0 +1,25 @@
+<h3 id="how-repo">Repo map</h3>
+<figure>
+  <div class="crumbs" id="tm-crumbs"></div>
+  <div class="tm" id="treemap" aria-label="Treemap of the repository"></div>
+  <div class="ramp" id="tm-ramp"></div>
+  <figcaption><b>Area is lines of code, colour is churn</b>. The server file is the hot spot.</figcaption>
+</figure>
+<figure>
+  <h3>Lines by area</h3>
+  <div class="bars" id="loc"></div>
+  <figcaption>Most lines are in the server.</figcaption>
+</figure>
+<h3 id="how-flows">Key flows</h3>
+<figure>
+<pre class="mermaid">
+sequenceDiagram
+  participant U as User
+  participant S as Server
+  U->>S: GET /
+  S-->>U: 200 hello
+</pre>
+  <figcaption><b>Greeting.</b> No state, so nothing to lose.</figcaption>
+</figure>
+<h3 id="how-start">Getting started</h3>
+<pre class="cmd">go test ./...  <span class="c"># 3 s, passed</span></pre>

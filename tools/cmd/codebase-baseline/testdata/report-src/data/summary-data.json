@@ -1,0 +1,52 @@
+{
+ "verdict": "A tiny service with no safety net. The tests run only on one laptop.",
+ "facts": [
+  {
+   "v": "1k",
+   "l": "lines of Go"
+  },
+  {
+   "v": "1",
+   "l": "person who can deploy"
+  },
+  {
+   "v": "0",
+   "l": "CI workflows"
+  },
+  {
+   "v": "12",
+   "l": "tests, all passing"
+  },
+  {
+   "v": "$0",
+   "l": "per month hosting"
+  }
+ ],
+ "risks": [
+  {
+   "sev": "crit",
+   "t": "<b>No CI.</b> Nothing runs the tests before a deploy."
+  },
+  {
+   "sev": "high",
+   "t": "<b>One deployer.</b> Nobody else can ship."
+  },
+  {
+   "sev": "med",
+   "t": "<b>No alerts.</b> Errors go to a log."
+  },
+  {
+   "sev": "med",
+   "t": "<b>Old Go.</b> Two minor versions behind."
+  },
+  {
+   "sev": "good",
+   "t": "<b>Small.</b> Easy to read in a day."
+  }
+ ],
+ "actions": [
+  "<b>Add CI.</b> See <a href=\"#plan\">the plan</a>.",
+  "<b>Add a second deployer.</b>",
+  "<b>Alert on errors.</b>"
+ ]
+}

@@ -1,0 +1,3 @@
+# newest first
+2026-11-13 First baseline of <code>abc1234</code>. Scoreboard snapshot 1.
+note: What was read: the repo's files and history. What was run: the tests, in a clean copy. Nothing else was touched.

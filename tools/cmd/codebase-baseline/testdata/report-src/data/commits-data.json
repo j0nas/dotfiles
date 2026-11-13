@@ -1,0 +1,22 @@
+{
+ "id": "commits",
+ "unit": "commits",
+ "months": [
+  "2026-09",
+  "2026-10",
+  "2026-11"
+ ],
+ "series": [
+  {
+   "name": "Human only",
+   "values": [
+    30,
+    50,
+    40
+   ]
+  }
+ ],
+ "partial": {
+  "2026-11": "13 days"
+ }
+}

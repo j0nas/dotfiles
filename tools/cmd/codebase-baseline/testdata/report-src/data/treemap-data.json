@@ -1,0 +1,22 @@
+{
+ "name": "tiny",
+ "churnLabel": "commits touching the file, last 12 months",
+ "children": [
+  {
+   "name": "main.go",
+   "path": "main.go",
+   "loc": 800,
+   "churn": 40,
+   "complexity": 12,
+   "lang": "go"
+  },
+  {
+   "name": "main_test.go",
+   "path": "main_test.go",
+   "loc": 200,
+   "churn": 10,
+   "complexity": 1,
+   "lang": "go"
+  }
+ ]
+}
