@@ -32,6 +32,26 @@ The order is fixed, because orientation has to come before the verdict: the risk
 
 Everything below the summary is collapsed by default.
 
+## When the reader owns the codebase
+
+`run.json` `reader` says who reads the report. An owner wrote the code, so three things change:
+- The codebase's own vocabulary is theirs. Gloss only what the report itself introduces: its scales, its metric names, a class of problem it named.
+- "What this is" shrinks to the map and one sentence. They want the verdict sooner.
+- The plan is addressed to them: what they can decide today leads, and each decision says what happens if it is left.
+
+Everything else holds. An owner didn't see this run either, so the rule against context the reader doesn't have applies in full.
+
+## A later version
+
+After `add-source`, `rebaseline` or `fix`, the report is an update, and a reader who never saw the first version has to be able to tell. Open by saying what the page is: a baseline taken on one date and measured again on another.
+
+- **Summary.** The verdict, facts, risks and actions describe the new state. The facts are the headline metrics that moved, the risks are the ones still open.
+- **What changed on \<date\>,** right after the summary: the headline metrics before and after, what got worse or more expensive, how each change was checked, and behaviour a user of the system would notice. Say once who made the changes, so nobody reads the movement as someone else's work.
+- **Decisions for you** (after `fix`): numbered, grouped, the ones that should happen before a launch first. Each has one line on what it is, the recommendation, and what happens if nothing is done. The owner answers by number.
+- **Plan.** Done rows carry their commits and the metric before and after. Remaining rows are ranked again for where the project now stands. A finding that was fixed shows as fixed, with how that was checked. If no independent reader re-checked the fixes, say so.
+- **Scoreboard.** A row whose count can't see its fix (it counts sites, and the guard now sits elsewhere) says so in the note. The number stays as measured.
+- **Superseded readings.** When a new source pull overturns an earlier one, say which stands and why the earlier one read as it did. Remove questions the new data answers.
+
 ## Writing
 
 - **Terse.**
@@ -62,7 +82,9 @@ Everything below the summary is collapsed by default.
 - **Evidence.** Every finding gives file:line (relative to the repo root), and every number says where it came from.
   - Say which kind of count a size is: "1,558 code lines" (excluding blanks and comments, as scc counts) or "1,948 lines".
   - Don't attribute a repo total to one file.
-  - Shares say their base: "97% of non-merge commits". Critical and high findings went through verification: refuted ones are gone, and "unsure" ones carry that label. Medium and low findings were never verified, so they carry an "unverified" label. A metric counted by a model (no `recount` pattern) is labelled model-counted.
+  - Shares say their base: "97% of non-merge commits". Critical and high findings went through verification: refuted ones are gone, and "unsure" ones carry that label. So did the medium findings the plan rests on. The other medium and low findings were read once, so they carry an "unverified" label. A metric counted by a model (no `recount` pattern) is labelled model-counted.
+  - One word keeps one meaning across the page. If the codebase and the report both use "gate", "check" or "guard" for different things, give each its own name at first use and hold to it.
+  - A result from a check the tool inferred (a bare type check the repo has no script for) is labelled as that. The repo's own checks are the ones its scripts, hooks and CI run.
 
 ## "My take"
 

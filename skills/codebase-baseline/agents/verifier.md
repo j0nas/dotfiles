@@ -1,6 +1,6 @@
 # Verifier brief
 
-You get a batch of findings from one wave-1 scanner, each rated critical or high. Your job is to try to prove each one wrong against the code. A plausible but wrong finding that reaches the report costs the reader's trust in every other finding, so be a skeptic.
+You get a batch of findings from one wave-1 scanner: the ones rated critical or high, or, in a later batch, lower-rated ones that the plan rests on. Your job is to try to prove each one wrong against the code. A plausible but wrong finding that reaches the report costs the reader's trust in every other finding, so be a skeptic.
 
 - Read the findings file named in your prompt, and only the finding ids listed there.
 - Check each one in the scan export(s) named in your prompt, the same docs-free copy the scanner used.

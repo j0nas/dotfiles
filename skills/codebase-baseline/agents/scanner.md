@@ -24,7 +24,9 @@ You are one of several scanners mapping a codebase for an engineer who has never
 - Prefer mechanisms over inventories. "Requests go A → B → C, and B is where caching happens" beats a file list.
 - For each finding, suggest the baseline metric that would show it fixed (e.g. "count of unauthenticated mutating endpoints: 7").
   - When a regular expression over the code can recount it, give that as `recount`: `{"pattern": "RE2 regex matching one line per instance", "globs": ["**/*.go"], "exclude": ["**/*_test.go"]}`. Later runs then recount it without a model.
+  - The pattern has to match the violation, so the count reaches zero when the problem is fixed. A pattern that matches every site of a kind, fixed or not, would stay where it is after the fix; leave `recount` null in that case and say what a pattern would need to tell the two apart.
   - Otherwise leave `recount` null, and the report will mark the metric as model-counted.
+- A claim about what reaches production (which dependencies ship, which code runs on a request) needs the command or the import chain that shows it. A guess about scope gets carried into the plan as if it were measured.
 
 ## What to write
 
