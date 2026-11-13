@@ -1,0 +1,25 @@
+{
+ "note": "Snapshot 1, measured on 2026-11-13.",
+ "rows": [
+  {
+   "metric": "Tests",
+   "value": 12,
+   "first": null,
+   "better": "up",
+   "trend": [
+    12
+   ],
+   "how": "go test ./... | grep -c ok",
+   "asOf": "2026-11-13"
+  },
+  {
+   "metric": "Production build",
+   "value": "passes",
+   "first": null,
+   "better": "none",
+   "trend": [],
+   "how": "go build ./...",
+   "asOf": "2026-11-13"
+  }
+ ]
+}

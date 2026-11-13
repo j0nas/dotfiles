@@ -1,0 +1,14 @@
+{
+  "sections": [
+    {"id":"what","title":"What this is","open":true,"asof":"2026-11-13"},
+    {"id":"summary","title":"Summary: a bad day","nav":"Summary","open":true},
+    {"id":"scoreboard","title":"Baseline scoreboard","nav":"Scoreboard"},
+    {"id":"how","title":"How it works"},
+    {"id":"quality","title":"Quality & factory readiness","nav":"Quality & readiness"},
+    {"id":"delivery","title":"Delivery & team"},
+    {"id":"production","title":"How production behaves","nav":"Production"},
+    {"id":"plan","title":"Plan, ranked by impact","nav":"Plan"},
+    {"id":"sources","title":"Sources & gaps"},
+    {"id":"glossary","title":"Glossary"}
+  ]
+}

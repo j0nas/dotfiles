@@ -3,8 +3,9 @@
 // codebase-baseline skill: export a clean copy of the repo, discover and run its
 // feedback loops (tests, lint, typecheck, build) in an empty environment,
 // snapshot its size, git history, dependencies and hygiene, back-fill the same
-// numbers for past months, build a hotspot treemap, diff two snapshots, and
-// check the generated HTML report for undefined jargon and leaked session talk.
+// numbers for past months, build a hotspot treemap, diff two snapshots, build
+// the HTML report from a folder of source files, and check the generated report
+// for undefined jargon and leaked session talk.
 //
 // Everything except run-loops is static: it never executes the analysed repo's
 // code, and none of it writes inside the repo it analyses. Every JSON output
@@ -54,6 +55,10 @@ const usage = `codebase-baseline: deterministic measurements for onboarding to a
   codebase-baseline diff <old.json> <new.json> [--format md|json] [--author <regex>]
         [--repo <path>]
         deltas between two snapshots.
+  codebase-baseline build-report --src <ws>/report-src --out <ws>/report/index.html
+        [--template <file>] [--draft]
+        build the report page from a folder of source files (one per section and
+        data block); --init --src <dir> writes a starter folder from the template.
   codebase-baseline check-report <report.html> [--repo <repo>] [--allow <file>]
         [--format text|json] [--strict-each]
         cold-reader checks on the generated report; exit 1 when any fail.
@@ -100,6 +105,8 @@ func (a *app) run(args []string) int {
 		err = a.cmdScrub(args[1:])
 	case "diff":
 		err = a.cmdDiff(args[1:])
+	case "build-report":
+		err = a.cmdBuildReport(args[1:])
 	case "check-report":
 		err = a.cmdCheckReport(args[1:])
 	case "version", "--version":

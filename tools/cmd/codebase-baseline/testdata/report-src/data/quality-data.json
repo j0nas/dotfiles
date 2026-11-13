@@ -1,0 +1,27 @@
+{
+ "autonomy": {
+  "level": 2,
+  "names": [
+   "No AI",
+   "Autocomplete",
+   "Supervised agent",
+   "Agent opens PRs",
+   "Agent merges behind gates",
+   "Unattended, self-healing"
+  ]
+ },
+ "harness": {
+  "level": 1,
+  "names": [
+   "Rules in prose only",
+   "Local checks agents can run",
+   "CI gates every PR",
+   "Review automation and branch protection",
+   "Sandboxed runs, observability, auto-rollback"
+  ]
+ },
+ "target": {
+  "autonomy": 2,
+  "harness": 3
+ }
+}

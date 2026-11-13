@@ -1,0 +1,36 @@
+{
+ "loc": {
+  "unit": "lines",
+  "rows": [
+   {
+    "l": "main.go",
+    "v": 800
+   },
+   {
+    "l": "main_test.go",
+    "v": 200,
+    "c": "b3"
+   }
+  ]
+ },
+ "authors": {
+  "kind": "share",
+  "unit": "commits",
+  "rows": [
+   {
+    "l": "Author A",
+    "v": 120
+   }
+  ]
+ },
+ "owners": {
+  "unit": "files",
+  "rows": [
+   {
+    "l": "files with one author",
+    "v": 2,
+    "c": "high"
+   }
+  ]
+ }
+}

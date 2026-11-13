@@ -358,7 +358,7 @@ ul.log time { font: 500 11.5px var(--f-mono); color: var(--muted); }
 ] }
 </script>
 
-<!-- DUMMY: replace. One object per chart on the page. series: 1-4 entries, stacked bottom-up; c = s1|s2|s3|muted (default by order). partial: {"YYYY-MM": "note"} marks an incomplete month. -->
+<!-- DUMMY: replace. One object per chart, or an array of objects for several charts (each needs its own container id). series: 1-4 entries, stacked bottom-up; c = s1|s2|s3|muted (default by order). partial: {"YYYY-MM": "note"} marks an incomplete month. -->
 <script type="application/json" id="commits-data">
 { "id": "commits", "unit": "commits",
   "months": ["2026-01","2026-02","2026-03","2026-04","2026-05","2026-06","2026-07","2026-08","2026-09","2026-10","2026-11"],
@@ -877,7 +877,7 @@ pnpm dev                <span class="c"># needs DATABASE_URL; failed without it,
   /* ---------- charts from JSON ---------- */
   var bd = J('bars-data') || {};
   Object.keys(bd).forEach(function (id) { (bd[id].kind === 'share' ? shareBar : bars)(id, bd[id].rows, bd[id].unit, bd[id].pre); });
-  [J('commits-data')].forEach(function (c) { if (c) stackedMonthly(c.id, c.months, c.series, { unit: c.unit, partial: c.partial, label: c.label }); });
+  [].concat(J('commits-data') || []).forEach(function (c) { if (c) stackedMonthly(c.id, c.months, c.series, { unit: c.unit, partial: c.partial, label: c.label }); });
 
   /* ---------- two-axis figure: autonomy 0-5 (y) against harness 1-5 (x) ---------- */
   (function () {
