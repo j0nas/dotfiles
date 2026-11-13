@@ -20,12 +20,20 @@ type metricDef struct {
 	Unit    string   `json:"unit,omitempty"`
 	Better  string   `json:"better,omitempty"`
 	Note    string   `json:"note,omitempty"`
+	// How says in plain words what the number is, for the report's reader.
+	// The scoreboard falls back to a generic phrase when it is empty.
+	How string `json:"how,omitempty"`
 }
 
 type runFile struct {
 	Metrics  []metricDef `json:"metrics"`
 	Headline []any       `json:"headline"`
+	// BuiltinRows false turns the scoreboard's built-in rows off, so only the
+	// declared metrics show. Absent or true keeps them.
+	BuiltinRows *bool `json:"builtin_rows,omitempty"`
 }
+
+func (r runFile) builtinRows() bool { return r.BuiltinRows == nil || *r.BuiltinRows }
 
 func (r runFile) headlineNames() []string {
 	var out []string

@@ -313,6 +313,8 @@ func TestScoreboard(t *testing.T) {
 		},
 		Headline: []any{"Handlers without owner check", "Code"},
 	}
+	noBuiltin := false
+	run.BuiltinRows = &noBuiltin // only the declared rows; the built-ins are tested below and in round4_test.go
 	res, err := buildScoreboard(run, dir)
 	if err != nil {
 		t.Fatal(err)
@@ -328,7 +330,7 @@ func TestScoreboard(t *testing.T) {
 		t.Errorf("handlers row = %+v", h)
 	}
 	c := res.Rows[1]
-	if c.Value != 180.0 || c.First != 100.0 || c.Trend[1] != 150 || c.How != "snapshot field size.totals_code_only.code" {
+	if c.Value != 180.0 || c.First != 100.0 || c.Trend[1] != 150 || c.Source != "snapshot field size.totals_code_only.code" {
 		t.Errorf("code row = %+v", c)
 	}
 	p := res.Rows[2]
