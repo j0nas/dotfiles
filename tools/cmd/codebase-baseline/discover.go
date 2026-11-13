@@ -32,6 +32,15 @@ type loop struct {
 	// RealHome opts the loop out of the sandboxed HOME (private-registry installs the user approved).
 	RealHome bool   `json:"real_home,omitempty"`
 	Note     string `json:"note,omitempty"`
+	// DuplicateOf names another loop that already covers this one (thirty
+	// per-package test loops under one root test run). run-loops reports the
+	// status "duplicate" and measure keeps it out of loops_not_run. Set by hand.
+	DuplicateOf string `json:"duplicate_of,omitempty"`
+	// Inferred marks a loop that does not come from a script, Makefile target or
+	// CI step the repo defines: discover guessed it from the ecosystem's usual
+	// command. InferredFrom says what it guessed from.
+	Inferred     bool   `json:"inferred,omitempty"`
+	InferredFrom string `json:"inferred_from,omitempty"`
 
 	text     string // resolved script text (hooks and nested runs) for the needs analysis
 	force    *bool  // overrides the default enabled guess (audits)
@@ -177,6 +186,7 @@ func discoverLoops(repo string, now time.Time) discoverOut {
 	res.Notes = []string{
 		"enabled is a default guess; edit it, and put dummy values for anything a loop needs in extra_env",
 		"ci_steps are reference only and are never run",
+		"a loop with inferred: true does not come from a script, Makefile target or CI step of the repo: discover proposed the ecosystem's usual command (inferred_from says why), so do not present it as the repo's own check",
 		"needs are guesses from commands, CI services and env names; an empty list does not prove the loop is self-contained",
 	}
 	return res
@@ -304,6 +314,12 @@ func (d *discoverer) add(l loop) {
 	if l.TimeoutS == 0 {
 		l.TimeoutS = timeoutByKind[l.Kind]
 	}
+	if !l.Inferred && l.script == "" && !l.runner {
+		l.Inferred = true
+	}
+	if l.Inferred && l.InferredFrom == "" {
+		l.InferredFrom = inferredFromDefault(l)
+	}
 	l.Enabled = (l.Kind != "e2e" && l.Kind != "other" && l.Kind != "audit") && !hasServiceNeed(l.Needs)
 	if l.force != nil {
 		l.Enabled = *l.force
@@ -322,6 +338,29 @@ func (d *discoverer) add(l loop) {
 	}
 	d.eco[l.Ecosystem] = true
 	d.loops = append(d.loops, l)
+}
+
+var reAllDigits = regexp.MustCompile(`^\d+$`)
+
+// inferredFromDefault says why discover proposes a loop the repo does not
+// define: the usual command of the ecosystem, seen from the file that marks it.
+func inferredFromDefault(l loop) string {
+	eco := l.Ecosystem
+	if eco == "" {
+		eco = "the"
+	}
+	what := "usual " + eco + " " + l.Kind + " command"
+	if l.Kind == "audit" {
+		what = "usual " + eco + " dependency audit command"
+	}
+	src := l.Source
+	if i := strings.LastIndex(src, ":"); i > 0 && reAllDigits.MatchString(src[i+1:]) {
+		src = src[:i]
+	}
+	if src == "" {
+		return what + "; no script, Makefile target or CI step of the repo defines it"
+	}
+	return what + ", proposed because " + src + " exists; no script, Makefile target or CI step of the repo defines it"
 }
 
 func uniqueKeepOrder(in []string) []string {
@@ -882,7 +921,8 @@ func (d *discoverer) jsScripts(dir string, p *pkgInfo, pm pmInfo, installID stri
 	if !haveTypecheck && (p.Deps["typescript"]) && d.hasFile(join(dir, "tsconfig.json")) {
 		d.add(loop{ID: idFor("js", dir, "tsc-noemit"), Kind: "typecheck", Cmd: pm.Exec + " tsc --noEmit", Cwd: dir, Source: join(dir, "tsconfig.json"),
 			Ecosystem: "javascript", Requires: []string{idFor("js", pm.rootOf(dir, d), "install")}, pm: pm.Name, matchKey: "tsc --noEmit",
-			Note: "no typecheck script; typescript is a dependency"})
+			Note:         "no typecheck script; typescript is a dependency",
+			InferredFrom: "typescript is a dependency and " + join(dir, "tsconfig.json") + " exists, but the package defines no typecheck script"})
 	}
 }
 

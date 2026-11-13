@@ -47,6 +47,33 @@ var (
 	reIaCDir     = regexp.MustCompile(`(^|/)(terraform|terragrunt|ansible|pulumi|cdk|cloudformation|helm|charts|k8s|kubernetes|infra|infrastructure)/`)
 )
 
+// gitHookNames are the file names git runs as hooks. "update" is left out: as
+// a file name it is far too common (scripts/update) to say anything.
+var gitHookNames = map[string]bool{
+	"applypatch-msg": true, "pre-applypatch": true, "post-applypatch": true, "pre-commit": true, "pre-merge-commit": true,
+	"prepare-commit-msg": true, "commit-msg": true, "post-commit": true, "pre-rebase": true, "post-checkout": true,
+	"post-merge": true, "pre-push": true, "pre-receive": true, "proc-receive": true, "post-receive": true, "post-update": true,
+	"reference-transaction": true, "push-to-checkout": true, "pre-auto-gc": true, "post-rewrite": true, "sendemail-validate": true,
+	"fsmonitor-watchman": true, "p4-changelist": true, "p4-prepare-changelist": true, "p4-post-changelist": true,
+	"p4-pre-submit": true, "post-index-change": true,
+}
+
+// isHookNamedFileInTopDir reports a tracked file named after a git hook that
+// sits directly in a top-level directory (ci-hooks/pre-push): a hooks directory
+// whatever it is called, found by file name alone, never by running anything. Directories that have their own entry above
+// (.husky, .githooks, .git-hooks, .vite-hooks) never reach here.
+func isHookNamedFileInTopDir(f string) bool {
+	dir, name, ok := strings.Cut(f, "/")
+	if !ok || strings.Contains(name, "/") || !gitHookNames[name] {
+		return false
+	}
+	switch dir {
+	case ".husky", ".githooks", ".git-hooks", ".vite-hooks", ".git", "node_modules":
+		return false
+	}
+	return true
+}
+
 func appendTo(m map[string][]string, key, p string) {
 	m[key] = append(m[key], p)
 }
@@ -97,6 +124,10 @@ func scanHygiene(root string, files []string, scc []sccFile) hygieneSection {
 			appendTo(h.Hooks, "git_hooks_dir", f)
 		case base == ".simple-git-hooks.json":
 			appendTo(h.Hooks, "simple_git_hooks", f)
+		case strings.HasPrefix(f, ".vite-hooks/") && !strings.HasPrefix(f, ".vite-hooks/_/"):
+			appendTo(h.Hooks, "vite_hooks", f) // Vite+ (vp config --hooks-dir)
+		case isHookNamedFileInTopDir(f):
+			appendTo(h.Hooks, "hooks_dir", f)
 		}
 		if base == "CODEOWNERS" {
 			h.Codeowners = append(h.Codeowners, f)

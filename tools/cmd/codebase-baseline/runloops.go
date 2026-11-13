@@ -30,6 +30,9 @@ type loopResult struct {
 	Cwd            string      `json:"cwd"`
 	Status         string      `json:"status"`
 	Reason         string      `json:"reason,omitempty"`
+	DuplicateOf    string      `json:"duplicate_of,omitempty"`
+	Inferred       bool        `json:"inferred,omitempty"`
+	InferredFrom   string      `json:"inferred_from,omitempty"`
 	ExitCode       *int        `json:"exit_code,omitempty"`
 	DurationS      float64     `json:"duration_s,omitempty"`
 	TimedOut       bool        `json:"timed_out,omitempty"`
@@ -54,13 +57,16 @@ type loopResults struct {
 	EnvNames      []string       `json:"env_names_passed"`
 	Summary       map[string]int `json:"summary"`
 	Complete      bool           `json:"complete"`
-	SandboxHome   string         `json:"sandbox_home"`
-	RealHomeLoops []string       `json:"real_home_loops,omitempty"`
-	TotalTimeoutS int            `json:"total_timeout_s"`
-	TotalTimedOut bool           `json:"total_timeout_hit,omitempty"`
-	DaemonsNote   string         `json:"daemons_note,omitempty"`
-	Truncated     []string       `json:"truncated,omitempty"`
-	Loops         []loopResult   `json:"loops"`
+	// RunOrder is the order the loops were started in: install loops, then
+	// build loops, then the rest in loops.json order. Loops is in the same order.
+	RunOrder      []string     `json:"run_order"`
+	SandboxHome   string       `json:"sandbox_home"`
+	RealHomeLoops []string     `json:"real_home_loops,omitempty"`
+	TotalTimeoutS int          `json:"total_timeout_s"`
+	TotalTimedOut bool         `json:"total_timeout_hit,omitempty"`
+	DaemonsNote   string       `json:"daemons_note,omitempty"`
+	Truncated     []string     `json:"truncated,omitempty"`
+	Loops         []loopResult `json:"loops"`
 }
 
 type loopsFile struct {
@@ -183,6 +189,9 @@ func (a *app) cmdRunLoops(args []string) error {
 	if *repeat < 1 {
 		*repeat = 1
 	}
+	if err := checkDuplicates(lf.Loops); err != nil {
+		return err
+	}
 	var onlySet map[string]bool
 	if *only != "" {
 		onlySet = map[string]bool{}
@@ -225,6 +234,16 @@ func (a *app) cmdRunLoops(args []string) error {
 		fmt.Fprintf(a.stdout, " %s=%d", k, res.Summary[k])
 	}
 	fmt.Fprintln(a.stdout)
+	nInstall, nBuild := 0, 0
+	for _, r := range res.Loops {
+		switch r.Kind {
+		case "install":
+			nInstall++
+		case "build":
+			nBuild++
+		}
+	}
+	fmt.Fprintf(a.stdout, "  run order: %d install, %d build, then %d others (the ids are in run_order)\n", nInstall, nBuild, len(res.Loops)-nInstall-nBuild)
 	for _, r := range res.Loops {
 		line := fmt.Sprintf("  %-9s %-28s", r.Status, r.ID)
 		if r.Parsed != nil {
@@ -239,6 +258,77 @@ func (a *app) cmdRunLoops(args []string) error {
 		fmt.Fprintln(a.stdout, line)
 	}
 	return nil
+}
+
+// checkDuplicates refuses a duplicate_of that names no loop of the file (or the
+// loop itself): a typo there would silently hide a loop from every report.
+func checkDuplicates(loops []loop) error {
+	known := map[string]bool{}
+	for _, l := range loops {
+		known[l.ID] = true
+	}
+	for _, l := range loops {
+		if l.DuplicateOf == "" {
+			continue
+		}
+		if l.DuplicateOf == l.ID {
+			return fmt.Errorf("loop %q is a duplicate of itself", l.ID)
+		}
+		if !known[l.DuplicateOf] {
+			return fmt.Errorf("loop %q: duplicate_of names %q, which is not a loop in the file", l.ID, l.DuplicateOf)
+		}
+	}
+	return nil
+}
+
+// runOrder is the order loops start in. Install loops come first and build
+// loops second, because later loops (type checks above all) may read what a
+// build generates: i18n code, route trees, `wrangler types`. Everything else
+// keeps its place in the file. A loop never starts before the loops it
+// `requires`: those are pulled up in front of it. A failed build does not skip
+// the loops after it; only a `requires` does.
+func runOrder(loops []loop) []int {
+	var wanted []int
+	for _, kind := range []string{"install", "build"} {
+		for i, l := range loops {
+			if l.Kind == kind {
+				wanted = append(wanted, i)
+			}
+		}
+	}
+	for i, l := range loops {
+		if l.Kind != "install" && l.Kind != "build" {
+			wanted = append(wanted, i)
+		}
+	}
+	byID := map[string]int{}
+	for i, l := range loops {
+		if _, dup := byID[l.ID]; !dup {
+			byID[l.ID] = i
+		}
+	}
+	placed := make([]bool, len(loops))
+	visiting := make([]bool, len(loops))
+	var order []int
+	var place func(i int)
+	place = func(i int) {
+		if placed[i] || visiting[i] {
+			return
+		}
+		visiting[i] = true
+		for _, req := range loops[i].Requires {
+			if j, ok := byID[req]; ok {
+				place(j)
+			}
+		}
+		visiting[i] = false
+		placed[i] = true
+		order = append(order, i)
+	}
+	for _, i := range wanted {
+		place(i)
+	}
+	return order
 }
 
 // runLoops runs the selected loops. With only set and a previous results file,
@@ -285,13 +375,15 @@ func runLoops(lf loopsFile, workdir string, o runOpts) loopResults {
 		deadline = time.Now().Add(o.TotalTimeout)
 	}
 	seen := map[string]bool{}
-	snapshotOf := func(i int) loopResults {
+	order := runOrder(lf.Loops)
+	res.RunOrder = []string{}
+	snapshotOf := func(k int) loopResults {
 		p := res
 		p.Summary = map[string]int{}
 		p.Loops = append([]loopResult(nil), res.Loops...)
 		if o.Prev != nil { // loops not reached yet keep their earlier entries
-			for _, l := range lf.Loops[i+1:] {
-				if e, ok := old[l.ID]; ok {
+			for _, j := range order[k+1:] {
+				if e, ok := old[lf.Loops[j].ID]; ok {
 					p.Loops = append(p.Loops, e)
 				}
 			}
@@ -303,8 +395,10 @@ func runLoops(lf loopsFile, workdir string, o runOpts) loopResults {
 		p.Complete = false
 		return p
 	}
-	for i, l := range lf.Loops {
+	for k, idx := range order {
+		l := lf.Loops[idx]
 		seen[l.ID] = true
+		res.RunOrder = append(res.RunOrder, l.ID)
 		r := loopResult{ID: l.ID, Kind: l.Kind, Cmd: l.Cmd, Cwd: l.Cwd}
 		switch {
 		case o.Only != nil && !o.Only[l.ID]:
@@ -313,6 +407,9 @@ func runLoops(lf loopsFile, workdir string, o runOpts) loopResults {
 			} else {
 				r.Status = "not_selected"
 			}
+		case o.Only == nil && l.DuplicateOf != "":
+			r.Status = "duplicate"
+			r.Reason = "duplicate of " + l.DuplicateOf + ", which already covers it"
 		case o.Only == nil && !l.Enabled:
 			r.Status = "disabled"
 			r.Reason = "disabled in loops.json"
@@ -340,10 +437,11 @@ func runLoops(lf loopsFile, workdir string, o runOpts) loopResults {
 		if r.Status == "failed" || r.Status == "timeout" || r.Status == "tool-missing" {
 			failed[l.ID] = r.Status
 		}
+		r.DuplicateOf, r.Inferred, r.InferredFrom = l.DuplicateOf, l.Inferred, l.InferredFrom
 		res.Summary[r.Status]++
 		res.Loops = append(res.Loops, r)
 		if o.Checkpoint != nil {
-			o.Checkpoint(snapshotOf(i))
+			o.Checkpoint(snapshotOf(k))
 		}
 	}
 	// Entries of loops that are no longer in loops.json stay, so nothing is lost.

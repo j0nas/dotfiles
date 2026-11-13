@@ -35,14 +35,45 @@ type snapshot struct {
 	Shallow       bool           `json:"shallow"`
 	Branch        string         `json:"branch"`
 	LoopsNotRun   *loopsNotRun   `json:"loops_not_run,omitempty"`
-	Truncated     []string       `json:"truncated,omitempty"`
-	Custom        []customResult `json:"custom,omitempty"`
-	Loops         any            `json:"loops,omitempty"`
+	// LoopsDuplicate lists loops switched off because another loop covers them
+	// (duplicate_of in the loops file). They are no gap, so they are not in
+	// loops_not_run.
+	LoopsDuplicate *loopsDuplicate `json:"loops_duplicate,omitempty"`
+	Truncated      []string        `json:"truncated,omitempty"`
+	Custom         []customResult  `json:"custom,omitempty"`
+	Loops          any             `json:"loops,omitempty"`
 }
 
 type loopsNotRun struct {
 	Count   int            `json:"count"`
 	Reasons []notRunReason `json:"reasons"`
+}
+
+type loopsDuplicate struct {
+	Count int            `json:"count"`
+	Loops []duplicateOne `json:"loops"`
+}
+
+type duplicateOne struct {
+	ID          string `json:"id"`
+	DuplicateOf string `json:"duplicate_of"`
+}
+
+// duplicatesOf lists the loops of a results file whose status is "duplicate".
+func duplicatesOf(lr any) *loopsDuplicate {
+	root, ok := lr.(map[string]any)
+	if !ok {
+		return nil
+	}
+	list, _ := root["loops"].([]any)
+	d := &loopsDuplicate{Loops: []duplicateOne{}}
+	for _, e := range list {
+		if em, ok := e.(map[string]any); ok && str(em["status"]) == "duplicate" {
+			d.Loops = append(d.Loops, duplicateOne{ID: str(em["id"]), DuplicateOf: str(em["duplicate_of"])})
+		}
+	}
+	d.Count = len(d.Loops)
+	return d
 }
 
 type notRunReason struct {
@@ -52,6 +83,7 @@ type notRunReason struct {
 }
 
 // notRunOf lists the loops of a results file that did not produce a result.
+// Duplicates (status "duplicate") are not among them: another loop covers them.
 func notRunOf(lr any) *loopsNotRun {
 	root, ok := lr.(map[string]any)
 	if !ok {
@@ -262,6 +294,9 @@ func (a *app) cmdMeasure(args []string) error {
 		}
 		snap.Loops = lr
 		snap.LoopsNotRun = notRunOf(lr)
+		if d := duplicatesOf(lr); d != nil && d.Count > 0 {
+			snap.LoopsDuplicate = d
+		}
 		if root, ok := lr.(map[string]any); ok {
 			if tr, ok := root["truncated"].([]any); ok {
 				for _, t := range tr {

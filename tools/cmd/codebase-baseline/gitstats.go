@@ -41,6 +41,17 @@ var agentEmails = []struct {
 	{"aider", regexp.MustCompile(`(?i)@aider\.chat$|^aider@`)},
 }
 
+// agentSessionTrailers are trailers that coding agents add to a commit to link
+// it to their session. A commit carrying one is agent-made. Add an agent here
+// (name, then a regexp for the whole trailer line, case-insensitive) and it is
+// counted everywhere.
+var agentSessionTrailers = []struct {
+	Name string
+	Re   *regexp.Regexp
+}{
+	{"claude", regexp.MustCompile(`(?im)^\s*claude-session:\s*\S+`)},
+}
+
 var (
 	reCoAuthor    = regexp.MustCompile(`(?im)^\s*co-authored-by:\s*(.+)$`)
 	reAngleEmail  = regexp.MustCompile(`<([^<>\s]+@[^<>\s]+)>`)
@@ -62,7 +73,8 @@ func agentByEmail(email string) string {
 }
 
 // classifyCommit reports which agents a commit names by address (co-author
-// trailer or author), and whether a bot authored it. The count is a lower
+// trailer or author), by session trailer (Claude-Session: <url>), by the Claude
+// Code footer or an aider: subject, and whether a bot authored it. The count is a lower
 // bound: agents that leave no trailer are invisible.
 func classifyCommit(c gitCommit) (agents []string, bot bool) {
 	seen := map[string]bool{}
@@ -83,6 +95,11 @@ func classifyCommit(c gitCommit) (agents []string, bot bool) {
 	}
 	if n := agentByEmail(c.Email); n != "" {
 		add(n + ":author")
+	}
+	for _, t := range agentSessionTrailers {
+		if t.Re.MatchString(c.Body) {
+			add(t.Name + ":session-trailer")
+		}
 	}
 	if reClaudeFoot.MatchString(c.Body) {
 		add("claude:footer")
@@ -190,6 +207,8 @@ type gitSection struct {
 	ContributorsTotal    int            `json:"contributors_total"`
 	Contributors12m      int            `json:"contributors_last_12m"`
 	Commits12m           int            `json:"commits_last_12m"`
+	NonMergeCommits12m   int            `json:"non_merge_commits_last_12m"`
+	NonMergeByMonth      map[string]int `json:"non_merge_commits_by_month"`
 	HumanCommits12m      int            `json:"human_commits_last_12m"`
 	TopAuthorShare12m    float64        `json:"top_author_share_last_12m"`
 	AuthorsFor50pct12m   int            `json:"authors_for_50pct_last_12m"`
@@ -198,9 +217,9 @@ type gitSection struct {
 	AuthorsNote          string         `json:"authors_note"`
 	AgentCommitsByMonth  map[string]int `json:"agent_commits_by_month"`
 	BotCommitsByMonth    map[string]int `json:"bot_authored_commits_by_month"`
-	AgentCommitsTotal    int            `json:"agent_commits_total"`
-	AgentCommits12m      int            `json:"agent_commits_last_12m"`
-	AgentTrailerShare    float64        `json:"agent_trailer_share_lower_bound"`
+	AgentCommitsTotal    int            `json:"agent_commits_total"`             // non-merge commits only
+	AgentCommits12m      int            `json:"agent_commits_last_12m"`          // non-merge commits only
+	AgentTrailerShare    float64        `json:"agent_trailer_share_lower_bound"` // agent_commits_last_12m / non_merge_commits_last_12m
 	BotCommitsTotal      int            `json:"bot_authored_commits_total"`
 	AgentPatternsMatched map[string]int `json:"agent_patterns_matched"`
 	AgentNote            string         `json:"agent_note"`
@@ -239,10 +258,10 @@ func collectGit(repo, rev string, months int, asOf time.Time, tracked map[string
 
 	window := monthsBack(asOf, months)
 	inWindow := map[string]bool{}
-	g.CommitsByMonth, g.AgentCommitsByMonth, g.BotCommitsByMonth = map[string]int{}, map[string]int{}, map[string]int{}
+	g.CommitsByMonth, g.AgentCommitsByMonth, g.BotCommitsByMonth, g.NonMergeByMonth = map[string]int{}, map[string]int{}, map[string]int{}, map[string]int{}
 	for _, m := range window {
 		inWindow[m] = true
-		g.CommitsByMonth[m], g.AgentCommitsByMonth[m], g.BotCommitsByMonth[m] = 0, 0, 0
+		g.CommitsByMonth[m], g.AgentCommitsByMonth[m], g.BotCommitsByMonth[m], g.NonMergeByMonth[m] = 0, 0, 0, 0
 	}
 	cut12 := asOf.AddDate(-1, 0, 0)
 	g.AgentPatternsMatched = map[string]int{}
@@ -271,16 +290,23 @@ func collectGit(repo, rev string, months int, asOf time.Time, tracked map[string
 				fixes++
 			}
 		}
+		isMerge := c.Parents > 1
+		if is12 && !isMerge {
+			g.NonMergeCommits12m++
+		}
 		if inWindow[c.month()] {
 			g.CommitsByMonth[c.month()]++
-			if len(agents) > 0 {
+			if !isMerge {
+				g.NonMergeByMonth[c.month()]++
+			}
+			if len(agents) > 0 && !isMerge {
 				g.AgentCommitsByMonth[c.month()]++
 			}
 			if bot {
 				g.BotCommitsByMonth[c.month()]++
 			}
 		}
-		if len(agents) > 0 {
+		if len(agents) > 0 && !isMerge {
 			g.AgentCommitsTotal++
 			if is12 {
 				g.AgentCommits12m++
@@ -341,10 +367,10 @@ func collectGit(repo, rev string, months int, asOf time.Time, tracked map[string
 	if len(ranked) > 0 && g.HumanCommits12m > 0 {
 		g.TopAuthorShare12m = round2(float64(ranked[0].n) / float64(g.HumanCommits12m))
 	}
-	if g.Commits12m > 0 {
-		g.AgentTrailerShare = round2(float64(g.AgentCommits12m) / float64(g.Commits12m))
+	if g.NonMergeCommits12m > 0 {
+		g.AgentTrailerShare = round2(float64(g.AgentCommits12m) / float64(g.NonMergeCommits12m))
 	}
-	g.AgentNote = "agent_trailer_share_lower_bound counts commits whose Co-authored-by trailer or author address is a known coding agent (Claude/Anthropic, Copilot, Cursor, Devin, Codex/OpenAI, Gemini, Aider; display names alone do not count) plus the Claude Code footer; agents that leave no trace are not counted. " +
+	g.AgentNote = "agent_trailer_share_lower_bound is the share of non-merge commits in the last 12 months (agent_commits_last_12m / non_merge_commits_last_12m; merge commits are left out of both) that carry a session trailer of a known coding agent (Claude-Session: <url>), a Co-authored-by trailer or author address of one (Claude/Anthropic, Copilot, Cursor, Devin, Codex/OpenAI, Gemini, Aider; display names alone do not count), the Claude Code footer or an aider: subject; agents that leave no trace are not counted. " +
 		"Keys in agent_patterns_matched read <agent>:<where it matched>. bot_authored counts [bot] authors (and dependabot/renovate); a commit can be both."
 
 	// Per-commit file counts and churn come from one numstat pass over 12 months.
