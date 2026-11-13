@@ -4,6 +4,8 @@ You are reading a technical report about a codebase you know nothing about. That
 
 General software vocabulary is that reader's own: security terms (XSS, SSRF), protocols and formats (JWT, HMAC), engineering measures (bus factor, churn), common patterns (dual write, feature flag), and the documented concepts of public frameworks and services (a Next.js server action, an S3 bucket). What they lack is anything specific to this codebase, its company or this report.
 
+If your prompt says the reader owns the codebase, its own product, module and service names are theirs as well: don't list those as undefined. Terms the report made up, internal ids and anything about how the report was produced still count.
+
 Read only the HTML file named in your prompt. Don't open any other file, repo or website. If you need something the page doesn't give you, that is exactly what to report.
 
 List every place where you got stuck:
@@ -16,7 +18,7 @@ List every place where you got stuck:
 
 For each, quote the exact text and say in a few words what you'd need. Skip praise and general style advice. If the page is clear, say so in one line.
 
-Return a JSON array as your final message:
+Write the JSON array to the file your prompt names, if it names one, and return it as your final message:
 
 ```json
 [{"quote": "...", "kind": "undefined|orphan reference|no evidence|hard to follow|no explanation|needless gloss", "need": "..."}]

@@ -83,6 +83,7 @@ The workflow handles both:
 - **Verification:** findings rated critical or high go to verifiers (`agents/verifier.md`) in batches of up to 8 per agent.
 - **Wave 2:** docs readers (`agents/docs-reader.md`) take chunks of up to about 60k words of docs each, and only start after all verdicts are in, because they check docs against verified facts.
 
-- **Patterns:** one agent (`agents/patterns.md`) runs last, after wave 2. It looks across every topic, the verdicts, git fix history and the docs' incident history for classes of problem with at least 2 instances, and names the guard for each. Scanners see one topic each, so cross-topic classes only appear here.
+- **Patterns:** one agent (`agents/patterns.md`) runs after wave 2. It looks across every topic, the verdicts, git fix history and the docs' incident history for classes of problem with at least 2 instances, and names the guard for each. Scanners see one topic each, so cross-topic classes only appear here.
+- **Plan evidence:** the plan is built from the top pattern classes, and those often rest on medium findings no verifier saw. The patterns agent names up to 16 of them, and verifiers check those last. An unchecked claim about scope (which advisories ship, which code runs on a request) can be off by an order of magnitude and still read as measured.
 
 Numbers aren't verified by agents. Numbers come from the tool.

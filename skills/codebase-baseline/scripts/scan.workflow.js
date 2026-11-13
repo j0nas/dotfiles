@@ -7,6 +7,7 @@ export const meta = {
     { title: 'Verify', detail: 'skeptics try to refute critical and high findings, batches of up to 8' },
     { title: 'Docs', detail: 'docs checked against verified facts; history the code cannot show' },
     { title: 'Patterns', detail: 'recurring classes of problem across topics, history and incidents, with the guard for each' },
+    { title: 'Verify plan', detail: 'a second reading of the unverified findings the top pattern classes rest on' },
   ],
 }
 
@@ -15,18 +16,34 @@ export const meta = {
 //   skillDir: "/abs/path/to/skills/codebase-baseline",
 //   workspace: "/abs/path/<name>-baseline",
 //   repos: [{ name, path, sha, scan: "<ws>/scan/<name>", run: "<ws>/run/<name>" }],
-//   lenses: [{ key (unique), topic, paths?: ["<ws>/scan/<name>/sub"], history?: true, model?: "sonnet", effort?: "high" }],
+//   lenses: [{ key (unique), topic, paths?: ["apps/web", "packages/core"], history?: true, model?: "sonnet", effort?: "high" }],
 //   verify: { model?: "sonnet", effort?: "xhigh", batch?: 8, maxPerLens?: 16 },
-//   docs: { model?: "sonnet", effort?: "high", maxChunks?: 6, chunks: [{ label, paths: ["<ws>/run/<name>/docs/..."] }] },
-//   patterns: { model?: "sonnet", effort?: "xhigh" } | false
+//   docs: { model?: "sonnet", effort?: "high", maxChunks?: 6, chunks: [{ label, paths: ["docs", "README.md"] }] },
+//   patterns: { model?: "sonnet", effort?: "xhigh", verifyPlan?: 16 } | false
 // }
+// Paths are relative to the repo root: a lens path resolves against the scan
+// export, a docs path against the run export. With several repos, prefix the
+// repo name ("api:src/billing"). An absolute path is used as it is (a lens that
+// needs build output from the run export).
 // Scanners and verifiers only see the docs-stripped scan exports. A lens with
 // history: true (delivery) also gets the original repo path, for read-only git.
+// patterns.verifyPlan caps how many unverified findings behind the top classes
+// get a verifier afterwards; 0 turns that off.
 // Agents read their briefs from <skillDir>/agents/ and write full results into the
 // workspace; they return only the small summaries below.
 
 const ws = args.workspace
 const brief = name => `${args.skillDir}/agents/${name}.md`
+const repoByName = Object.fromEntries(args.repos.map(r => [r.name, r]))
+function resolve(p, kind) {
+  if (p.startsWith('/')) return p
+  const i = p.indexOf(':')
+  const named = i > 0 ? repoByName[p.slice(0, i)] : null
+  const repo = named || (args.repos.length === 1 ? args.repos[0] : null)
+  if (!repo) throw new Error(`path "${p}" needs a "<repo name>:" prefix when there are several repos`)
+  const rel = named ? p.slice(i + 1) : p
+  return rel ? `${repo[kind]}/${rel}` : repo[kind]
+}
 const scanRepos = args.repos.map(r => `- ${r.name} at commit ${r.sha}: ${r.scan}`).join('\n')
 const historyRepos = args.repos.map(r => `- ${r.name}: original repo ${r.path} (read-only git only)`).join('\n')
 const docsRepos = args.repos
@@ -68,6 +85,14 @@ const PATTERNS = {
     file: { type: 'string' },
     classes: { type: 'integer' },
     instances: { type: 'integer' },
+    plan_evidence: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: { lens: { type: 'string' }, ids: { type: 'array', items: { type: 'string' } } },
+        required: ['lens', 'ids'],
+      },
+    },
   },
   required: ['file', 'classes'],
 }
@@ -84,7 +109,7 @@ const DOCS = {
 }
 
 function scanPrompt(l) {
-  const paths = l.paths && l.paths.length ? `\nLimit yourself to: ${l.paths.join(', ')}` : ''
+  const paths = l.paths && l.paths.length ? `\nLimit yourself to: ${l.paths.map(p => resolve(p, 'scan')).join(', ')}` : ''
   const hist = l.history ? `\nFor history you may also run read-only git commands in:\n${historyRepos}` : ''
   return `Read ${brief('scanner')} and follow it.
 
@@ -118,7 +143,7 @@ function docsPrompt(c, scanned) {
   return `Read ${brief('docs-reader')} and follow it.
 
 Chunk: ${c.label}
-Docs to read: ${c.paths.join(', ')}
+Docs to read: ${c.paths.map(p => resolve(p, 'run')).join(', ')}
 
 Repos:
 ${docsRepos}
@@ -144,10 +169,11 @@ For fix history you may run read-only git commands in:
 ${historyRepos}
 
 Write your result to: ${ws}/patterns.json
-Your final message is the summary object: file, the number of classes, and the total number of instances. This overrides the brief's last section.`
+Your final message is the summary object: file, the number of classes, the total number of instances, and plan_evidence: for the five top-ranked classes, the findings they rest on that have no verdict yet, as [{lens: "<lens key>", ids: [...]}], ${planCap} ids at most in all. This overrides the brief's last section.`
 }
 
 const v = Object.assign({ model: 'sonnet', effort: 'xhigh', batch: 8, maxPerLens: 16 }, args.verify || {})
+const planCap = args.patterns && args.patterns.verifyPlan !== undefined ? args.patterns.verifyPlan : 16
 
 const lensResults = await pipeline(
   args.lenses,
@@ -205,6 +231,29 @@ if (args.patterns === false || !scanned.length) {
   if (!patterns) log('patterns agent returned nothing; the plan will lack cross-topic classes')
 }
 
+// The plan is built from the top pattern classes. Findings below high never got a
+// verifier, so the ones those classes rest on get one now.
+let planVerdicts = []
+const evidence = (patterns && patterns.plan_evidence) || []
+if (planCap > 0 && evidence.length) {
+  let left = planCap
+  const jobs = []
+  for (const e of evidence) {
+    const scan = scanned.find(s => s.lens === e.lens)
+    const ids = (e.ids || []).slice(0, left)
+    if (!scan) { log(`plan evidence names an unknown lens: ${e.lens}`); continue }
+    if (!ids.length) continue
+    left -= ids.length
+    for (let i = 0; i < ids.length; i += v.batch) jobs.push({ lens: e.lens, file: scan.file, ids: ids.slice(i, i + v.batch) })
+  }
+  planVerdicts = (await parallel(jobs.map((j, n) => () =>
+    agent(verifyPrompt(j.lens, j.file, j.ids, `plan-${n + 1}`), {
+      label: `verify-plan:${j.lens}#${n + 1}`, phase: 'Verify plan', schema: VERDICTS,
+      model: v.model, effort: v.effort,
+    })))).filter(Boolean)
+  if (planVerdicts.length < jobs.length) log(`plan evidence: ${jobs.length - planVerdicts.length} verifier batches died; those findings stay unverified`)
+}
+
 const tally = lensResults.filter(Boolean).reduce((t, r) => {
   r.verdicts.forEach(x => { t.confirmed += x.confirmed; t.refuted += x.refuted; t.unsure += x.unsure })
   return t
@@ -218,5 +267,6 @@ return {
   docs: docsResults,
   docs_not_read: allChunks.slice(d.maxChunks).map(c => c.label),
   patterns,
+  plan_verdicts: planVerdicts,
   tally,
 }
