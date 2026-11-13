@@ -478,6 +478,37 @@ func TestHookReportsOtherSessionsDrafts(t *testing.T) {
 	}
 }
 
+func TestDraftsAllListsEveryKnownProject(t *testing.T) {
+	h := newHarness(t)
+	here, there := h.project(), h.project()
+	h.mustRun(here, s1, "", "note", "open", "left unfinished here")
+	h.mustRun(there, s2, "", "note", "open", "left unfinished there")
+
+	// From a folder that is no project, as a third session.
+	const s3 = "33333333-aaaa-4bbb-8ccc-000000000003"
+	out := h.mustRun(t.TempDir(), s3, "", "drafts", "--all")
+	for _, want := range []string{here + ": " + s1, there + ": " + s2} {
+		if !strings.Contains(out, want) {
+			t.Errorf("drafts --all: want a line starting %q, got %q", want, out)
+		}
+	}
+	if strings.Count(out, "\n") != 2 {
+		t.Errorf("drafts --all: want two lines, got %q", out)
+	}
+
+	// A session's own draft is not a leftover, and a finished one is gone.
+	if out := h.mustRun(here, s1, "", "drafts", "--all"); strings.Contains(out, s1) || !strings.Contains(out, s2) {
+		t.Errorf("drafts --all as %s: want only %s, got %q", s1, s2, out)
+	}
+	h.mustRun(there, s2, "body", "finish", "--slug", "done", "--title", "T", "--summary", "S.")
+	if out := h.mustRun(t.TempDir(), s3, "", "drafts", "--all"); strings.Contains(out, s2) || !strings.Contains(out, s1) {
+		t.Errorf("after finishing %s: want only %s, got %q", s2, s1, out)
+	}
+	if _, _, code := h.run(here, s3, "", "drafts", "--everything"); code == 0 {
+		t.Error("an unknown flag: want an error")
+	}
+}
+
 func TestConcurrentFinishesKeepEveryLine(t *testing.T) {
 	h := newHarness(t)
 	dir := h.project()

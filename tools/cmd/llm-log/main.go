@@ -42,8 +42,11 @@ Anywhere else is an error, so cd to the project a note is about.
                                write this project's entry (body on stdin), add or
                                update its INDEX.md line, delete its draft, and name
                                any other project still holding this session's notes
-  llm-log drafts               list drafts other sessions left unfinished here
-  llm-log path                 print this project's llm-sessions folder
+  llm-log drafts [--all]       list drafts other sessions left unfinished here;
+                               --all lists them for every project a session of
+                               the last 30 days logged in, one "<project>: <draft>"
+                               per line, and works from any folder
+  llm-log path                print this project's llm-sessions folder
   llm-log init [folder]        make a folder that isn't a git repo a project
   llm-log hook session-start   the SessionStart hook: report leftover drafts
 
@@ -99,7 +102,7 @@ func (a *app) run(args []string) int {
 	case "finish":
 		err = a.finish(args[1:])
 	case "drafts":
-		err = a.drafts()
+		err = a.drafts(args[1:])
 	case "path":
 		var dir string
 		if dir, err = a.logDir(); err == nil {
@@ -314,12 +317,29 @@ func (a *app) finish(args []string) error {
 	return nil
 }
 
-func (a *app) drafts() error {
+func (a *app) drafts(args []string) error {
+	all := len(args) == 1 && args[0] == "--all"
+	if len(args) > 0 && !all {
+		return errors.New("usage: llm-log drafts [--all]")
+	}
+	self := a.getenv("CLAUDE_CODE_SESSION_ID")
+	if all {
+		for _, dir := range a.knownDirs() {
+			ds, err := listDrafts(dir, self)
+			if err != nil {
+				continue // a project that moved or can't be read has nothing to finish here
+			}
+			for _, d := range ds {
+				fmt.Fprintf(a.stdout, "%s: %s\n", filepath.Dir(dir), d.describe(a.now()))
+			}
+		}
+		return nil
+	}
 	dir, err := a.logDir()
 	if err != nil {
 		return err
 	}
-	ds, err := listDrafts(dir, a.getenv("CLAUDE_CODE_SESSION_ID"))
+	ds, err := listDrafts(dir, self)
 	if err != nil {
 		return err
 	}
@@ -327,6 +347,30 @@ func (a *app) drafts() error {
 		fmt.Fprintln(a.stdout, d.describe(a.now()))
 	}
 	return nil
+}
+
+// knownDirs lists the log folders of the current project, if the current folder
+// is in one, and of every project a recorded session has logged in. Records are
+// pruned after stateMaxAge, so a project nobody has logged in since is left out.
+func (a *app) knownDirs() []string {
+	var dirs []string
+	if dir, err := a.logDir(); err == nil {
+		dirs = append(dirs, dir)
+	}
+	entries, _ := os.ReadDir(a.stateDir())
+	var rest []string
+	for _, e := range entries {
+		for _, root := range a.recorded(e.Name()) {
+			if r, ok := findProject(root); ok {
+				root = r
+			}
+			if dir := filepath.Join(root, dirName); !slices.Contains(dirs, dir) && !slices.Contains(rest, dir) {
+				rest = append(rest, dir)
+			}
+		}
+	}
+	slices.Sort(rest)
+	return append(dirs, rest...)
 }
 
 type hookInput struct {
@@ -374,7 +418,7 @@ func (a *app) hook(args []string) error {
 	if len(ds) > 1 {
 		noun = "drafts"
 	}
-	fmt.Fprintf(a.stdout, "llm-sessions: %d unfinished session %s in this project: %s. Mention this to the user once; `/session-end <session id>` finishes one from its notes, unless that session is still running.\n",
+	fmt.Fprintf(a.stdout, "llm-sessions: %d unfinished session %s in this project: %s. Mention this to the user once; `/session-end` finishes leftover drafts from their notes and leaves one whose session may still be running (`/session-end <session id>` finishes just that one).\n",
 		len(ds), noun, strings.Join(parts, "; "))
 	return nil
 }
