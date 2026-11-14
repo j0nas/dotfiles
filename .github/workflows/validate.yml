@@ -55,7 +55,7 @@ jobs:
       - name: Install validators
         run: |
           mise use -g uv@latest
-          mise use -g jq@latest taplo@latest shellcheck@latest jactionlint@latest stylua@latest go@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest"
+          mise use -g jq@latest taplo@latest shellcheck@latest jactionlint@latest stylua@latest go@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest" "aqua:boyter/scc@latest"
 
       # validate parses the zsh configs with `zsh -n`; macOS ships zsh, the
       # ubuntu image doesn't.
