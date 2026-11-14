@@ -28,7 +28,7 @@ set -uo pipefail
 repo="$(git rev-parse --show-toplevel)" && cd "$repo" || exit 1
 schemas="$repo/.githooks/schemas"
 export PATH="${MISE_DATA_DIR:-$HOME/.local/share/mise}/shims:$PATH"
-for t in chezmoi jq taplo check-jsonschema shellcheck zsh python3 stylua jactionlint go gofmt; do
+for t in chezmoi jq taplo check-jsonschema shellcheck zsh python3 stylua jactionlint go gofmt scc; do
   command -v "$t" >/dev/null 2>&1 || { echo "validate: '$t' not on PATH — run 'chezmoi apply' (local) or check the CI tool install"; exit 1; }
 done
 

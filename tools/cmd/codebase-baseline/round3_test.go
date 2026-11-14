@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 )
 
 func writeFiles(t *testing.T, root string, files map[string]string) {
@@ -312,7 +313,7 @@ func TestAgentContributorsExcludeBots(t *testing.T) {
 		gitRun(t, repo, "add", "-A")
 		gitRun(t, repo, "commit", "-q", "--author="+auth, "-m", fmt.Sprintf("c%d", i), "-m", "Co-authored-by: Claude <noreply@anthropic.com>")
 	}
-	g := collectGit(repo, "HEAD", 2, timeNow().AddDate(100, 0, 0), nil)
+	g := collectGit(repo, "HEAD", 2, time.Date(2099, 1, 1, 0, 0, 0, 0, time.UTC), nil)
 	if g.ContributorsTotal != 1 || g.BotCommitsTotal != 1 || g.AgentCommitsTotal != 3 {
 		t.Errorf("contributors=%d bots=%d agent=%d", g.ContributorsTotal, g.BotCommitsTotal, g.AgentCommitsTotal)
 	}
