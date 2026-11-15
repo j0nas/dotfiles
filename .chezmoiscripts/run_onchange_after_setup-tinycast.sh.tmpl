@@ -21,7 +21,10 @@ set -e
 # install-packages script has installed the cask.
 # agent: {{ include "private_Library/LaunchAgents/com.tinycast.app.autostart.plist" | sha256sum }}
 
-domain="com.tinycast.app"
+# The app's bundle ID, which names both its defaults domain and its Application
+# Support folder. Older builds were com.tinycast.app; a current build migrates
+# that domain over on first launch. The agent label below is only a label.
+domain="com.abueammar.tinycast"
 agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/com.tinycast.app.autostart.plist"
 label="com.tinycast.app.autostart"
 
