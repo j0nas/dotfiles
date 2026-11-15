@@ -1,0 +1,55 @@
+{{ if eq .chezmoi.os "darwin" -}}
+#!/bin/bash
+# Install HueForge (paid filament-painting app) into /Applications.
+#
+# VERSION is a floor: a missing or older app gets the pinned release, a newer
+# one is left alone. The download sits behind a Shopify sign-in with a one-time
+# email code, so no script can fetch it. This installs from the zip once it is
+# in ~/Downloads or ~/Desktop, checked against the pinned sha256, and otherwise
+# says where to get it. Bump the version and SHA256 together.
+#
+# A run that finds no zip still counts as done, so the rendered script has to
+# change for chezmoi to run it again. These lines change when the zip appears
+# or the installed version moves:
+{{ $version := "0.9.4.4" -}}
+{{ $zip := printf "HueForge_MacOS_v%s.zip" $version -}}
+# zip in Downloads: {{ if stat (joinPath .chezmoi.homeDir "Downloads" $zip) }}yes{{ else }}no{{ end }}
+# zip on Desktop: {{ if stat (joinPath .chezmoi.homeDir "Desktop" $zip) }}yes{{ else }}no{{ end }}
+# installed: {{ output "sh" "-c" "defaults read /Applications/HueForge.app/Contents/Info CFBundleShortVersionString 2>/dev/null; true" | trim }}
+set -e
+
+VERSION="{{ $version }}"
+ZIP="{{ $zip }}"
+SHA256="4aa26e0bfa1f8446ed82784d559fcf3b7c889f4936bf7e510bcaf7bf9a57a460"
+APP="/Applications/HueForge.app"
+
+installed="$(defaults read "$APP/Contents/Info" CFBundleShortVersionString 2>/dev/null || true)"
+# sort -V puts the newer of the two last.
+if [ -n "$installed" ] && [ "$(printf '%s\n%s\n' "$VERSION" "$installed" | sort -V | tail -n 1)" = "$installed" ]; then
+  exit 0
+fi
+
+zip=""
+for dir in "$HOME/Downloads" "$HOME/Desktop"; do
+  if [ -f "$dir/$ZIP" ]; then zip="$dir/$ZIP"; break; fi
+done
+if [ -z "$zip" ]; then
+  echo "NOTE: HueForge $VERSION isn't installed. Sign in at https://shop.thehueforge.com/apps/download with the purchase email, save $ZIP to ~/Downloads and run chezmoi apply again."
+  exit 0
+fi
+if [ "$(shasum -a 256 "$zip" | cut -d' ' -f1)" != "$SHA256" ]; then
+  echo "NOTE: $zip doesn't match the pinned sha256, so HueForge was not installed." >&2
+  exit 0
+fi
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+ditto -x -k "$zip" "$tmp"
+# The app is notarized (Developer ID, Horn & Rhode LLC) and the zip's hash is
+# pinned, so the quarantine flag ditto carries over would only add a
+# first-launch prompt.
+xattr -dr com.apple.quarantine "$tmp/HueForge.app"
+rm -rf "$APP"
+mv "$tmp/HueForge.app" "$APP"
+echo "==> Installed HueForge $VERSION"
+{{ end -}}
