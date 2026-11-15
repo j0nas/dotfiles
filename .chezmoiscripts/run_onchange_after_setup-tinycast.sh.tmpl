@@ -10,15 +10,21 @@ set -e
 #      `settingsFileEnabled` default, and a launch with it on imports the file.
 #      The Import/Replace dialog only appears when the pane turns it on over an
 #      existing file, so this path never risks Replace.
-#   2. Start it at login via the tracked LaunchAgent, and load that agent now
+#   2. Add the managed custom commands. Tinycast keeps custom commands outside
+#      settings.json, as a JSON array in the `customCommands` default, and reads
+#      it only at launch. Each managed one has a fixed id, so a re-run replaces
+#      it in place (and drops any other command of the same name, which Tinycast
+#      would reject as a duplicate); commands made in its Settings stay.
+#   3. Start it at login via the tracked LaunchAgent, and load that agent now
 #      (RunAtLoad launches it, unless it is already running).
 #
 # Full Disk Access (its file index) and Accessibility (pasting) are TCC grants
 # that no script can make. The first-run walkthrough asks for Accessibility.
 #
 # run_onchange: re-runs when this script or the agent changes. _after_: runs
-# once the settings symlink and the agent plist are written and the
-# install-packages script has installed the cask.
+# once the settings symlink, the agent plist and the command scripts are
+# written, the install-packages script has installed the cask, and the
+# install-mise-tools script has installed jq.
 # agent: {{ include "private_Library/LaunchAgents/com.tinycast.app.autostart.plist" | sha256sum }}
 
 # The app's bundle ID, which names both its defaults domain and its Application
@@ -28,13 +34,44 @@ domain="com.abueammar.tinycast"
 agent="{{ .chezmoi.homeDir }}/Library/LaunchAgents/com.tinycast.app.autostart.plist"
 label="com.tinycast.app.autostart"
 
-if [ "$(defaults read "$domain" settingsFileEnabled 2>/dev/null)" != 1 ]; then
-  # A running Tinycast caches its prefs and would flush the switch back off on
-  # exit (the same footgun SwiftBar has). Quit it and wait for it to go.
+# A running Tinycast caches its prefs and would write them back over a change
+# (the same footgun SwiftBar has). Quit it and wait for it to go; step 3
+# launches it again.
+quit_tinycast() {
   killall Tinycast 2>/dev/null || true
   for _ in 1 2 3 4 5 6 7 8 9 10; do pgrep -qx Tinycast || break; sleep 0.2; done
+}
+
+if [ "$(defaults read "$domain" settingsFileEnabled 2>/dev/null)" != 1 ]; then
+  quit_tinycast
   echo "==> Switching on Tinycast's settings file (it imports Tinycast-settings.json at launch)"
   defaults write "$domain" settingsFileEnabled -bool true
+fi
+
+# Each command runs as `zsh -lc <command>`, so it calls its script in
+# ~/.config/tinycast/script-commands by path and an edited script needs no
+# re-run. Keys left out get Tinycast's defaults below. A record Tinycast can't
+# decode makes it drop the whole array, so keep id a valid UUID.
+managed='[
+  {"id": "6FD444C6-5683-4860-8856-AAAD74CBE5EB", "name": "Open Clipboard Path",
+   "command": "exec \"$HOME/.config/tinycast/script-commands/open-clipboard-path.sh\""}
+]'
+
+# The default is a data blob: plutil prints it as base64. Missing means none yet.
+current="$(defaults export "$domain" - | plutil -extract customCommands raw -o - - 2>/dev/null | base64 -D)"
+merged="$(mise exec -- jq -c --argjson managed "$managed" '
+  ($managed | map({isEnabled: true, showsInRootSearch: true, loadsShellEnvironment: false,
+    requiresConfirmation: false, showsConfirmation: false, arguments: [], showsOutput: false} + .)) as $want
+  | map(select(
+      (.id | IN($want[].id) | not)
+      and ((.name | ascii_downcase) | IN($want[].name | ascii_downcase) | not)))
+  + $want
+  | if (sort_by(.id)) == ($current | sort_by(.id)) then empty else . end
+' --argjson current "${current:-[]}" <<<"${current:-[]}")"
+if [ -n "$merged" ]; then
+  quit_tinycast
+  echo "==> Writing Tinycast's managed custom commands"
+  defaults write "$domain" customCommands -data "$(printf '%s' "$merged" | xxd -p | tr -d '\n')"
 fi
 
 # Idempotent reload: bootout is a no-op the first time.
