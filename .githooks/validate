@@ -296,8 +296,12 @@ fi
 # uses, never a downloaded one.
 go_ok=1
 if ! (cd tools && gofmt -l . >"$err" 2>&1 && [ ! -s "$err" ]); then fail "gofmt: tools/ needs formatting (gofmt -w tools)"; show_err; go_ok=0; fi
-if ! (cd tools && GOTOOLCHAIN=local go vet ./... >"$err" 2>&1); then fail "go vet tools/"; show_err; go_ok=0; fi
-if ! (cd tools && GOTOOLCHAIN=local go test ./... >"$err" 2>&1); then fail "go test tools/"; show_err; go_ok=0; fi
+# The tools' tests run git in temp repos. From a hook, git exports GIT_DIR and
+# GIT_INDEX_FILE, which override `git -C`: a test that misses that (codebase-baseline's
+# did, 2026-11-21) re-initialises this repo. So vet and test run with no GIT_* at all.
+nogit() { (for v in $(compgen -e | grep '^GIT_'); do unset "$v"; done; "$@"); }
+if ! (cd tools && nogit env GOTOOLCHAIN=local go vet ./... >"$err" 2>&1); then fail "go vet tools/"; show_err; go_ok=0; fi
+if ! (cd tools && nogit env GOTOOLCHAIN=local go test ./... >"$err" 2>&1); then fail "go test tools/"; show_err; go_ok=0; fi
 [ "$go_ok" -eq 1 ] && ok "Go tools gofmt-clean, vetted, tests pass"
 
 [ "$status" -ne 0 ] && printf '\n\033[31mvalidation failed.\033[0m\n' >&2
