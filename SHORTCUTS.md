@@ -155,6 +155,7 @@
 | `cs` | claude on Sonnet |
 | `md` | Read a markdown file, paged (glow) |
 | `keys` | Open this shortcuts cheat sheet |
+| `board` | Kanban board of every project in ~/Desktop/projects (opens in the browser) |
 | `kill-port <port>` | Kill whatever process is listening on a port |
 | `brave-agent` | Launch the agents' Brave (own profile, CDP on :9222) |
 | `shutdown-in <minutes>` | Schedule a shutdown that many minutes from now |
