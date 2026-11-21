@@ -137,6 +137,8 @@ func TestCheckReportLinksAndGlossary(t *testing.T) {
 func gitRun(t *testing.T, dir string, args ...string) {
 	t.Helper()
 	cmd := exec.Command("git", append([]string{"-C", dir, "-c", "user.name=T", "-c", "user.email=t@example.com", "-c", "commit.gpgsign=false"}, args...)...)
+	// Never the hook's repo: GIT_DIR from a pre-commit run would override -C (gitEnv).
+	cmd.Env = withoutGitVars(os.Environ())
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("git %v: %v\n%s", args, err, out)
 	}
@@ -191,5 +193,41 @@ func TestHarvestRepoLabels(t *testing.T) {
 func TestWordIndexes(t *testing.T) {
 	if got := wordIndexes("R3 and R3.3b and R3. and xR3 and R3-1", "R3"); len(got) != 2 || got[0] != 0 || got[1] != 17 {
 		t.Errorf("indexes = %v", got)
+	}
+}
+
+// validate runs these tests from the pre-commit hook. From a linked worktree git hands the
+// hook GIT_DIR and GIT_INDEX_FILE, and a test's `git -C <tmp> init` then re-initialised
+// the dotfiles repo itself (2026-11-21). With them set to a repo of their own, the tests'
+// git and the tool's must still act on the temp repo and leave that one alone.
+func TestGitIgnoresAHooksRepo(t *testing.T) {
+	if _, err := exec.LookPath("git"); err != nil {
+		t.Skip("git not installed")
+	}
+	hook := t.TempDir()
+	gitRun(t, hook, "init", "-q", "-b", "main")
+	t.Setenv("GIT_DIR", filepath.Join(hook, ".git"))
+	t.Setenv("GIT_INDEX_FILE", filepath.Join(hook, ".git", "index"))
+	t.Setenv("GIT_WORK_TREE", hook)
+
+	repo := t.TempDir()
+	gitRun(t, repo, "init", "-q", "-b", "main")
+	if err := os.WriteFile(filepath.Join(repo, "a.txt"), []byte("a\n"), 0o644); err != nil {
+		t.Fatal(err)
+	}
+	commitAll(t, repo, "in the temp repo")
+	out, err := git(repo, "log", "--format=%s")
+	if err != nil || strings.TrimSpace(out) != "in the temp repo" {
+		t.Fatalf("the tool's git read %q, %v; want the temp repo's commit", out, err)
+	}
+	if _, err := os.Stat(filepath.Join(hook, ".git", "refs", "heads", "main")); err == nil {
+		t.Fatal("a commit landed in the hook's repo")
+	}
+	cfg, err := os.ReadFile(filepath.Join(hook, ".git", "config"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(string(cfg), "bare = true") {
+		t.Fatal("the hook's repo was re-initialised bare")
 	}
 }

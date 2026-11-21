@@ -142,8 +142,26 @@ func gitSafeArgs(repo string) []string {
 		"-C", repo, "-c", "core.quotepath=off", "-c", "core.pager=cat"}
 }
 
+// gitEnv is the environment for every git this tool runs: the caller's minus every GIT_*
+// variable, plus its own. Inside a git hook (validate runs this tool's tests from
+// pre-commit) GIT_DIR and GIT_INDEX_FILE point at the hook's repo and override -C, so a
+// `git -C <tmp> init` re-initialises that repo instead: on 2026-11-21, run from a linked
+// worktree, the tests set the dotfiles repo bare, moved main and pointed its hooks at a
+// temp script.
 func gitEnv() []string {
-	return append(os.Environ(), "GIT_OPTIONAL_LOCKS=0", "LC_ALL=C", "GIT_TERMINAL_PROMPT=0")
+	env := withoutGitVars(os.Environ())
+	return append(env, "GIT_OPTIONAL_LOCKS=0", "LC_ALL=C", "GIT_TERMINAL_PROMPT=0")
+}
+
+// withoutGitVars drops every GIT_* variable from env.
+func withoutGitVars(env []string) []string {
+	out := make([]string, 0, len(env))
+	for _, kv := range env {
+		if !strings.HasPrefix(kv, "GIT_") {
+			out = append(out, kv)
+		}
+	}
+	return out
 }
 
 // git runs a read-only git command in repo and returns its stdout.
