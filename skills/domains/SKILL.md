@@ -67,8 +67,8 @@ re-run or check manually). Exit codes: `0` all resolved, `1` at least one
 2. **Namecheap**, only for what Cloudflare doesn't sell. Its site is behind a
    Cloudflare bot check that curl and headless Chrome both fail ("Just a
    moment…"), and its API needs an account with API access and an allowlisted
-   IP. So the script drives a **real browser over CDP**: Brave with
-   `--remote-debugging-port=9222` on this Mac (override the port with
+   IP. So the script drives a **real browser over CDP**: the agents' Brave on
+   :9222 on this Mac (`brave-agent` starts it; override the port with
    `NAMECHEAP_CDP_PORT`). It opens a tab on the search results page, reads the
    `article.available|unavailable` row for the name and closes the tab. Regular
    rows read `$5.98/yr Retail $6.98/yr` (first year, and the undiscounted price,

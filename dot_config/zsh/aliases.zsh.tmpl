@@ -107,16 +107,20 @@ kill-port() {
 }
 
 {{ if eq .chezmoi.os "darwin" -}}
-# Brave with the Chrome DevTools Protocol on :9222, so agent-browser can drive the
-# real, logged-in browser. `open --args` is silently dropped when Brave is already
-# running, so bail with a hint instead of focusing a debug-less instance.
-# sc: brave-debug | Launch Brave with remote debugging on :9222 | Tools
-brave-debug() {
-  if pgrep -xq "Brave Browser"; then
-    echo "brave-debug: Brave is already running; quit it (Cmd-Q) first, flags only apply at launch" >&2
-    return 1
+# The agents' own Brave: a separate profile (~/.brave-agent) with the Chrome DevTools
+# Protocol always on :9222, for agent-browser and CDP scripts. It runs beside the everyday
+# Brave (`open -n` starts a second instance), which never gets the port: on the main
+# profile it would hand every logged-in session to any local process, and an automation
+# run that wedges the browser would take those tabs down too. The profile holds only the
+# logins agents need, signed in by hand once. Already listening: nothing to do.
+# sc: brave-agent | Launch the agents' Brave (own profile, CDP on :9222) | Tools
+brave-agent() {
+  if curl -s -m 1 127.0.0.1:9222/json/version >/dev/null 2>&1; then
+    echo "brave-agent: already running on :9222" >&2
+    return 0
   fi
-  open -a "Brave Browser" --args --remote-debugging-port=9222
+  open -na "Brave Browser" --args --user-data-dir="$HOME/.brave-agent" \
+    --remote-debugging-port=9222 --no-first-run --no-default-browser-check
 }
 {{ end -}}
 
