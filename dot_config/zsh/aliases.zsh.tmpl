@@ -115,9 +115,16 @@ kill-port() {
 # logins agents need, signed in by hand once. Already listening: nothing to do.
 # sc: brave-agent | Launch the agents' Brave (own profile, CDP on :9222) | Tools
 brave-agent() {
-  if curl -s -m 1 127.0.0.1:9222/json/version >/dev/null 2>&1; then
+  if curl -s -m 1 127.0.0.1:9222/json/version 2>/dev/null | grep -q '"Browser"'; then
     echo "brave-agent: already running on :9222" >&2
     return 0
+  fi
+  # An answer that isn't DevTools' JSON is the everyday Brave with brave://inspect's
+  # remote-debugging toggle on: it holds 127.0.0.1:9222 and asks before each connection,
+  # and the agents' Brave would get only [::1]:9222.
+  if lsof -nP -iTCP@127.0.0.1:9222 -sTCP:LISTEN >/dev/null 2>&1; then
+    echo "brave-agent: something else holds 127.0.0.1:9222, likely your own Brave's remote-debugging toggle; untick it at brave://inspect/#remote-debugging" >&2
+    return 1
   fi
   open -na "Brave Browser" --args --user-data-dir="$HOME/.brave-agent" \
     --remote-debugging-port=9222 --no-first-run --no-default-browser-check
