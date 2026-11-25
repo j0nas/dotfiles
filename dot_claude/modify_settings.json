@@ -12,9 +12,10 @@ wholesale (only the llm-log SessionStart hook; a hook added through /hooks
 lasts until the next apply); "model" stays unset so the account default applies (Claude Code drops the key
 when /model picks default, and a leftover pin would otherwise win forever);
 and "modelSettings" we own wholesale — /effort saves a block per model you
-confirm a level on, which a deep merge would let accumulate past the defaults
-declared here (Opus xhigh, Fable medium); every other model falls back to the
-top-level effortLevel.
+confirm a level on, under its exact ID, and that block beats ours until the next
+apply. Ours is keyed by alias ("opus"), which Claude Code resolves to the current
+model (tested 2026-11-25), so a new release needs no edit here; every model not
+listed falls back to the top-level effortLevel.
 */ -}}
 {{- $cur := dict -}}
 {{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
