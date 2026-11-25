@@ -1,5 +1,5 @@
 # Age recipients for chezmoi's encrypted files (dot_claude/private_secrets/
-# encrypted_private_*.json.age -> ~/.claude/secrets/*.json). chezmoi encrypts to
+# encrypted_private_*.age -> ~/.claude/secrets/). chezmoi encrypts to
 # every key listed here (recipientsFile in .chezmoi.toml.tmpl) and each machine
 # decrypts with its own ~/.ssh/id_ed25519 ([age] identity there).
 #

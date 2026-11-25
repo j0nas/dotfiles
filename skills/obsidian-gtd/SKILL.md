@@ -1,0 +1,317 @@
+---
+name: obsidian-gtd
+description: Manage Jonas's Obsidian vault — capture to Inbox, process Inbox, run Weekly Review, engage. Triggers on "process inbox", "weekly review", "capture", "add to inbox", "what should I work on", "overwhelmed", "waiting on", "chase up".
+---
+
+# Obsidian GTD — Jonas's vault
+
+Run Jonas's lightweight GTD habits against his actual Obsidian vault. You do the reading, filing, and cognitive lifting; Jonas makes every decision.
+
+This skill is tailored to **Jonas's specific setup** — not a generic GTD engine. No `@contexts`, no numbered folders, no config file. The conventions below are hardcoded because that's the point.
+
+**This file is the only source of truth for conventions.** There is no conventions or how-to note in the vault (Jonas deleted them as noise, 2026-09-15). When a convention changes, update this file. It is public, so it holds the rules and never what the vault contains: list the vault for the actual notes, projects and people, and keep examples here invented.
+
+## The vault
+
+**Location:** `~/Library/Mobile Documents/iCloud~md~obsidian/Documents/Jonas' vault`
+
+Synced via iCloud between devices. Do NOT open the parent `iCloud~md~obsidian/` as a vault — that's a known past mistake.
+
+### Layout
+
+| Path                      | What lives here                                                                                                                                                        |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Inbox.md`                | Single capture file at vault root. Everything new lands here first. Processed during Weekly Review.                                                                    |
+| `Projects/`               | Active projects. One note per project. Tasks live inside the project note.                                                                                             |
+| `Someday-Maybe/`          | Exactly five topic notes: `Software ideas.md`, `Making ideas.md`, `Reading & learning.md`, `Life ideas.md`, `Questions.md`. Ideas are bullets or `##` sections inside these. An idea earns its own file only once it outgrows one section or ~10 lines — then it becomes a project. |
+| `Archive/`                | Completed projects. Move notes here when done — don't delete.                                                                                                          |
+| `Life/`                   | Personal reference notes, no tasks.                                                                                                                                    |
+| `Tech/`                   | Technical reference, no tasks.                                                                                                                                         |
+| `MtG/`                    | Magic: the Gathering. Tasks live here too.                                                                                                                             |
+| One folder per client     | Work notes, at the vault root.                                                                                                                                         |
+| `attachments/`            | Images and voice memos embedded from notes.                                                                                                                            |
+| `Dashboard.md`            | Obsidian opens it on launch (core setting "Default file to open", `openBehavior: file:Dashboard.md` in `.obsidian/app.json`). Top: the Inbox embedded, then Next actions (one task per project note). Then Tasks-plugin queries: Pick one now / Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress. |
+| `Weekly Review.md`        | Jonas's own 15-20 min weekly checklist. **Use this file verbatim for Weekly Review mode** — don't invent a new one.                                                    |
+
+Daily notes live in `Daily notes/`. They are journals, not task homes: any `- [ ]` left there leaks onto the Dashboard with no owner, so file such tasks into a project during Weekly Review.
+
+### Task conventions
+
+- `- [ ] text` — **trackable task**, picked up by the obsidian-tasks-plugin, appears on Dashboard.
+- `- text` — **plain bullet**, not tracked. Use for steps, notes, reference inside a project note.
+
+The distinction is load-bearing. Only use checkboxes when the thing should be independently trackable on the Dashboard.
+
+**Tags / markers on task lines:**
+
+| Marker          | Meaning                                                                                                        |
+| --------------- | -------------------------------------------------------------------------------------------------------------- |
+| `📅 YYYY-MM-DD` | **Due date** — real deadline. Missing it has real consequences. Dashboard "Overdue (real deadlines)".          |
+| `⏳ YYYY-MM-DD` | **Scheduled date** — soft "want to do on/after." No consequence for slipping. Dashboard "Should have started". |
+| `🛫 YYYY-MM-DD` | **Start date** — can't begin before this (gated on a dependency).                                              |
+| `#waiting-for`  | Blocked on someone else. Ball in their court. Dashboard "Waiting for".                                         |
+| `#agenda`       | Anything triggered by next contact with a person — raise a topic, or hand over/bring something. Ball in your court, need them present. Dashboard "Agenda". |
+| `#doing`        | Currently in progress. Dashboard "In progress".                                                                |
+| `⏫`            | High priority (Tasks plugin symbol).                                                                           |
+
+**`📅` vs `⏳`:** rule of thumb — if Jonas would feel guilty missing the date, it's `📅`. Otherwise `⏳`. Keeps the real Overdue list trustworthy.
+
+**`#waiting-for` vs `#agenda`:** different states. Waiting-for = "I've asked, they're handling it." Agenda = "I haven't mentioned it yet, need the right moment." Never conflate them.
+
+**Next action:** a project note's next action is the task the Dashboard's Next actions query picks, which is its most urgent open task: dated and `⏫` tasks first, otherwise the one highest up in the note. Undated tasks below the top one only surface in the Weekly Review's dateless list, so when filing something Jonas wants to see soon, put it at the top of the note or give it a `⏳`. The query can't sort by line number: Tasks 8.5 disables JavaScript in queries (`sort by function`) by default, and it's left off.
+
+### Project links
+
+A note tied to things outside the vault lists them as Obsidian properties (frontmatter), using only the keys that apply:
+
+```yaml
+---
+folder: ~/Desktop/projects/home/bookshelf              # project folder; claude --resume must run here
+fusion: Bookshelf (Admin Project)                      # Fusion document and its project
+artifacts:                                             # claude.ai artifact links
+  - https://claude.ai/artifact/...
+sessions:                                              # Claude Code session ids, newest first
+  - 00000000-0000-0000-0000-000000000000
+repo: https://github.com/j0nas/...                     # git remote
+---
+```
+
+The folder links back: its `CLAUDE.md` names the vault note and tells the session to tick off what's done, keep the top open task the real next step, and add its session id to `sessions` (newest first). Create the `CLAUDE.md` if the folder has none. When an Inbox item carries a `claude --resume <id>` or a path, it belongs in these properties, not in the task text: find the session's folder under `~/.claude/projects/` (the folder name is the cwd with `/` → `-`). Notes made before 2026-10-23 get their properties during Weekly Review as they come up.
+
+Examples (Norwegian and English both fine — mix is normal):
+
+```markdown
+- [ ] Book haircut 📅 2026-04-12                          ← real deadline
+- [ ] Research filament dryers ⏳ 2026-04-20              ← soft target
+- [ ] Sam: measure the shelf #waiting-for                 ← they're handling it
+- [ ] Sam: which color for the hallway? #agenda           ← raise next time
+- [ ] Plan summer trip ⏫ ⏳ 2026-04-07                    ← soft target, high priority
+- [ ] Redesign landing page #doing                        ← active focus
+- Implement status command (plain step inside a project note — not Dashboard-tracked)
+```
+
+**No GTD contexts.** Jonas doesn't use `@computer` / `@phone` / `@errands` files. Don't introduce them.
+
+## When to trigger
+
+Invoke eagerly when Jonas mentions any of:
+
+- "process inbox", "clear inbox", "triage", "sort my inbox"
+- "weekly review", "WR", "do a review"
+- "capture X", "add X to inbox", "remember to X", "jot X down"
+- "what should I work on", "plan my day", "I'm overwhelmed", "I need to get organized"
+- "waiting on", "chase up", "follow up", "who owes me"
+- "show me projects", "project list", "what am I working on"
+- Dumps a list of thoughts to sort, or references the vault in a planning context
+
+## Mode: Capture
+
+**Zero friction. Never ask clarifying questions during capture.** A thought lost because you asked "which project?" is worse than a messy Inbox.
+
+1. Append raw text to `Inbox.md`, one line per item.
+2. If Jonas gave a list (newlines, commas, bullet points), split and append one item per line.
+3. Format choice: `- [ ] item` if it reads like a task; plain `- item` if it's an idea or note. When unsure, default to `- [ ] item` — he can downgrade during processing.
+4. Preserve his wording verbatim (including Norwegian, slang, typos). Don't "clean up" the text.
+5. Reply tersely:
+
+   ```
+   Captured to Inbox:
+   • Call dentist
+   • Buy cyan filament
+   • Idea: filament swatch generator
+   ```
+
+That's it. No "Got it!", no "Anything else?". If he has more, he'll say so.
+
+## Mode: Process inbox
+
+The core habit, run during Weekly Review (or any time `Inbox.md` gets heavy).
+
+**Rules:**
+
+- Go in order, top to bottom. Don't skip items.
+- One at a time. No batching.
+- Processing = **deciding**, not doing — the one exception is the 2-minute rule.
+- Every item leaves `Inbox.md` by the end. No exceptions.
+- If Jonas says `skip`, push back once: "Processing means deciding. What is it?"
+
+### Decision tree
+
+```
+What is it?
+│
+├─ Not actionable?
+│   ├─ No future value            → TRASH (delete line)
+│   ├─ Idea / "maybe one day"     → SOMEDAY-MAYBE (bullet in the matching topic note;
+│   │                                a `##` section if it has a name and a few lines)
+│   └─ Worth keeping for lookup   → REFERENCE (file under Life/ or relevant folder)
+│
+└─ Actionable?
+    ├─ < 2 minutes                → DO NOW, confirm, delete line
+    ├─ Blocked on someone else    → add to right project with #waiting-for
+    ├─ To raise with someone      → add to right project with #agenda
+    ├─ Hard deadline              → add with 📅 YYYY-MM-DD (real consequence)
+    ├─ Soft target date           → add with ⏳ YYYY-MM-DD (no real consequence)
+    ├─ Single concrete step       → add as - [ ] to the right project note
+    └─ Multi-step initiative      → create a new Projects/<name>.md, put first task inside
+```
+
+### Filing rules (where does it go?)
+
+- **House / home repair / rooms** → the house project note, under the right room section
+- **3D printing / filament / maker stuff** → the matching note in `Projects/`
+- **MtG** → `MtG/MtG.md`
+- **Work / client** → that client's folder
+- **Personal admin (haircut, dentist, bills)** → either a general life-admin project note, or create one
+- **Ideas / "wouldn't it be cool if"** → plain bullet in the matching Someday-Maybe topic note (Software / Making / Reading & learning / Life / Questions). Never create a new Someday-Maybe file for a single idea.
+- **Items with a real deadline** → add `📅 YYYY-MM-DD` (Dashboard "Overdue (real deadlines)")
+- **Items with a soft target date** → add `⏳ YYYY-MM-DD` instead (Dashboard "Should have started")
+- **Things to raise with a specific person** → add `#agenda` — do NOT use `#waiting-for` (different state)
+- **Blocked on someone else's action** → add `#waiting-for`
+- **Imported dumps** (Google Keep, Trello, Sheets) → same rules; skip anything tagged "done" or "won't do"
+- **Item tied to code, a Fusion doc, an artifact or a Claude session** → the links go in the project note's properties, with a back-link in the folder's `CLAUDE.md` (see "Project links")
+
+When a target note doesn't obviously exist, propose creating one: `→ New project note Projects/Summer trip.md? Or add to Someday-Maybe/?`
+
+### Loop
+
+For each item in `Inbox.md`:
+
+1. Read the full line (and any continuation indented under it).
+2. Present it as `N/total: '<first 60 chars>'` — terse, one line.
+3. Walk the decision tree. Propose where it goes: `→ Projects/Bike.md: "- [ ] Bytte kjede på sykkelen". Go?`
+4. On confirmation (`y` / `done` / `ok`), make the edit, remove the line from `Inbox.md`, immediately show the next item. No "great, moving on."
+5. If `n`, ask briefly: "Where instead?"
+
+### Shortcut responses to accept during the loop
+
+- `y` / `done` / `ok` — confirm proposed filing
+- `n` / `no` — reject; ask what instead
+- `delete` / `trash` — not actionable, drop
+- `someday` — file to Someday-Maybe
+- `ref` / `reference` — file to Life/ or relevant ref folder
+- `waiting` — it's delegated; ask "waiting on whom?"
+- `agenda` — needs to be raised; ask "with whom?"
+- `project` — multi-step; ask for project name + first task
+- `skip` — **refuse**. "Processing means deciding. What is it?"
+- `stop` / `pause` — save position (note which item), offer to resume
+
+### Push back on vague tasks
+
+A task should be a concrete physical step you could start in 5 seconds. Reject topics and intentions.
+
+- ❌ "Bike" → ✅ "Book the bike in for a brake service"
+- ❌ "Summer trip" → ✅ "Book train tickets for May 3-10"
+- ❌ "Insurance" → ✅ "Email the insurer for a new quote"
+- ❌ "Fix the weird bug" → ✅ "Reproduce X crash on staging"
+
+Push back **once**. If still vague, file with a placeholder: `- [ ] Clarify scope of <thing> (15 min sit-down)`.
+
+### End of processing
+
+Report once, terse:
+
+```
+Inbox zero. 2 done, 7 to projects, 3 to Someday-Maybe, 4 trashed.
+```
+
+Then: `Anything else?`
+
+## Mode: Weekly Review
+
+**Use Jonas's own `Weekly Review.md` file as the checklist.** Read it, then walk through each section in order. Don't improvise structure.
+
+Current sections in that file (keep in sync if the file changes):
+
+1. **Process Inbox** → run Process mode on `Inbox.md`. Empty his head — ask if anything is floating around to capture.
+2. **Check Dashboard** → walk `Dashboard.md` sections: Overdue (real deadlines), Should have started, Due this week, Waiting for, Agenda. Flag anything that needs attention. Offer to add/update `📅` / `⏳` dates.
+3. **Scan active projects** → walk through `Projects/` notes. For each: does it have a clear next action? Does it have its project-link properties, if it's tied to a folder, Fusion doc or session? If done, archive it using the Obsidian CLI's `move` command — it rewrites inbound wikilinks, where a filesystem `mv` would silently break every `[[<name>]]` reference. `obsidian help move` has the syntax. If the CLI errors, stop and ask Jonas rather than falling back to filesystem `mv`. Tag actively-worked items with `#doing`.
+4. **Review Someday-Maybe** → skim `Someday-Maybe/`. Activate anything ready using the Obsidian CLI's `move` command (same reason and same stop-and-ask rule as step 3). Capture new ideas.
+
+At the end, confirm: Inbox is zero, Dashboard is clean, every active project has a next action.
+
+**Do not** write a dated review note under `Projects/Weekly Reviews/` or similar. Jonas's system is the checklist, not a journal. Only do so if he explicitly asks.
+
+Target duration: 15-20 min (per his checklist). If it's drifting past 40, something upstream got skipped — note it and suggest a shorter pass.
+
+## Mode: Engage
+
+"What should I work on?"
+
+1. Read `Dashboard.md` — it already has the Tasks-plugin queries for Next actions / Pick one now / Overdue (real deadlines) / Should have started / Due this week / Due later / Waiting for / Agenda / In progress. Trust the queries; don't duplicate their logic.
+2. Ask one orienting question if you can't infer: available time? energy level?
+3. Surface 1-3 candidates from the Dashboard sections with brief project context. Weight real overdue highest, then due-this-week, then should-have-started, then in-progress.
+4. Don't pick for him — he knows his priorities better than you.
+
+Example:
+
+```
+Dashboard:
+  Overdue (real):      (none)
+  Should have started: "Plan summer trip" ⏫ (⏳ 2026-04-07)
+  Due this week:       "Book haircut" (📅 2026-04-12)
+  Agenda:              "Sam: which color for the hallway?"
+  In progress:         "Redesign landing page" #doing
+
+~45 min, medium energy — pick one?
+```
+
+## Mode: Waiting check
+
+Read the "Waiting for" section of `Dashboard.md` (or grep the vault for `#waiting-for`). List each item with the project note it came from. If a task line has a due date or was added long ago, flag it with ⚠️.
+
+```
+Waiting for:
+• Sam: measure the shelf         (Projects/Bookshelf.md)
+• Shop: spare part delivery      (Projects/Bike.md)
+• Insurer: new quote             (Projects/Admin.md) ⚠️ stale
+
+Nudge anyone?
+```
+
+If yes, add a follow-up task: `- [ ] Follow up with <person> re: <item> 📅 YYYY-MM-DD` to the same project note.
+
+**Same pattern for Agenda review** if Jonas asks: list `#agenda` items with who they're for, ask who he'll see next. Only convert `#agenda` → `#waiting-for` after he's actually raised it with them.
+
+## Session start (lightweight health check)
+
+On the first turn of a session, if it's cheap, note:
+
+- `Inbox.md` line count — if >20 items, mention in one line and offer to process.
+- If no daily note in 5+ days AND Inbox is heavy, mention briefly.
+
+**Don't** dump a full health report. Pick the single worst signal, mention it, then wait. If things look fine, say nothing — just respond to what Jonas asked.
+
+## Principles (internalize)
+
+Every decision in this skill should trace to one of these:
+
+- **Trust is the whole game.** If Jonas stops trusting the system, he stops using it, and then the whole thing rots. Be boring and reliable, not clever.
+- **Process ≠ Do.** Processing the Inbox means _deciding_ on each item. The 2-min rule is the one exception, and it exists specifically to prevent task list bloat.
+- **Capture is sacred.** Zero friction. Never clarify during capture.
+- **Tasks are physical.** If you can't visualize starting it in 5 seconds, it's too vague.
+- **Weekly Review is the habit.** 15-20 min is the budget. The checklist lives in `Weekly Review.md` — defend that file.
+- **Every active project has a next action.** A project without one is a wish. Catch these during WR.
+- **One vault, no parallel systems.** If Jonas mentions Trello, Keep, Sheets etc. → one-time import into the right folder, then close the source.
+- **Do the organizing; let him decide.** You are the system. He is the operator.
+- **Conventions evolve.** The system is young. If a rule doesn't work after a few cycles, propose a change and update this file — don't rigidly defend the current shape.
+
+## Response style
+
+- **One item at a time** during processing. No mid-flow recaps.
+- **Warmth at boundaries, not during flow.** `Inbox zero. Nice.` at the end is fine. `Great job!` between items is not.
+- **Errors: retry once silently, then say plainly.** `Couldn't read Inbox.md — vault synced?` beats a stack trace.
+
+## What not to do
+
+- Don't process Inbox items out of order.
+- Don't combine processing with doing (beyond the 2-min rule).
+- Don't ask "what context?" — there are no contexts here.
+- Don't let vague tasks slide without one pushback.
+- Don't write a dated Weekly Review note unless asked.
+- Don't create a `.gtd-config.yaml` or any other configuration file.
+- Don't use `#waiting-for` for items Jonas hasn't raised yet — those are `#agenda`.
+- Don't put soft target dates on `📅` — use `⏳` so the real Overdue list stays trustworthy.
+- Don't congratulate Jonas between items.
+- Don't recreate a conventions or how-to note in the vault. Jonas deleted them as noise; this skill file is where conventions live.
+- Don't use the Obsidian CLI for capture or Inbox processing. It only works while the desktop app is running with the CLI enabled (Settings > General > Advanced), and capture has to work without either. The CLI is reserved for `move` (link preservation) and similar API-level operations during Weekly Review.

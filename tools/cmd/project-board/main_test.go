@@ -583,10 +583,10 @@ func TestParseStatus(t *testing.T) {
 
 func TestHTTPSRemote(t *testing.T) {
 	for in, want := range map[string]string{
-		"git@github.com:j0nas/dotfiles.git":        "https://github.com/j0nas/dotfiles",
-		"ssh://git@github.com/j0nas/x.git":         "https://github.com/j0nas/x",
-		"https://github.com/j0nas/y.git":           "https://github.com/j0nas/y",
-		"git@gitlab.com:someone/z.git":             "git@gitlab.com:someone/z.git",
+		"git@github.com:j0nas/dotfiles.git":       "https://github.com/j0nas/dotfiles",
+		"ssh://git@github.com/j0nas/x.git":        "https://github.com/j0nas/x",
+		"https://github.com/j0nas/y.git":          "https://github.com/j0nas/y",
+		"git@gitlab.com:someone/z.git":            "git@gitlab.com:someone/z.git",
 		"https://dev.azure.com/org/_git/acme-app": "https://dev.azure.com/org/_git/acme-app",
 	} {
 		if got := httpsRemote(in); got != want {

@@ -40,7 +40,7 @@ Each script and config explains itself in its header; this file holds what spans
 - **Settings**: `Claude-settings.json` holds the managed keys and `dot_claude/modify_settings.json` merges them over the live file. To retire a key, add it to that template's `unset` list. `model` stays unmanaged and effort is rebuilt on every apply, so `/model` and `/effort` picks last until then. `MM .claude/settings.json` in `chezmoi status` is normal.
 - **Updates**: `autoUpdatesChannel` is `stable` (about a week old, the counterpart of mise's cooldown). Before moving a Mac off `latest`, set a local `minimumVersion` to the running version, or it rolls back. Never commit that floor. For a model that needs a newer build, raise the local floor and run `claude install <version>`; switching to `latest` in `/config` clears it.
 - **Third-party skills** (`skills add`) live in `~/.agents/skills`; the mise converge refreshes them.
-- **Secrets**: age-encrypted, `dot_claude/private_secrets/encrypted_private_*.json.age` → `~/.claude/secrets/*.json`, decrypted with the SSH key and skipped where the Mac's key isn't in `.age-recipients` (its header has the add, revoke and edit steps).
+- **Secrets and private notes**: age-encrypted, `dot_claude/private_secrets/encrypted_private_*.age` → `~/.claude/secrets/`, decrypted with the SSH key and skipped where the Mac's key isn't in `.age-recipients` (its header has the add, revoke and edit steps). A skill about something private (`/seedbox`, `/stationary`) is a public stub that reads its `*-notes.md`.
 - **Session log**: `rules/llm-sessions.md`, `commands/session-end.md` and `tools/cmd/llm-log`. `llm-sessions/` is in the global gitignore (`dot_config/git/ignore`), so a log never reaches a remote.
 
 ## Validation

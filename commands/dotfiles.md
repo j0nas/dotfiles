@@ -24,6 +24,7 @@ The argument describes a change the user wants persisted across machines.
    - retire a managed file, symlink, skill, command or rule → `git rm` its source and add an empty `remove_<target name>` in the same source dir (e.g. `dot_claude/skills/remove_<name>`). Deleting the source alone leaves the old target on every machine. A third-party skill: drop its `add` from the mise-tools converge script and run `skills remove <name> -g -y` once.
    - setting in a file the app rewrites itself → `modify_<file>` template that reads `.chezmoi.stdin` and sets only the managed keys (examples: `dot_claude/modify_settings.json`, `private_Library/private_Application Support/private_obsidian/modify_obsidian.json`)
    - secret → `chezmoi edit ~/.claude/secrets/<file>.json` (existing) or `chezmoi add --encrypt ~/.claude/secrets/<file>.json` (new); the source lands at `dot_claude/private_secrets/encrypted_private_<file>.json.age`
+   - notes that shouldn't be public (hosts, accounts, other people) → `~/.claude/secrets/<name>-notes.md`, encrypted beside the secrets, with a short public skill or command that reads them. Save an edit with `chezmoi encrypt --output "$(chezmoi source-path <file>)" <file>` (no autoCommit, unlike `chezmoi re-add`), and keep its commit message generic
    - macOS default → `.chezmoiscripts/run_onchange_macos-defaults.sh`
    - one-time setup task → `.chezmoiscripts/run_once_<name>.sh.tmpl` (alphabetical sort matters)
    - re-runs on content change → `.chezmoiscripts/run_onchange_<name>.sh.tmpl`
