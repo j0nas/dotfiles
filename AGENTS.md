@@ -10,7 +10,7 @@ Each script and config explains itself in its header; this file holds what spans
 - **No model IDs**: refer to Claude models by alias (`opus`, `sonnet`, `haiku`, `fable`). `modelSettings` in `Claude-settings.json` accepts aliases too, though its docs only show IDs.
 - **This repo is public.** Nothing goes in that shouldn't be read by anyone.
 - **Naming**: `dot_` prefix, `.tmpl` only where something is templated. Repo-only files are listed in `.chezmoiignore`, whose patterns match **target** paths (`validate` checks).
-- **Shared data**: `.chezmoi.toml.tmpl` (`name`, `email`, `obsidian_vault`, machine facts; re-run `chezmoi init` after editing) and `.chezmoidata.yaml` (package and extension lists).
+- **Shared data**: `.chezmoi.toml.tmpl` (`name`, `email`, machine facts; re-run `chezmoi init` after editing) and `.chezmoidata.yaml` (package and extension lists).
 - **All aliases** go in `dot_config/zsh/aliases.zsh`.
 
 ## Scripts

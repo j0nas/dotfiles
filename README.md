@@ -19,7 +19,7 @@ What the script can't do:
    - Accessibility: AeroSpace, Tinycast
    - Full Disk Access: Tinycast (file search), WezTerm (cursor size and color). After granting WezTerm, run `bash ~/.local/share/chezmoi/.chezmoiscripts/run_onchange_macos-defaults.sh` in it, since the apply already skipped that part.
 3. Log out and back in. Key repeat and the Spaces setting only apply then.
-4. Sign in: `claude` (then `/login`), iCloud, Brave and the other apps.
+4. Sign in: `claude` (then `/login`), iCloud (the Obsidian vault comes with it, plugins included), Brave and the other apps.
 5. Secrets (`~/.claude/secrets`) are skipped on a Mac that can't decrypt them. To add this one, run `ssh-keygen -t ed25519` and follow the header of `.age-recipients` on a Mac that can.
 6. Fusion 360 comes from Autodesk and HueForge from its store; `chezmoi apply` then adds the Fusion add-in and installs HueForge from the zip in `~/Downloads`.
 7. Epson ET-8550: install the Drivers and Utilities Combo Package from [epson.com](https://epson.com/Support/Printers/All-In-Ones/ET-Series/Epson-ET-8550/s/SPT_C11CJ21201). Epson's CDN blocks scripts. AirPrint alone breaks ICC profiles and custom paper sizes, and Epson Print Layout needs the driver.
@@ -46,7 +46,3 @@ zsh plugins are pinned, checksummed archives in `.chezmoiexternal.toml`.
 | Pull a dotfile in | `chezmoi add ~/.foo` (`--template` if it has personal data). |
 | Edit a managed dotfile | `chezmoi edit ~/.foo`, or edit it under `~/.local/share/chezmoi/`. |
 | Push changes | `git commit` in the source dir; the post-commit hook pushes. |
-
-## Obsidian
-
-The vault lives in iCloud Drive. `run_onchange_setup-obsidian-tasks.sh.tmpl` puts the pinned [Tasks](https://github.com/obsidian-tasks-group/obsidian-tasks) plugin in it once it has synced. Bump `PLUGIN_VERSION` to upgrade.

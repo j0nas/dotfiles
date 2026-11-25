@@ -6,6 +6,10 @@ Settings > General > Advanced "Command line interface" toggle; the Homebrew
 cask's binary symlink covers putting `obsidian` on PATH. Obsidian reads the file
 at launch and writes its in-memory copy back when it saves, so if it is running
 during an apply it may drop the key again; a later apply restores it.
+
+Obsidian's own defaults, tagged here so they show in SHORTCUTS.md:
+# sc: Cmd+P | Command palette — fuzzy-find any command, e.g. "daily" → Open today's daily note
+# sc: Cmd+O | Quick switcher — fuzzy-open a note by name
 */ -}}
 {{- $cur := dict -}}
 {{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
