@@ -9,13 +9,9 @@ jq = "latest"  # JSON parsing for shell scripts (e.g. the Claude Code statusline
 # check-jsonschema schema-checks JSON (Claude settings) against the
 # vendored schemas in .githooks/schemas/. jq above does JSON syntax checks.
 taplo = "latest"
-# uv: the deterministic venv/installer for mise's pipx backend below. Declared
-# here (not only as a darwin brew) so check-jsonschema resolves on EVERY OS —
-# Linux/WSL have no Homebrew, and without uv the pipx backend falls back to
-# pipx→pip, whose "upgrade shared libraries" step intermittently fails (the exact
-# flake CI's validate.yml already works around with `mise use -g uv`). The darwin
-# brew uv stays too, for a different reason: it puts `uvx` on the broad system
-# PATH for the Fusion MCP, which Claude Code spawns where mise shims aren't.
+# uv: the venv/installer for the pipx: tools below. Without it mise's pipx backend
+# falls back to pipx→pip, whose "upgrade shared libraries" step fails now and then.
+# brew's uv (.chezmoidata.yaml) is there for another reason: the Fusion MCP's PATH.
 uv = "latest"
 "pipx:check-jsonschema" = "latest"  # pipx backend; uv (above) provides the venv
 shellcheck = "latest"  # lints the repo's shell scripts in the pre-commit hook + CI
@@ -48,10 +44,6 @@ node = "26"
 # pnpm then auto-switches to each project's pinned version. Version here is
 # irrelevant for that reason; "latest" keeps the baseline current.
 pnpm = "latest"
-# ccusage: analyzes Claude Code token usage from local JSONL logs. npm-backed
-# so it lands on PATH (vs `npx` re-downloading each run) — the Claude Code
-# statusLine spawns `ccusage statusline` on every prompt render.
-"npm:ccusage" = "latest"
 # agent-browser: the browser-automation CLI behind the /agent-browser skill.
 # `agent-browser install` must fetch the Chrome for Testing build each CLI
 # version expects, so the postinstall hook runs that (and prunes the builds it
@@ -70,13 +62,8 @@ glow = "latest"
 # on apply, and runs their vet + tests in .githooks/validate. Go is the default
 # for new tools here: fast static binaries, no runtime to install per machine.
 go = "latest"
-# chezmoi: the tool that applies this very repo. Declared here so the weekly
-# upgrade rolls it forward — otherwise nothing would. setup.sh installs
-# it once via get.chezmoi.io into ~/.local/bin (that copy has to exist before
-# mise does, to bootstrap a bare machine) behind a `command -v` guard, so it was
-# install-once-never-upgrade and quietly fell behind releases. The converge
-# script retires that bootstrap copy once this one resolves, because
-# ~/.local/bin precedes mise's shims on PATH and would otherwise shadow it.
+# chezmoi: the tool that applies this very repo. setup.sh runs the first apply
+# through `mise exec`, so this is the only copy and the weekly upgrade moves it.
 chezmoi = "latest"
 
 [settings]
