@@ -2,25 +2,50 @@
 set -e
 
 # The Android emulator Touchup's `pnpm devices` checks the widget on, in real Chrome.
-# Command-line tools only: nothing here or in the tests needs Android Studio.
-#
-# _after_: Java comes from the mise converge, which sorts before this; the cask
-# comes from install-packages, which runs before any target is written.
+# Command-line tools only: no Android Studio, and no Java, which only sdkmanager and
+# avdmanager needed. Google deprecated both for the `android` CLI.
 #
 # The SDK lives in the android-commandlinetools cask's share dir, so a cask that
-# gets removed and reinstalled takes it along. sdkmanager is a no-op when all is
-# in place, so the Unix-week counter (same trick as the mise converge) re-checks
-# on the first apply of each week.
+# gets removed and reinstalled takes it along. Installing what is already there is
+# a no-op, so the Unix-week counter (same trick as the mise converge) re-checks on
+# the first apply of each week. _after_: the download is big, so the dotfiles land first.
 # check cadence: week {{ div (now | unixEpoch) 604800 }}
 
-ANDROID_SDK_ROOT="$(brew --prefix)/share/android-commandlinetools"
-export ANDROID_SDK_ROOT
-image='system-images;android-35;google_apis;{{ if eq .chezmoi.arch "arm64" }}arm64-v8a{{ else }}x86_64{{ end }}'
+sdk="$(brew --prefix)/share/android-commandlinetools"
+image=system-images/android-35/google_apis/arm64-v8a
 
-yes | mise exec -- sdkmanager --licenses > /dev/null
-mise exec -- sdkmanager platform-tools emulator 'platforms;android-35' "$image" > /dev/null
+for package in platform-tools emulator platforms/android-35 "$image"; do
+  "$sdk/cmdline-tools/latest/bin/android" --no-metrics --sdk="$sdk" sdk install "$package" > /dev/null
+done
 
-if ! mise exec -- avdmanager list avd -c 2> /dev/null | grep -qx touchup-phone; then
+# `android emulator create` picks its own name and image, and Touchup needs this
+# one. An AVD is two ini files; the emulator fills in what they leave out.
+avds="${ANDROID_AVD_HOME:-$HOME/.android/avd}"
+if [[ ! -f "$avds/touchup-phone.ini" ]]; then
   echo "==> Creating the touchup-phone emulator"
-  echo no | mise exec -- avdmanager create avd -n touchup-phone -k "$image" -d pixel_7
+  mkdir -p "$avds/touchup-phone.avd"
+  cat > "$avds/touchup-phone.avd/config.ini" <<INI
+avd.ini.encoding=UTF-8
+abi.type=arm64-v8a
+disk.dataPartition.size=10G
+hw.camera.back=emulated
+hw.cpu.arch=arm64
+hw.cpu.ncore=4
+hw.device.manufacturer=Google
+hw.device.name=pixel_7
+hw.keyboard=no
+hw.lcd.density=420
+hw.lcd.height=2400
+hw.lcd.width=1080
+hw.ramSize=2G
+image.sysdir.1=$image/
+tag.display=Google APIs
+tag.id=google_apis
+target=android-35
+INI
+  cat > "$avds/touchup-phone.ini" <<INI
+avd.ini.encoding=UTF-8
+path=$avds/touchup-phone.avd
+target=android-35
+INI
 fi

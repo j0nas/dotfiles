@@ -6,7 +6,7 @@ packages:
     - uv  # puts `uvx` on the system PATH for the Fusion360 MCP, which Claude spawns where mise's shims aren't. validate's uv is mise's (dot_config/mise/config.toml).
   casks:
     - nikitabobko/tap/aerospace
-    - android-commandlinetools  # sdkmanager/avdmanager, and home of the Android SDK: run_onchange_after_setup-android-emulator installs the emulator Touchup's `pnpm devices` runs on (no Android Studio needed)
+    - android-commandlinetools  # the android CLI, and home of the Android SDK: run_onchange_after_setup-android-emulator installs the emulator Touchup's `pnpm devices` runs on (no Android Studio needed)
     - android-platform-tools  # adb/fastboot: talk to the Meta Quest 3 over USB (push GLBs, adb reverse for localhost WebXR, screenshots)
     - bambu-studio
     - brave-browser
@@ -22,7 +22,7 @@ packages:
     - signal
     - spotify
     - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
-    - abue-ammar/tinycast/tinycast  # ⌘-Space launcher replacing Spotlight: free, open source, no account; only ships via its own tap
+    - tinycast  # ⌘-Space launcher replacing Spotlight: free, open source, no account
     - visual-studio-code
     - wezterm
     - xtool-studio  # xTool Studio (formerly Creative Space) — design/control for the xTool P2 laser

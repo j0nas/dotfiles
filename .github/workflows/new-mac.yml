@@ -55,6 +55,7 @@ jobs:
           done
           [ -e ~/.config/mise/config.toml ] || { echo "missing: mise config"; failed=1; }
           [ ! -e ~/.claude/secrets ] || { echo "secrets written without a key"; failed=1; }
+          "$(brew --prefix)/share/android-commandlinetools/emulator/emulator" -list-avds | grep -qx touchup-phone || { echo "missing: Android emulator"; failed=1; }
           code --list-extensions | grep -q anthropic.claude-code || { echo "missing: VS Code extensions"; failed=1; }
           exit ${failed:-0}
           CHECK
