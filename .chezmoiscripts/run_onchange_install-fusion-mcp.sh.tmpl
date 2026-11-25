@@ -1,13 +1,10 @@
 #!/bin/bash
 set -e
 
-{{ if eq .chezmoi.os "darwin" -}}
 # Fusion 360 MCP (faust-machines/fusion360-mcp-server). Drives Fusion from
 # Claude Code via a uvx-launched stdio server; the in-Fusion side is a Python
-# add-in that listens on localhost:9876. Lives in its own run_onchange_ script
-# rather than run_once_bootstrap so it (a) runs after install-claude-code (we
-# need `claude` on PATH for `claude mcp add`) and (b) self-heals if you install
-# Fusion later -- run_once_ would never re-evaluate.
+# add-in that listens on localhost:9876. Sorts after install-claude-code, since
+# `claude mcp add` needs `claude` on PATH.
 #
 # Both halves are pinned to the same upstream commit so the add-in's command
 # set matches the server's tool list. PyPI 0.1.0 (Apr 2026) lacks the later
@@ -52,4 +49,3 @@ if command -v claude &>/dev/null; then
     uvx --from "git+${FUSION_MCP_REPO}@${FUSION_MCP_SHA}" \
     fusion360-mcp-server --mode socket
 fi
-{{ end -}}

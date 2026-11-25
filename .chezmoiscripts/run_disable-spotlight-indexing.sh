@@ -1,4 +1,3 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 set -e
 
@@ -26,4 +25,3 @@ if sudo mdutil -a -d; then
 else
   echo "NOTE: couldn't disable Spotlight indexing (no sudo). Run 'chezmoi apply' in a terminal."
 fi
-{{ end -}}

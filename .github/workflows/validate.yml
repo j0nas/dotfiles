@@ -1,9 +1,7 @@
 name: validate
 
 # Enforces the same checks as the local pre-commit hook (.githooks/validate),
-# independent of local git config — covers `--no-verify` commits and fresh
-# clones. The macOS + Linux matrix lints each platform's rendered templates,
-# closing the gap where the local hook only sees the committer's OS.
+# independent of local git config: covers `--no-verify` commits and fresh clones.
 
 # Runs on pushes to main and on pull requests. A branch push without a PR is
 # left to the pre-commit hook.
@@ -22,11 +20,7 @@ concurrency:
 
 jobs:
   validate:
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest, macos-latest]
-    runs-on: ${{ matrix.os }}
+    runs-on: macos-latest
     # A warm run takes about 20s.
     timeout-minutes: 10
     # The same 7-day cooldown that dot_config/mise/config.toml sets locally, so
@@ -47,21 +41,13 @@ jobs:
       # Pinned-to-latest like the repo's mise config; schemas themselves are
       # vendored, so validation behaviour is stable regardless of tool version.
       #
-      # uv goes in FIRST and on its own line: mise's pipx backend installs via
-      # `uv tool install` when uv is present (as it is locally via brew), which
-      # is deterministic. Without uv the backend falls back to pipx→pip, whose
-      # "upgrade shared libraries" step intermittently fails on the ubuntu runner
-      # — the actual cause of the red `validate` runs (the checks never ran).
+      # uv goes in first, on its own line: with it mise's pipx backend installs
+      # deterministically, without it the backend falls back to pipx→pip, whose
+      # "upgrade shared libraries" step fails now and then.
       - name: Install validators
         run: |
           mise use -g uv@latest
           mise use -g jq@latest taplo@latest shellcheck@latest jactionlint@latest stylua@latest go@latest "pipx:check-jsonschema@latest" "aqua:twpayne/chezmoi@latest" "aqua:boyter/scc@latest"
-
-      # validate parses the zsh configs with `zsh -n`; macOS ships zsh, the
-      # ubuntu image doesn't.
-      - name: Install zsh
-        if: runner.os == 'Linux'
-        run: sudo apt-get install -y --no-install-recommends zsh
 
       # Generate a config from .chezmoi.toml.tmpl (no apply) so execute-template
       # resolves [data] vars; --source then also loads .chezmoidata.yaml.

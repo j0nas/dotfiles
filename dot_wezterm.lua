@@ -3,14 +3,10 @@ local config = wezterm.config_builder()
 local act = wezterm.action
 
 -- Shell
-if wezterm.target_triple:find("windows") then
-  config.default_domain = "WSL:Ubuntu"
-else
-  config.default_prog = { "zsh" }
-end
+config.default_prog = { "zsh" }
 
 -- Font
-config.font = wezterm.font("{{ .font }}")
+config.font = wezterm.font("JetBrains Mono")
 config.font_size = 14
 
 -- macOS: let both Option keys compose so Nordic specials (|, \, @, etc.) work
@@ -44,15 +40,5 @@ config.keys = {
   -- The new window takes focus, so Cmd+Alt+Shift+N (AeroSpace) can fling it straight to a workspace.
   { key = "o", mods = "CTRL|SHIFT", action = act.PaneSelect({ mode = "MoveToNewWindow" }) },  -- sc: Ctrl+Shift+O | Pop a pane out to its own window (pick by letter) | Panes
 }
-
--- Windows/WSL: ConPTY strips Shift+Enter, so send the CSI u sequence explicitly
-if wezterm.target_triple:find("windows") then
-  table.insert(config.keys, { key = "Enter", mods = "SHIFT", action = act.SendString("\x1b[13;2u") })  -- sc: Shift+Enter | Insert newline (multiline prompts) | Input
-  -- Ctrl+V has no default binding on Windows (Ctrl+Shift+V is taken by the
-  -- split above, SUPER+V is macOS-only), so it reaches zsh as ^V =
-  -- quoted-insert. The paste that follows then has its leading ESC swallowed
-  -- literally, showing up as "^[[200~<text>~" at the prompt.
-  table.insert(config.keys, { key = "v", mods = "CTRL", action = act.PasteFrom("Clipboard") })  -- sc: Ctrl+V | Paste clipboard (Windows) | Input
-end
 
 return config

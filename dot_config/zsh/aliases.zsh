@@ -6,33 +6,20 @@ alias gcb='git checkout -b'                        # sc: gcb | git checkout -b |
 alias gco='git checkout'                           # sc: gco | git checkout | Git
 alias gc='git commit --verbose'                    # sc: gc | git commit --verbose | Git
 alias gcam='git commit --all --message'            # sc: gcam | git commit --all --message | Git
-alias gcmsg='git commit --message'                 # sc: gcmsg | git commit --message | Git
 alias gc!='git commit --verbose --amend'           # sc: gc! | git commit --verbose --amend | Git
 alias gd='git diff'                                # sc: gd | git diff | Git
-alias gds='git diff --staged'                      # sc: gds | git diff --staged | Git
 alias gl='git pull'                                # sc: gl | git pull | Git
 alias gp='git push'                                # sc: gp | git push | Git
 alias gst='git status'                             # sc: gst | git status | Git
-alias glog='git log --oneline --decorate --graph'  # sc: glog | git log --oneline --decorate --graph | Git
 
 # docker
 alias dc='docker compose'                          # sc: dc | docker compose | Docker
 
 # clipboard
 # sc: x | Copy stdin to the clipboard | Clipboard
-{{ if eq .chezmoi.os "darwin" -}}
 alias x='pbcopy'
-{{ else -}}
-alias x='xclip -selection clipboard'
-{{ end -}}
 
 # navigation
-# sc: desktop | cd to your Desktop | Navigation
-{{ if stat "/mnt/c/Users" -}}
-alias desktop='cd "{{ template "win-home" . }}/Desktop"'
-{{ else -}}
-alias desktop='cd ~/Desktop'
-{{ end -}}
 mcd() { mkdir -p -- "$1" && cd -- "$1"; }          # sc: mcd <dir> | mkdir -p then cd into it | Navigation
 # Each extra dot climbs one more level, as in oh-my-zsh. Global aliases expand as
 # a whole word anywhere on the line: typed alone, AUTO_CD (dot_zshrc) cds there,
@@ -54,11 +41,7 @@ _mtg_proxy_dir() {
   for d in "${MTG_PROXY_DIR:-}" "$HOME/Desktop/projects/code/mtg-proxy"; do
     [[ -n "$d" && -d "$d" ]] && { echo "$d"; return 0; }
   done
-{{- if eq .chezmoi.os "darwin" }}
   echo "$1: mtg-proxy clone not found — run: gh repo clone j0nas/mtg-proxy ~/Desktop/projects/code/mtg-proxy" >&2
-{{- else }}
-  echo "$1: mtg-proxy runs on the Mac (it prints on the PC over SSH)" >&2
-{{- end }}
   return 1
 }
 # A printed paper deck box's cut, the formeriet workbench's own command (a subshell, so the
@@ -84,11 +67,9 @@ alias c='claude'                                   # sc: c | claude | Tools
 alias cr='claude --resume'                         # sc: cr | claude --resume | Tools
 # ~/.claude/settings.json (chezmoi-managed) leaves `model` unset, so plain `c`
 # runs the account default; `cf`, `co` and `cs` are the session overrides. --model
-# applies only to the session it starts, while /model (v2.1.153+) also writes
-# `model` into settings.json, so a mid-session switch reads back as chezmoi drift.
-# No [1m] suffix: Opus 4.7+ and Fable 5.1 are natively 1M on the Anthropic API,
-# so the quoting dance the old alias needed (zsh globs the brackets) is gone with
-# it. Effort comes from modelSettings — xhigh on Opus, medium on Fable.
+# applies only to the session it starts, while /model also writes `model` into
+# settings.json, so a mid-session switch reads back as chezmoi drift. Effort comes
+# from modelSettings in Claude-settings.json.
 alias cf='claude --model fable'                    # sc: cf | claude on Fable | Tools
 alias co='claude --model opus'                     # sc: co | claude on Opus | Tools
 alias cs='claude --model sonnet'                   # sc: cs | claude on Sonnet | Tools
@@ -107,7 +88,6 @@ kill-port() {
   echo "$pids" | xargs kill
 }
 
-{{ if eq .chezmoi.os "darwin" -}}
 # The agents' own Brave: a separate profile (~/.brave-agent) with the Chrome DevTools
 # Protocol always on :9222, for agent-browser and CDP scripts. It runs beside the everyday
 # Brave (`open -n` starts a second instance), which never gets the port: on the main
@@ -130,31 +110,14 @@ brave-agent() {
   open -na "Brave Browser" --args --user-data-dir="$HOME/.brave-agent" \
     --remote-debugging-port=9222 --no-first-run --no-default-browser-check
 }
-{{ end -}}
 
-# Scheduled shutdown. One name on every OS: WSL hands it to the Windows host
-# (shutdown.exe takes seconds; no /f, so an app with unsaved work can still veto
-# it — Windows shows the pending shutdown in a toast either way), macOS/Linux use
-# the BSD/systemd `shutdown -h +m` form, which needs root. Windows refuses a
-# second schedule (error 1190) until the first is cancelled: shutdown-cancel.
+# Scheduled shutdown: BSD `shutdown -h +m`, which needs root.
 # sc: shutdown-in <minutes> | Schedule a shutdown that many minutes from now | Tools
 shutdown-in() {
   local m="$1"
   [[ "$m" =~ ^[0-9]+$ ]] || { echo "usage: shutdown-in <minutes>" >&2; return 1; }
-{{ if stat "/mnt/c/Users" -}}
-  /mnt/c/Windows/System32/shutdown.exe /s /t $((m * 60)) || return
-{{ else -}}
   sudo shutdown -h "+$m" || return
-{{ end -}}
-  echo "shutdown-in: shutdown scheduled for $(date -d "+$m min" +%H:%M 2>/dev/null || date -v "+${m}M" +%H:%M)" >&2
+  echo "shutdown-in: shutdown scheduled for $(date -v "+${m}M" +%H:%M)" >&2
 }
 # sc: shutdown-cancel | Cancel a pending shutdown-in | Tools
-shutdown-cancel() {
-{{ if stat "/mnt/c/Users" -}}
-  /mnt/c/Windows/System32/shutdown.exe /a
-{{ else if eq .chezmoi.os "darwin" -}}
-  sudo killall shutdown
-{{ else -}}
-  sudo shutdown -c
-{{ end -}}
-}
+shutdown-cancel() { sudo killall shutdown; }

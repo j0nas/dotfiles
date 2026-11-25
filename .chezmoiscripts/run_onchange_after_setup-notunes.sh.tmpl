@@ -1,4 +1,3 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 set -e
 
@@ -35,4 +34,3 @@ launchctl bootout "gui/$(id -u)/$label" 2>/dev/null || true
 launchctl bootstrap "gui/$(id -u)" "$agent"
 
 echo "==> noTunes active — Apple Music will be killed on launch, media keys go to Spotify."
-{{ end -}}

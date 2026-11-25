@@ -1,10 +1,10 @@
 #!/bin/bash
 set -e
 
-if ! command -v code &> /dev/null; then
-  echo "==> code CLI not found, skipping VS Code extensions"
-  exit 0
-fi
+# The VS Code cask (install-packages, which sorts first) provides `code`. Listing
+# up front makes a missing `code` fail the script, so the next apply tries again;
+# a skip would count as done until the list changed.
+installed="$(code --list-extensions)"
 
 DESIRED=(
 {{- range .vscode_extensions }}
@@ -24,7 +24,7 @@ while IFS= read -r ext; do
   if [[ $keep -eq 0 ]]; then
     code --uninstall-extension "$ext" || true
   fi
-done < <(code --list-extensions)
+done <<<"$installed"
 
 for ext in "${DESIRED[@]}"; do
   code --install-extension "$ext" --force || true

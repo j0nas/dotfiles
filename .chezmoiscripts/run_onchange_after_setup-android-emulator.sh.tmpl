@@ -1,4 +1,3 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 set -e
 
@@ -25,4 +24,3 @@ if ! mise exec -- avdmanager list avd -c 2> /dev/null | grep -qx touchup-phone; 
   echo "==> Creating the touchup-phone emulator"
   echo no | mise exec -- avdmanager create avd -n touchup-phone -k "$image" -d pixel_7
 fi
-{{ end -}}

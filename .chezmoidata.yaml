@@ -1,55 +1,31 @@
 packages:
-  darwin:
-    brews:
-      - age   # decrypts chezmoi-managed secrets via SSH key
-      - libusb  # USB backend for inkscape-silhouette (drives the Cameo 5 Alpha directly, bypassing Silhouette Studio)
-      - llmfit  # picks the right local LLM + quant for this machine's hardware
-      - uv    # darwin-only: puts `uvx` on the broad system PATH so the Claude-spawned Fusion360 MCP launches (mise's uv shim isn't on PATH in that spawn). The validator's uv is mise-managed — see dot_config/mise/config.toml.
-    casks:
-      - nikitabobko/tap/aerospace
-      - android-commandlinetools  # sdkmanager/avdmanager, and home of the Android SDK: run_onchange_after_setup-android-emulator installs the emulator Touchup's `pnpm devices` runs on (no Android Studio needed)
-      - android-platform-tools  # adb/fastboot: talk to the Meta Quest 3 over USB (push GLBs, adb reverse for localhost WebXR, screenshots)
-      - bambu-studio
-      - brave-browser
-      - claude
-      - discord
-      - epson-print-layout
-      - fastmail
-      - font-jetbrains-mono-nerd-font
-      - godot  # Godot 4.x game engine; cask puts a `godot` CLI shim on PATH (headless runs, script checks)
-      - lm-studio
-      - notunes  # Apple Music can't be uninstalled (sealed system volume); this kills it on launch and redirects media keys to Spotify
-      - obsidian
-      - signal
-      - silhouette-studio  # design/cut software for the Silhouette Cameo 5 (card proxies etc.)
-      - spotify
-      - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
-      - abue-ammar/tinycast/tinycast  # ⌘-Space launcher replacing Spotlight: free, open source, no account; only ships via its own tap
-      - visual-studio-code
-      - wezterm
-      - xtool-studio  # xTool Studio (formerly Creative Space) — design/control for the xTool P2 laser
-  windows:
-    winget:
-      - Anthropic.Claude
-      - Apple.iCloud
-      - Bambulab.Bambustudio
-      - Brave.Brave
-      - DEVCOM.JetBrainsMonoNerdFont
-      - Discord.Discord
-      - Microsoft.VisualStudioCode
-      - Obsidian.Obsidian
-      - OpenWhisperSystems.Signal
-      - Spotify.Spotify
-      - wez.wezterm
-  linux:
-    flatpaks:
-      - com.bambulab.BambuStudio
-      - com.brave.Browser
-      - com.discordapp.Discord
-      - com.spotify.Client
-      - com.visualstudio.code
-      - md.obsidian.Obsidian
-      - org.signal.Signal
+  brews:
+    - age   # decrypts chezmoi-managed secrets via SSH key
+    - libusb  # mtg-proxy's own Cameo driver cuts over USB through it
+    - llmfit  # picks the right local LLM + quant for this machine's hardware
+    - uv  # puts `uvx` on the system PATH for the Fusion360 MCP, which Claude spawns where mise's shims aren't. validate's uv is mise's (dot_config/mise/config.toml).
+  casks:
+    - nikitabobko/tap/aerospace
+    - android-commandlinetools  # sdkmanager/avdmanager, and home of the Android SDK: run_onchange_after_setup-android-emulator installs the emulator Touchup's `pnpm devices` runs on (no Android Studio needed)
+    - android-platform-tools  # adb/fastboot: talk to the Meta Quest 3 over USB (push GLBs, adb reverse for localhost WebXR, screenshots)
+    - bambu-studio
+    - brave-browser
+    - claude
+    - discord
+    - epson-print-layout
+    - fastmail
+    - font-jetbrains-mono-nerd-font
+    - godot  # Godot 4.x game engine; cask puts a `godot` CLI shim on PATH (headless runs, script checks)
+    - lm-studio
+    - notunes  # Apple Music can't be uninstalled (sealed system volume); this kills it on launch and redirects media keys to Spotify
+    - obsidian
+    - signal
+    - spotify
+    - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
+    - abue-ammar/tinycast/tinycast  # ⌘-Space launcher replacing Spotlight: free, open source, no account; only ships via its own tap
+    - visual-studio-code
+    - wezterm
+    - xtool-studio  # xTool Studio (formerly Creative Space) — design/control for the xTool P2 laser
 # G9 desk (dot_config/g9-desk/README.md). Brews join the Brewfile only where
 # the g9_desk flag (.chezmoi.toml.tmpl) is true. Deskflow is not in Homebrew:
 # setup.sh installs this exact release and checks the sha256 from its sums.txt.
@@ -59,14 +35,6 @@ desk_g9:
     - m1ddc   # DDC/CI from Apple Silicon (`g9 pc|mac`)
   deskflow_version: "1.27.0"
   deskflow_sha256_macos_arm64: "dd21e79e566314394214906d3338c505d337af536fc580c022ee3fadffad0c97"
-
-# JetBrains Mono Nerd Font on plain Linux (macOS gets the brew cask; WSL gets
-# winget's, since its terminal runs Windows-side), consumed by
-# .chezmoiscripts/run_onchange_install-linux-font.sh.tmpl. Bump both together:
-# sha256 is the release's own SHA-256.txt entry for JetBrainsMono.tar.xz.
-nerd_font:
-  version: "v3.5.1"
-  sha256: "04d5e8f903693f9dd13e16f867e994834e681eb3c72c0d337a770dcda09010cf"
 
 vscode_extensions:
   - anthropic.claude-code

@@ -1,7 +1,6 @@
 #!/bin/bash
 set -e
 
-{{ if eq .chezmoi.os "darwin" -}}
 # brew bundle handles install and (with cleanup --force) uninstall — any brew
 # formula or cask not in .chezmoidata.yaml is removed, so one-offs clean
 # themselves up. It also
@@ -13,7 +12,7 @@ set -e
 # is the gate instead (AeroSpace's own tap skips even that review).
 # upgrade cadence: week {{ div (now | unixEpoch) 604800 }}
 BREWFILE=$(cat <<EOF
-{{ range .packages.darwin.brews -}}
+{{ range .packages.brews -}}
 brew {{ . | quote }}
 {{ end -}}
 {{ if and (hasKey . "g9_desk") .g9_desk -}}
@@ -21,7 +20,7 @@ brew {{ . | quote }}
 brew {{ . | quote }}
 {{ end -}}
 {{ end -}}
-{{ range .packages.darwin.casks -}}
+{{ range .packages.casks -}}
 cask {{ . | quote }}{{ if eq (len (splitList "/" .)) 3 }}, trusted: true{{ end }}
 {{ end -}}
 EOF
@@ -35,33 +34,3 @@ EOF
 # script. Declaring it keeps trust as declarative as the package list itself.
 echo "$BREWFILE" | brew bundle --file=/dev/stdin
 echo "$BREWFILE" | brew bundle cleanup --force --file=/dev/stdin
-{{ else if stat "/mnt/c/Users" -}}
-# On WSL the terminal (WezTerm) runs Windows-side, so the font and GUI apps
-# must be installed on Windows via winget — Linux-side equivalents would be
-# invisible to the host terminal.
-WINGET_PKGS=(
-{{- range .packages.windows.winget }}
-  {{ . }}
-{{- end }}
-)
-for p in "${WINGET_PKGS[@]}"; do
-  # winget exits non-zero (0x8A150061) if already installed — || true is required.
-  powershell.exe -NoProfile -Command "winget install --accept-source-agreements --accept-package-agreements -e --id $p" || true
-done
-echo "NOTE: After first Apple.iCloud install, sign in + tick 'iCloud Drive' so the vault syncs."
-{{ else if eq .chezmoi.os "linux" -}}
-# com.visualstudio.code is the unofficial Flathub build — extensions that
-# shell out to host tools (gcc, python, node) won't find them. If you need
-# that, install Code from Microsoft's apt repo instead.
-FLATPAKS=(
-{{- range .packages.linux.flatpaks }}
-  {{ . }}
-{{- end }}
-)
-if command -v flatpak &> /dev/null; then
-  flatpak install -y --noninteractive flathub "${FLATPAKS[@]}"
-else
-  echo "NOTE: flatpak not installed. Run 'sudo apt install -y flatpak' then re-apply."
-fi
-echo "NOTE: Linux has no iCloud client — use Syncthing/git for Obsidian cross-device sync."
-{{ end -}}

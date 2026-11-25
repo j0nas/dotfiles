@@ -1,4 +1,3 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 set -e
 
@@ -83,4 +82,3 @@ launchctl bootstrap "gui/$(id -u)" "$agent"
 if [ ! -d "{{ .chezmoi.homeDir }}/Library/Application Support/$domain/FileIndex" ]; then
   echo "NOTE: Tinycast's file search needs Full Disk Access: System Settings → Privacy & Security → Full Disk Access → Tinycast."
 fi
-{{ end -}}

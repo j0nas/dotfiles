@@ -1,58 +1,50 @@
 #!/bin/bash
-set -e
+# Set up a Mac from nothing, or re-apply on one already set up. Run it with
+#   /bin/bash -c "$(curl -fsSL <raw url of this file>)"
+# and never `curl … | bash`: piped, stdin is this script, so Homebrew's installer
+# sees no terminal, goes non-interactive and can't ask for the sudo password.
+set -euo pipefail
 
 echo "==> Setting up dotfiles..."
 
-OS="$(uname -s)"
-
-# --- macOS: enable Touch ID for sudo (one-time, before any other sudo) ---
-# Lets brew/installer/chezmoi-driven sudo prompts work in non-TTY contexts
-# (the Touch ID prompt is a system-level GUI dialog, not stdin). Without
-# this, `brew install --cask <pkg-with-.pkg-artifact>` fails when run from
-# any non-interactive shell. /etc/pam.d/sudo_local survives system updates;
-# /etc/pam.d/sudo already includes it (Apple-supplied template at
-# /etc/pam.d/sudo_local.template documents this exact line).
-if [[ "$OS" == "Darwin" ]] && [[ ! -f /etc/pam.d/sudo_local ]]; then
+# Touch ID for sudo: the prompt is a system dialog, so sudo also works where
+# there is no terminal (an apply from an agent or an app). sudo_local survives
+# system updates, and Apple's /etc/pam.d/sudo already includes it.
+if [[ ! -f /etc/pam.d/sudo_local ]]; then
   echo "==> Enabling Touch ID for sudo (one password prompt, then never again)..."
   echo "auth       sufficient     pam_tid.so" | sudo tee /etc/pam.d/sudo_local > /dev/null
 fi
 
-# --- Linux/WSL: install system packages that need sudo (not handled by chezmoi) ---
-# zsh: default shell. age: decrypts chezmoi-managed secrets via SSH key —
-# without it the first `chezmoi apply` would fail on encrypted_* files.
-if [[ "$OS" == "Linux" ]]; then
-  PKGS=()
-  command -v zsh &> /dev/null || PKGS+=(zsh)
-  command -v age &> /dev/null || PKGS+=(age)
-  if [[ ${#PKGS[@]} -gt 0 ]]; then
-    echo "==> Installing system packages: ${PKGS[*]}..."
-    sudo apt update -qq && sudo apt install -y "${PKGS[@]}"
-  fi
-  if [[ "$SHELL" != */zsh ]]; then
-    echo "==> Setting zsh as default shell..."
-    chsh -s "$(command -v zsh)"
-  fi
+# Homebrew's installer also installs Apple's command line tools, and with them
+# the git that the clone below needs.
+if [[ ! -x /opt/homebrew/bin/brew ]]; then
+  echo "==> Installing Homebrew..."
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 fi
-
-# --- chezmoi ---
-# Bootstrap copy only: a bare machine needs chezmoi before mise exists. Once the
-# first apply runs, mise takes over (chezmoi = "latest" in its config) and the
-# converge script deletes this ~/.local/bin copy — otherwise it would shadow the
-# managed binary on PATH and freeze the machine at whatever version installed it.
-if ! command -v chezmoi &> /dev/null; then
-  echo "==> Installing chezmoi..."
-  sh -c "$(curl -fsLS get.chezmoi.io)" -- -b ~/.local/bin
-fi
+# The apply's scripts inherit this PATH. They call brew and what it installs
+# (code) by name, and a new Mac has no login shell that set it up yet.
+eval "$(/opt/homebrew/bin/brew shellenv)"
 export PATH="$HOME/.local/bin:$PATH"
 
+# age has to exist before chezmoi starts: chezmoi picks its age when it launches,
+# and the one built in can't decrypt with an SSH key.
+command -v age > /dev/null || brew install age
+
+# mise runs chezmoi here and manages it from the first apply on.
+if ! command -v mise > /dev/null; then
+  echo "==> Installing mise..."
+  curl -fsSL https://mise.run | sh
+fi
+chezmoi() { mise exec chezmoi@latest -- chezmoi "$@"; }
+
 echo "==> Applying dotfiles..."
-# `init --apply` does NOT pull on re-runs if the source already exists, so
-# `update` (= git pull + apply) is the idempotent choice once initialized.
+# `init --apply` doesn't pull when the source already exists; `update` does.
+# DOTFILES_REPO: another repo or a local path, for testing (CI uses it).
 if [[ -d "$HOME/.local/share/chezmoi/.git" ]]; then
   chezmoi update
 else
-  chezmoi init --apply j0nas
+  chezmoi init --apply "${DOTFILES_REPO:-j0nas}"
 fi
 
-echo ""
-echo "==> All done! Open WezTerm and enjoy your new shell."
+echo
+echo "==> Done. What's left to do by hand is in the README (New Mac checklist)."

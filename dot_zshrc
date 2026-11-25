@@ -1,9 +1,7 @@
 # --- Path ---
 typeset -U path  # dedupe on re-source / nested shells
 path=("$HOME/.local/bin" $path)
-{{ if eq .chezmoi.os "darwin" -}}
 eval "$(/opt/homebrew/bin/brew shellenv)"
-{{ end -}}
 
 # --- History ---
 HISTFILE=~/.zsh_history
@@ -98,7 +96,7 @@ fi
 # --- Plugins ---
 # Fetched by chezmoi from pinned, checksummed release archives
 # (.chezmoiexternal.toml) — no plugin manager. zsh-syntax-highlighting's docs
-# ask for the very end of .zshrc. (On zsh >= 5.8.1.1 — both machines run 5.9 —
+# ask for the very end of .zshrc. (On zsh >= 5.8.1.1
 # 0.8.0 highlights from a zle-line-pre-redraw hook rather than by wrapping the
 # widgets that exist when it loads, so fzf's widgets are covered either way.)
 for plugin in zsh-autosuggestions zsh-syntax-highlighting; do

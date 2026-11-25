@@ -1,4 +1,4 @@
-{{ if and (hasKey . "g9_desk") .g9_desk (eq .chezmoi.os "darwin") (eq .chezmoi.arch "arm64") -}}
+{{ if and (hasKey . "g9_desk") .g9_desk -}}
 #!/bin/bash
 # G9 desk (Deskflow + DDC monitor switch): logic lives in ~/.config/g9-desk/setup.sh;
 # this only re-runs it when any of its inputs change. _after_: targets must exist.

@@ -12,24 +12,18 @@ tools
 llm-sessions
 .githooks
 .taplo.toml
-{{ if ne .chezmoi.os "darwin" -}}
-{{/* macOS-only: the AeroSpace tiler, its helper scripts, and the SwiftBar plugin that shows its workspace */}}
-.aerospace.toml
-.config/aerospace
-.config/swiftbar
-{{/* Tinycast launcher (replaces Spotlight); its settings.json symlink */}}
-.config/tinycast
-{{ end -}}
-{{/* VS Code: symlinked settings.json points here; repo-only content file */}}
+{{/* Contents of the files that ~/… symlinks into this repo, or that a modify_ template merges */}}
 Code-settings.json
-{{/* Tinycast: symlinked ~/.config/tinycast/settings.json points here; repo-only content file */}}
 Tinycast-settings.json
-{{/* Claude Code: managed keys merged into ~/.claude/settings.json by dot_claude/modify_settings.json; repo-only */}}
 Claude-settings.json
-{{ if eq .chezmoi.os "darwin" -}}
-.config/Code/User/settings.json
-{{ else -}}
-Library
+{{/* Secrets only where they can be decrypted: this Mac's public key must be one of
+.age-recipients. Anywhere else the first one aborts the apply, and nothing that
+sorts after .claude is ever written. */ -}}
+{{ $pub := joinPath .chezmoi.homeDir ".ssh/id_ed25519.pub" -}}
+{{ $key := "" -}}
+{{ if stat $pub }}{{ $key = index (splitList " " (include $pub)) 1 }}{{ end -}}
+{{ if or (not $key) (not (contains $key (include ".age-recipients"))) -}}
+.claude/secrets
 {{ end -}}
 {{ if not (and (hasKey . "g9_desk") .g9_desk) -}}
 {{/* G9 desk pairing (dot_config/g9-desk/README.md): only the Mac at that desk */}}

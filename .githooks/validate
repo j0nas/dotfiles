@@ -20,9 +20,7 @@
 #   9. SHORTCUTS.md matches its `# sc:` tags
 #  10. the Go tools in tools/ are gofmt-clean, pass go vet and their tests
 #
-# Renders for the CURRENT OS — OS-gated branches are only checked on their own
-# platform, which is why CI runs a macOS + Linux matrix. Scripts gated behind a
-# real WSL filesystem (`stat /mnt/c/Users`) render empty off-WSL and are skipped.
+# macOS only, like the repo: the templates read ioreg and defaults.
 set -uo pipefail
 
 repo="$(git rev-parse --show-toplevel)" && cd "$repo" || exit 1

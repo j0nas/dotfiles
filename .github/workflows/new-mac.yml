@@ -1,0 +1,62 @@
+name: new-mac
+
+# Runs setup.sh the way a new Mac would: no Homebrew, a bare PATH, and no SSH key
+# that can decrypt the secrets. Slow (it installs every app), so only when what a
+# first apply depends on changes, weekly to catch rot, and by hand.
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "23 4 * * 1"
+  push:
+    branches: [main]
+    paths:
+      - setup.sh
+      - .chezmoiscripts/**
+      - .chezmoiignore
+      - .chezmoi.toml.tmpl
+      - .github/workflows/new-mac.yml
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  setup:
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      # The runner image ships Homebrew; on Apple Silicon it all lives in here.
+      - name: Remove Homebrew
+        run: sudo rm -rf /opt/homebrew
+
+      # The token only lifts GitHub's rate limit for mise's downloads.
+      - name: Run setup.sh
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          env -i HOME="$HOME" USER="$USER" LOGNAME="$USER" TMPDIR="$TMPDIR" SHELL=/bin/zsh TERM=dumb \
+            PATH=/usr/bin:/bin:/usr/sbin:/sbin GITHUB_TOKEN="$TOKEN" DOTFILES_REPO="$GITHUB_WORKSPACE" \
+            /bin/bash -c "$(cat setup.sh)"
+
+      # In a new login shell, as in the first terminal window.
+      - name: Check the result
+        run: |
+          cat > "$RUNNER_TEMP/check.zsh" <<'CHECK'
+          for c in brew mise chezmoi starship zoxide fzf gh node pnpm claude code llm-log; do
+            command -v "$c" > /dev/null || { echo "missing: $c"; failed=1; }
+          done
+          [ -e ~/.config/mise/config.toml ] || { echo "missing: mise config"; failed=1; }
+          [ ! -e ~/.claude/secrets ] || { echo "secrets written without a key"; failed=1; }
+          code --list-extensions | grep -q anthropic.claude-code || { echo "missing: VS Code extensions"; failed=1; }
+          exit ${failed:-0}
+          CHECK
+          env -i HOME="$HOME" USER="$USER" TERM=dumb PATH=/usr/bin:/bin:/usr/sbin:/sbin \
+            /bin/zsh -li "$RUNNER_TEMP/check.zsh"

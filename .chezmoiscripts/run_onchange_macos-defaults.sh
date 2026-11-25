@@ -1,4 +1,3 @@
-{{ if eq .chezmoi.os "darwin" -}}
 #!/bin/bash
 set -e
 
@@ -62,4 +61,3 @@ defaults write "$HOME/Library/Group Containers/group.com.apple.controlcenter/Lib
 killall ControlCenter 2>/dev/null || true
 
 echo "==> Done. Log out and back in for key repeat changes to take effect."
-{{ end -}}

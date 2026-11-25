@@ -68,13 +68,6 @@
 | --- | --- |
 | `Ctrl+Shift+T` | New tab |
 
-### Input
-
-| Shortcut | Action |
-| --- | --- |
-| `Shift+Enter` | Insert newline (multiline prompts) |
-| `Ctrl+V` | Paste clipboard (Windows) |
-
 ## Zsh / shell
 
 ### Word motion
@@ -113,14 +106,11 @@
 | `gco` | git checkout |
 | `gc` | git commit --verbose |
 | `gcam` | git commit --all --message |
-| `gcmsg` | git commit --message |
 | `gc!` | git commit --verbose --amend |
 | `gd` | git diff |
-| `gds` | git diff --staged |
 | `gl` | git pull |
 | `gp` | git push |
 | `gst` | git status |
-| `glog` | git log --oneline --decorate --graph |
 
 ### Docker
 
@@ -138,7 +128,6 @@
 
 | Shortcut | Action |
 | --- | --- |
-| `desktop` | cd to your Desktop |
 | `mcd <dir>` | mkdir -p then cd into it |
 | `... / .... / .....` | cd up 2, 3, 4 levels (also works as an argument) |
 
