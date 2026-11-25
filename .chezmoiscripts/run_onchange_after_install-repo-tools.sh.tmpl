@@ -2,7 +2,8 @@
 set -euo pipefail
 
 # Build the repo's own Go tools (tools/cmd/*, e.g. llm-log) into ~/.local/bin
-# whenever their source changes.
+# whenever their source changes (Go files plus embedded HTML, e.g. project-board's
+# board.html).
 #
 # Ordering matters twice. _after_ runs this once the files are in place, and the
 # name sorts after install-mise-tools, which is what installs Go on a fresh
@@ -12,7 +13,7 @@ set -euo pipefail
 # a module asking for a newer Go than mise installed makes `go build` download
 # that toolchain itself, outside mise and its 7-day cooldown.
 #
-# tools source: {{ $src := "" }}{{ range concat (glob (joinPath .chezmoi.sourceDir "tools/go.mod")) (glob (joinPath .chezmoi.sourceDir "tools/**/*.go")) }}{{ $src = print $src (trimPrefix $.chezmoi.sourceDir .) (include .) }}{{ end }}{{ $src | sha256sum }}
+# tools source: {{ $src := "" }}{{ range concat (glob (joinPath .chezmoi.sourceDir "tools/go.mod")) (glob (joinPath .chezmoi.sourceDir "tools/**/*.go")) (glob (joinPath .chezmoi.sourceDir "tools/**/*.html")) }}{{ $src = print $src (trimPrefix $.chezmoi.sourceDir .) (include .) }}{{ end }}{{ $src | sha256sum }}
 
 export GOTOOLCHAIN=local
 cd "{{ .chezmoi.sourceDir }}/tools"

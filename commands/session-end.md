@@ -42,5 +42,6 @@ A session that ends without this command leaves its draft behind, in any project
    - **Agents logged as running.** One this session started with `claude-quota start` and never ended gets its `end`.
    - **Memory.** A memory file of the project that this session's decisions contradict: update it or delete it, and its line in `MEMORY.md`.
    - **Things left running.** Watchers and monitors this session started, and worktrees whose branches are merged.
+   - **Project board.** Each project under `~/Desktop/projects` that got an entry has a card in `~/Desktop/projects/projects.json`. `cd <project> && project-board show` prints it; bring it up to date with `project-board set`: `--left-off` (where the work stands now, naming files and devices), `--next` (one concrete next action), `--status` when the state changed (active, waiting, paused, idea, live, done, dropped), `--add-loop`/`--drop-loop` for open items. A folder with no card gets one the same way.
    - **Tracked files.** A work queue or docs page in a repo belongs to the project. Update it only where the project's rules have sessions keep it current, and commit as the project requires. Otherwise name it for the user.
 9. Tell the user: each entry's path and index line, any draft left because its session may still be running, and what was stale, saying which of it you corrected and which needs them.
