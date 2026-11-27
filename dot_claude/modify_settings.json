@@ -9,7 +9,12 @@ keys always win, anything Claude writes that we don't manage survives, and
 apply never prompts. The keys listed below are reset before that merge, so a
 stale local value can't keep overriding the managed one: "hooks" we own
 wholesale (only the llm-log SessionStart hook; a hook added through /hooks
-lasts until the next apply); "model" stays unset so the account default applies (Claude Code drops the key
+lasts until the next apply), except the entries herdr's Claude integration
+writes (`herdr integration install claude`, run by herdr's mise postinstall
+hook). Those hold an absolute path to ~/.claude/hooks/herdr-agent-state.sh and
+change with each integration version, so herdr owns them and they are carried
+over from the live file; `herdr integration uninstall claude` removes them for
+good. "model" stays unset so the account default applies (Claude Code drops the key
 when /model picks default, and a leftover pin would otherwise win forever);
 and "modelSettings" we own wholesale — /effort saves a block per model you
 confirm a level on, under its exact ID, and that block beats ours until the next
@@ -19,6 +24,21 @@ listed falls back to the top-level effortLevel.
 */ -}}
 {{- $cur := dict -}}
 {{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- $herdr := dict -}}
+{{- range $event, $groups := get $cur "hooks" | default dict -}}
+{{-   range $groups -}}
+{{-     if contains "/herdr-agent-state.sh" (toJson .) -}}
+{{-       $_ := set $herdr $event (append (get $herdr $event | default (list)) .) -}}
+{{-     end -}}
+{{-   end -}}
+{{- end -}}
 {{- range list "model" "modelSettings" "hooks" -}}{{- $_ := unset $cur . -}}{{- end -}}
 {{- $managed := include "Claude-settings.json" | fromJson -}}
-{{- mergeOverwrite $cur $managed | toPrettyJson }}
+{{- $out := mergeOverwrite $cur $managed -}}
+{{- if $herdr -}}
+{{-   if not (hasKey $out "hooks") -}}{{- $_ := set $out "hooks" dict -}}{{- end -}}
+{{-   range $event, $groups := $herdr -}}
+{{-     $_ := set $out.hooks $event (concat (get $out.hooks $event | default (list)) $groups) -}}
+{{-   end -}}
+{{- end -}}
+{{- $out | toPrettyJson }}
