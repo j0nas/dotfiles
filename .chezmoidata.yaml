@@ -23,6 +23,7 @@ packages:
     - signal
     - spotify
     - swiftbar  # menu-bar host for the ad-hoc AeroSpace workspace-label indicator
+    - tailscale-app  # lets the Herdr iPhone app reach this Mac's SSH (Remote Login) away from home. The standalone app can't run a Tailscale SSH server (only the CLI-only tailscaled variant can), so the phone logs in with its key through macOS sshd
     - tinycast  # ⌘-Space launcher replacing Spotlight: free, open source, no account
     - visual-studio-code
     - wezterm
