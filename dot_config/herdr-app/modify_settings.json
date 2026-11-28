@@ -1,0 +1,12 @@
+{{- /* chezmoi:modify-template */ -}}
+{{- /*
+The Herdr app (cask herdr-app) rewrites settings.json itself from its Settings
+window, so this sets only "telemetry": false on the live file and leaves the
+rest alone. That key is Settings > Privacy's switch for the daily usage report
+to telemetry.herdr.dev, on by default in releases. Turning it off also makes the
+app delete its install ID and unsent reports (~/.config/herdr-app/telemetry).
+*/ -}}
+{{- $cur := dict -}}
+{{- if .chezmoi.stdin -}}{{- $cur = fromJson .chezmoi.stdin -}}{{- end -}}
+{{- $_ := set $cur "telemetry" false -}}
+{{- $cur | toPrettyJson -}}
