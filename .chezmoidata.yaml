@@ -16,6 +16,7 @@ packages:
     - fastmail
     - font-jetbrains-mono-nerd-font
     - godot  # Godot 4.x game engine; cask puts a `godot` CLI shim on PATH (headless runs, script checks)
+    - herdr-app  # Herdr: desktop app for running coding agents. Updates itself, and on first launch sets up herdr-core (`hc`), which then updates itself with `hc update`
     - lm-studio
     - notunes  # Apple Music can't be uninstalled (sealed system volume); this kills it on launch and redirects media keys to Spotify
     - obsidian

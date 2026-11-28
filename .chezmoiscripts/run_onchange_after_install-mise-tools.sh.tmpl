@@ -36,10 +36,9 @@ echo "==> Pruning unused versions..."
 mise prune -y
 
 # Third-party Claude Code skills (~/.agents/skills, via the skills CLI, symlinked
-# into ~/.claude/skills): the agent-browser stub, herdr's skill (drives herdr
-# from inside a herdr pane, and stops unless HERDR_ENV=1), and Matt Pocock's
-# grill-me (/grill-me, a user-only wrapper that hands off to `grilling`, so both
-# are needed). `add` (re)registers each and repairs a stub the lock file lost track
+# into ~/.claude/skills): the agent-browser stub and Matt Pocock's grill-me
+# (/grill-me, a user-only wrapper that hands off to `grilling`, so both are
+# needed). `add` (re)registers each and repairs a stub the lock file lost track
 # of; `update -g` refreshes the rest. Not worth failing the converge over a
 # network blip, hence the `|| echo`.
 #
@@ -54,6 +53,5 @@ quietly() {
 }
 echo "==> Refreshing third-party Claude Code skills..."
 { quietly skills add vercel-labs/agent-browser -g -y &&
-  quietly skills add herdrdev/herdr --skill herdr -g -y &&
   quietly skills add mattpocock/skills --skill grill-me --skill grilling -g -y &&
   skills update -g; } || echo "==> skills refresh failed; continuing"

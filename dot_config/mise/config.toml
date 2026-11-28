@@ -59,12 +59,6 @@ glow = "latest"
 # on apply, and runs their vet + tests in .githooks/validate. Go is the default
 # for new tools here: fast static binaries, no runtime to install per machine.
 go = "latest"
-# herdr: terminal multiplexer for coding agents (runs inside WezTerm like tmux).
-# Shows each Claude Code/Codex pane as working, blocked or idle, and keeps
-# sessions alive across detach and reboot. It knows it's a mise install, so
-# `herdr update` is off and its update notice says `mise upgrade herdr`. The
-# postinstall hook reinstalls its Claude Code integration after every upgrade.
-herdr = { version = "latest", postinstall = "$HOME/.config/mise/hooks/herdr-postinstall.sh" }
 # chezmoi: the tool that applies this very repo. setup.sh runs the first apply
 # through `mise exec`, so this is the only copy and the weekly upgrade moves it.
 chezmoi = "latest"
