@@ -1,0 +1,49 @@
+#!/bin/bash
+# Install herdr-core (`hc`), the runtime the Herdr app (cask herdr-app) runs its
+# terminals in, with herdr's own installer: ~/.local/bin/herdr-core, signed as
+# Herdr Core.app, with `hc` linked beside it.
+#
+# VERSION is a floor: a missing or older core gets the pinned release, a newer
+# one is left alone. `hc update` and the app move the core forward, and it
+# refuses to go back. No package manager carries herdr-core, so the installer
+# comes from the release tag and must match INSTALLER_SHA256, and the release
+# manifest must list ARCHIVE_SHA256 for Apple silicon before the installer runs.
+# The installer then checks the archive against that manifest and the bundle's
+# signature (Herdr's Apple team). Bump all three together, from the tag's
+# distribution/install.sh and https://releases.herdr.dev/core/<version>/manifest.json.
+#
+# This line re-renders the script when the core moves or goes missing, so a
+# deleted core comes back on the next apply:
+# installed: {{ output "sh" "-c" "\"$HOME/.local/bin/herdr-core\" --version 2>/dev/null; true" | trim }}
+set -euo pipefail
+
+VERSION="0.1.22"
+INSTALLER_SHA256="9d29a920d796d11b00fde9ab0958b616179d88acc25edf0fde8b574bde0227d2"
+ARCHIVE_SHA256="90798daadefa8d126b90ef0bcdbe9c7dda9c6cfbf011a247065ab5da348f350e"  # macos-aarch64
+CORE="$HOME/.local/bin/herdr-core"
+
+installed="$("$CORE" --version 2>/dev/null | sed 's/^hc //' || true)"
+# sort -V puts the newer of the two last.
+if [ -n "$installed" ] && [ "$(printf '%s\n%s\n' "$VERSION" "$installed" | sort -V | tail -n 1)" = "$installed" ]; then
+  exit 0
+fi
+
+tmp="$(mktemp -d)"
+trap 'rm -rf "$tmp"' EXIT
+
+curl -fsSL "https://raw.githubusercontent.com/herdrdev/herdr-core/v$VERSION/distribution/install.sh" -o "$tmp/install.sh"
+if [ "$(shasum -a 256 "$tmp/install.sh" | cut -d' ' -f1)" != "$INSTALLER_SHA256" ]; then
+  echo "herdr-core: the v$VERSION installer doesn't match the pinned sha256" >&2
+  exit 1
+fi
+
+# Read the way the installer does (no jq: mise's tools aren't there yet on a new Mac).
+curl -fsSL "https://releases.herdr.dev/core/$VERSION/manifest.json" -o "$tmp/manifest.json"
+entry="$(tr -d '\n ' < "$tmp/manifest.json" | sed -n 's/.*"macos-aarch64":{\([^}]*\)}.*/\1/p')"
+case "$entry" in
+  *"\"sha256\":\"$ARCHIVE_SHA256\""*) ;;
+  *) echo "herdr-core: the $VERSION manifest doesn't list the pinned sha256" >&2; exit 1 ;;
+esac
+
+echo "==> Installing herdr-core $VERSION${installed:+ (was $installed)}"
+HC_VERSION="$VERSION" sh "$tmp/install.sh"
