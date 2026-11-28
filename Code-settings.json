@@ -13,5 +13,6 @@
   "files.autoSaveDelay": 1000,
   "workbench.secondarySideBar.defaultVisibility": "hidden",
   "explorer.confirmDelete": false,
-  "claudeCode.preferredLocation": "panel"
+  "claudeCode.preferredLocation": "panel",
+  "update.showReleaseNotes": false
 }
